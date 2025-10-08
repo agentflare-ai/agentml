@@ -1,4 +1,4 @@
-module github.com/gogo-agent/ollama
+module github.com/agentflare-ai/agentml
 
 go 1.24.5
 
