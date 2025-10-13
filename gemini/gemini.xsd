@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="github.com/agentflare-ai/agentml/gemini"
+    xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
+    elementFormDefault="qualified">
+
+    <!-- Gemini generate element -->
+    <xs:element name="generate">
+        <xs:complexType>
+            <xs:attribute name="model" type="xs:string" />
+            <xs:attribute name="modelexpr" type="xs:string" />
+            <xs:attribute name="promptexpr" type="xs:string" use="required" />
+            <xs:attribute name="location" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
