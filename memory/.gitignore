@@ -1,0 +1,23 @@
+# OS
+.DS_Store
+
+# Build artifacts
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+
+# Extension build outputs
+extensions/sqlite_graph/build/
+extensions/sqlite_graph/_deps/
+extensions/sqlite_graph/tests/
+extensions/sqlite_graph/scripts/vendor.sh
+
+# Go
+bin/
+coverage.out
+
+# Temporary
+*.tmp
+*.log
