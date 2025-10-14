@@ -41,7 +41,6 @@ func (n *ns) Handle(ctx context.Context, el xmldom.Element) (bool, error) {
 		exe := &memExec{Element: el, deps: n.deps, local: local}
 		return true, exe.Execute(ctx, n.itp)
 	case "graph":
-		// Legacy graph element
 		exe := &graphExec{Element: el, deps: n.deps}
 		return true, exe.Execute(ctx, n.itp)
 	default:

@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="github.com/agentflare-ai/agentml/memory"
+    xmlns:memory="github.com/agentflare-ai/agentml/memory"
+    elementFormDefault="qualified">
+
+    <!-- Key-Value Store Operations -->
+
+    <xs:element name="close">
+        <xs:annotation>
+            <xs:documentation>Close the memory database connection</xs:documentation>
+        </xs:annotation>
+        <xs:complexType />
+    </xs:element>
+
+    <xs:element name="put">
+        <xs:annotation>
+            <xs:documentation>Store a key-value pair in the memory store</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="key" type="xs:string" use="required" />
+            <xs:attribute name="value" type="xs:string" />
+            <xs:attribute name="valueexpr" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="get">
+        <xs:annotation>
+            <xs:documentation>Retrieve a value from the memory store by key</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="key" type="xs:string" use="required" />
+            <xs:attribute name="location" type="xs:string" />
+            <xs:attribute name="dataid" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="delete">
+        <xs:annotation>
+            <xs:documentation>Delete a key-value pair from the memory store</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="key" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="copy">
+        <xs:annotation>
+            <xs:documentation>Copy a value from one key to another</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="src" type="xs:string" />
+            <xs:attribute name="srckey" type="xs:string" />
+            <xs:attribute name="dst" type="xs:string" />
+            <xs:attribute name="dstkey" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="move">
+        <xs:annotation>
+            <xs:documentation>Move a value from one key to another (atomic operation)</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="src" type="xs:string" />
+            <xs:attribute name="srckey" type="xs:string" />
+            <xs:attribute name="dst" type="xs:string" />
+            <xs:attribute name="dstkey" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="query">
+        <xs:annotation>
+            <xs:documentation>Execute a SQL query on the memory database</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="sql" type="xs:string" />
+            <xs:attribute name="query" type="xs:string" />
+            <xs:attribute name="location" type="xs:string" />
+            <xs:attribute name="dataid" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="kvtruncate">
+        <xs:annotation>
+            <xs:documentation>Delete all key-value pairs from the memory store</xs:documentation>
+        </xs:annotation>
+        <xs:complexType />
+    </xs:element>
+
+    <!-- Transaction Operations -->
+
+    <xs:element name="begin">
+        <xs:annotation>
+            <xs:documentation>Begin a database transaction</xs:documentation>
+        </xs:annotation>
+        <xs:complexType />
+    </xs:element>
+
+    <xs:element name="commit">
+        <xs:annotation>
+            <xs:documentation>Commit the current transaction</xs:documentation>
+        </xs:annotation>
+        <xs:complexType />
+    </xs:element>
+
+    <xs:element name="rollback">
+        <xs:annotation>
+            <xs:documentation>Rollback the current transaction</xs:documentation>
+        </xs:annotation>
+        <xs:complexType />
+    </xs:element>
+
+    <xs:element name="savepoint">
+        <xs:annotation>
+            <xs:documentation>Create a savepoint within a transaction</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="name" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="release">
+        <xs:annotation>
+            <xs:documentation>Release a savepoint</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="name" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
+    <!-- SQL Operations -->
+
+    <xs:element name="sql">
+        <xs:annotation>
+            <xs:documentation>Execute arbitrary SQL statements</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="sql" type="xs:string" />
+            <xs:attribute name="sqlexpr" type="xs:string" />
+            <xs:attribute name="location" type="xs:string" />
+            <xs:attribute name="dataid" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="exec">
+        <xs:annotation>
+            <xs:documentation>Execute arbitrary SQL statements (alias for sql)</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="sql" type="xs:string" />
+            <xs:attribute name="sqlexpr" type="xs:string" />
+            <xs:attribute name="location" type="xs:string" />
+            <xs:attribute name="dataid" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Vector/Embedding Operations -->
+
+    <xs:element name="embed">
+        <xs:annotation>
+            <xs:documentation>Generate an embedding vector from text</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="model" type="xs:string" />
+            <xs:attribute name="textexpr" type="xs:string" use="required" />
+            <xs:attribute name="location" type="xs:string" />
+            <xs:attribute name="key" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="upsertvector">
+        <xs:annotation>
+            <xs:documentation>Insert or update a vector in the vector store</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="key" type="xs:string" use="required" />
+            <xs:attribute name="vectorexpr" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="search">
+        <xs:annotation>
+            <xs:documentation>Search for similar vectors using semantic similarity</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="model" type="xs:string" />
+            <xs:attribute name="textexpr" type="xs:string" use="required" />
+            <xs:attribute name="location" type="xs:string" />
+            <xs:attribute name="topk" type="xs:integer" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="deletevector">
+        <xs:annotation>
+            <xs:documentation>Delete a vector from the vector store</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="key" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="vectorindex">
+        <xs:annotation>
+            <xs:documentation>Initialize or manage vector index (auto-initialized)</xs:documentation>
+        </xs:annotation>
+        <xs:complexType />
+    </xs:element>
+
+    <!-- Graph Operations -->
+
+    <xs:element name="addnode">
+        <xs:annotation>
+            <xs:documentation>Add a new node to the knowledge graph</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="labels" type="xs:string" />
+            <xs:attribute name="propsexpr" type="xs:string" />
+            <xs:attribute name="location" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="addedge">
+        <xs:annotation>
+            <xs:documentation>Add a new edge/relationship between nodes in the graph</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="src" type="xs:string" />
+            <xs:attribute name="srcexpr" type="xs:string" />
+            <xs:attribute name="dst" type="xs:string" />
+            <xs:attribute name="dstexpr" type="xs:string" />
+            <xs:attribute name="rel" type="xs:string" use="required" />
+            <xs:attribute name="propsexpr" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="getnode">
+        <xs:annotation>
+            <xs:documentation>Retrieve a node from the graph by ID</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" use="required" />
+            <xs:attribute name="location" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="getedge">
+        <xs:annotation>
+            <xs:documentation>Retrieve an edge from the graph by ID</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" use="required" />
+            <xs:attribute name="location" type="xs:string" />
+            <xs:attribute name="dataid" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="deletenode">
+        <xs:annotation>
+            <xs:documentation>Delete a node from the graph</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="deleteedge">
+        <xs:annotation>
+            <xs:documentation>Delete an edge from the graph</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="src" type="xs:string" use="required" />
+            <xs:attribute name="dst" type="xs:string" use="required" />
+            <xs:attribute name="rel" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="neighbors">
+        <xs:annotation>
+            <xs:documentation>Get neighboring nodes in the graph (alias for getneighbors)</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="idexpr" type="xs:string" />
+            <xs:attribute name="direction" type="xs:string" />
+            <xs:attribute name="location" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="getneighbors">
+        <xs:annotation>
+            <xs:documentation>Get neighboring nodes in the graph</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="idexpr" type="xs:string" />
+            <xs:attribute name="direction" type="xs:string" />
+            <xs:attribute name="location" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="graphpath">
+        <xs:annotation>
+            <xs:documentation>Find a path between two nodes in the graph</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="src" type="xs:string" use="required" />
+            <xs:attribute name="dst" type="xs:string" use="required" />
+            <xs:attribute name="location" type="xs:string" />
+            <xs:attribute name="dataid" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="graphtruncate">
+        <xs:annotation>
+            <xs:documentation>Delete all nodes and edges from the graph</xs:documentation>
+        </xs:annotation>
+        <xs:complexType />
+    </xs:element>
+
+    <xs:element name="graphquery">
+        <xs:annotation>
+            <xs:documentation>Execute a graph query</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="pathexpr" type="xs:string" use="required" />
+            <xs:attribute name="location" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Legacy Graph Element (for backward compatibility) -->
+
+    <xs:element name="graph">
+        <xs:annotation>
+            <xs:documentation>Legacy graph operations (use dedicated elements like addnode, addedge instead)</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:attribute name="op" type="xs:string" use="required" />
+            <xs:attribute name="out" type="xs:string" />
+            <xs:attribute name="labels" type="xs:string" />
+            <xs:attribute name="properties-expr" type="xs:string" />
+            <xs:attribute name="start" type="xs:string" />
+            <xs:attribute name="end" type="xs:string" />
+            <xs:attribute name="type" type="xs:string" />
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="query-expr" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
