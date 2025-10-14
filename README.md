@@ -10,6 +10,7 @@
 - [Core Concepts](#core-concepts)
 - [Architecture](#architecture)
 - [Write Once, Deploy Anywhere](#write-once-deploy-anywhere)
+- [Remote Agent Communication](#remote-agent-communication)
 - [Getting Started](#getting-started)
 - [Event-Driven LLM Integration](#event-driven-llm-integration)
 - [Decomposition & Composition](#decomposition--composition)
@@ -37,6 +38,7 @@ AgentML extends SCXML with agent-specific capabilities:
 - 🔌 **Extensible**: Custom namespaces for memory, LLM providers, I/O, and more
 - 📊 **Observable**: Built-in OpenTelemetry tracing and logging
 - 🌐 **Universal Standard**: Write once, deploy anywhere - transform to any framework or runtime ⭐
+- 🔗 **Remote Communication**: Built-in distributed agent communication via IOProcessors ⭐
 
 > **💡 Critical Success Factor**: Always include detailed `description` fields in your `event:schema` JSON schemas. These descriptions are the primary mechanism for guiding LLMs to generate correct, well-structured events. Both schema-level and property-level descriptions are essential.
 
@@ -108,6 +110,235 @@ Benefits:
 - **Type Safety**: Ensures consistent event structure
 
 **Critical**: Always include `description` fields at both the schema level and property level. These descriptions are the primary way to guide LLMs in generating correct event data.
+
+### JSON Pointer References
+
+AgentML supports **JSON Pointer (RFC 6901)** references for event schemas, enabling schema reuse and cleaner documents:
+
+#### External Schema Files
+
+**schemas/events.json:**
+```json
+{
+  "components": {
+    "schemas": {
+      "FlightRequest": {
+        "type": "object",
+        "description": "User intent to search, book, update, or cancel a flight",
+        "properties": {
+          "category": {
+            "const": "flight",
+            "description": "Category identifier for flight requests"
+          },
+          "action": {
+            "enum": ["search", "book", "update", "cancel"],
+            "description": "The specific flight action to perform"
+          },
+          "details": {
+            "type": "object",
+            "description": "Flight-specific details",
+            "properties": {
+              "from": {
+                "type": "string",
+                "description": "Departure city or airport code"
+              },
+              "to": {
+                "type": "string",
+                "description": "Arrival city or airport code"
+              },
+              "date": {
+                "type": "string",
+                "format": "date",
+                "description": "Departure date in YYYY-MM-DD format"
+              }
+            }
+          }
+        },
+        "required": ["category", "action"]
+      },
+      "HotelRequest": {
+        "type": "object",
+        "description": "User intent for hotel booking",
+        "properties": {
+          "category": {"const": "hotel"},
+          "action": {"enum": ["search", "book", "update", "cancel"]},
+          "details": {"type": "object"}
+        }
+      },
+      "ConfirmationAccepted": {
+        "type": "object",
+        "description": "User accepted the proposed action",
+        "properties": {
+          "confirmed": {
+            "const": true,
+            "description": "Must be true for acceptance"
+          }
+        },
+        "required": ["confirmed"]
+      }
+    }
+  }
+}
+```
+
+**agent.aml:**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       use:spec="./schemas/events.json"
+       use:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <state id="classify_intent">
+    <onentry>
+      <gemini:generate location="_event" promptexpr="'Classify: ' + user_input" />
+    </onentry>
+    
+    <!-- Reference schemas using JSON pointers -->
+    <transition event="intent.flight"
+                event:schema="#/components/schemas/FlightRequest"
+                target="handle_flight" />
+    
+    <transition event="intent.hotel"
+                event:schema="#/components/schemas/HotelRequest"
+                target="handle_hotel" />
+  </state>
+  
+  <state id="confirm_action">
+    <transition event="confirmation.accepted"
+                event:schema="#/components/schemas/ConfirmationAccepted"
+                target="execute" />
+  </state>
+</agent>
+```
+
+#### Benefits of JSON Pointers
+
+1. **DRY Principle**: Define schemas once, reference everywhere
+2. **Maintainability**: Update schema in one place, affects all references
+3. **Readability**: Keep `.aml` files clean and focused on behavior
+4. **Reusability**: Share schemas across multiple agents
+5. **Standards Compliance**: Use OpenAPI 3.x specifications directly
+6. **Validation**: External schemas can be validated independently
+7. **Versioning**: Version control schemas separately from agents
+
+#### OpenAPI 3.x Integration
+
+Load OpenAPI specifications directly:
+
+**api-spec.yaml:**
+```yaml
+openapi: 3.0.0
+info:
+  title: Agent Event API
+  version: 1.0.0
+components:
+  schemas:
+    TaskRequest:
+      type: object
+      description: Request to execute a task
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          description: Unique task identifier
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+          description: Task priority level
+        payload:
+          type: object
+          description: Task-specific payload data
+      required:
+        - task_id
+        - priority
+```
+
+**agent.aml:**
+```xml
+<agent use:spec="https://api.example.com/openapi.yaml">
+  <state id="handle_task">
+    <transition event="task.request"
+                event:schema="#/components/schemas/TaskRequest"
+                target="process_task" />
+  </state>
+</agent>
+```
+
+#### Multiple Specification Files
+
+Load multiple specs and reference them:
+
+```xml
+<agent use:spec1="./events.json"
+       use:spec2="./openapi.yaml"
+       use:spec3="https://external-api.com/schema.json">
+  
+  <!-- Reference schemas from different specs -->
+  <transition event="local.event"
+              event:schema="spec1#/components/schemas/LocalEvent"
+              target="..." />
+  
+  <transition event="api.event"
+              event:schema="spec2#/components/schemas/ApiEvent"
+              target="..." />
+  
+  <transition event="external.event"
+              event:schema="spec3#/definitions/ExternalEvent"
+              target="..." />
+</agent>
+```
+
+#### JSON Pointer Syntax
+
+AgentML supports standard JSON Pointer syntax (RFC 6901):
+
+- **`#/components/schemas/MySchema`** - OpenAPI 3.x style
+- **`#/definitions/MySchema`** - JSON Schema / OpenAPI 2.0 style
+- **`#/properties/myField`** - Direct property reference
+- **`spec1#/components/schemas/MySchema`** - Named spec reference
+
+#### Remote Specifications
+
+Load specifications from HTTP(S) URLs:
+
+```xml
+<agent use:spec="https://api.github.com/openapi.yaml">
+  <!-- Schemas are fetched and cached at agent startup -->
+  <transition event="github.webhook"
+              event:schema="#/components/schemas/WebhookEvent"
+              target="handle_webhook" />
+</agent>
+```
+
+**Caching Behavior:**
+- Specifications loaded once at agent initialization
+- Cached for agent lifetime
+- Support for ETags and conditional requests
+- Optional refresh intervals for long-running agents
+
+#### Schema Composition
+
+Combine inline schemas with references:
+
+```xml
+<transition event="custom.event"
+            event:schema='{
+              "allOf": [
+                {"$ref": "#/components/schemas/BaseEvent"},
+                {
+                  "type": "object",
+                  "properties": {
+                    "custom_field": {
+                      "type": "string",
+                      "description": "Custom field for this transition"
+                    }
+                  }
+                }
+              ]
+            }'
+            target="handle_custom" />
+```
 
 #### Why Descriptions Are Critical
 
@@ -429,6 +660,398 @@ AgentML extends SCXML with agent-specific capabilities while maintaining full co
 - AgentML can leverage SCXML verification tools
 - Standard SCXML transformations (XSLT, validation) work with AgentML
 - Cross-industry standardization enables broad ecosystem
+
+## Remote Agent Communication
+
+AgentML includes **built-in support for distributed agent communication** using the W3C SCXML IOProcessor interface. This enables agents to communicate across processes, machines, and networks using standard protocols.
+
+### IOProcessor Architecture
+
+The IOProcessor interface provides a standardized way for agents to send and receive events:
+
+```go
+type IOProcessor interface {
+    // Handle processes incoming events via this transport
+    Handle(ctx context.Context, event *Event) error
+    
+    // Location returns the URI where this agent can be reached
+    Location(ctx context.Context) (string, error)
+    
+    // Type returns the processor type (e.g., "http://www.w3.org/TR/scxml/#HTTPEventProcessor")
+    Type() string
+    
+    // Shutdown cleans up resources
+    Shutdown(ctx context.Context) error
+}
+```
+
+### Built-in IOProcessors
+
+AgentML includes several standard IOProcessors:
+
+#### 1. HTTP IOProcessor
+
+Send events to agents via HTTP/HTTPS:
+
+```xml
+<state id="notify_remote_agent">
+  <onentry>
+    <!-- Send event to remote agent via HTTP -->
+    <send event="task.assigned"
+          target="https://agent.example.com/events"
+          type="http://www.w3.org/TR/scxml/#HTTPEventProcessor">
+      <param name="task_id" expr="task.id" />
+      <param name="priority" expr="'high'" />
+    </send>
+  </onentry>
+  
+  <!-- Wait for response from remote agent -->
+  <transition event="task.acknowledged" target="confirmed" />
+  <transition event="error.communication" target="retry" />
+</state>
+```
+
+**Features:**
+- RESTful HTTP/HTTPS communication
+- Automatic request/response correlation
+- Built-in retry with exponential backoff
+- TLS support for secure communication
+- OpenTelemetry trace propagation
+
+#### 2. WebSocket IOProcessor
+
+Real-time bidirectional communication:
+
+```xml
+<state id="collaborative_work">
+  <!-- Connect to remote agent via WebSocket -->
+  <invoke type="websocket" id="partner_agent">
+    <param name="url" expr="'wss://partner.example.com/ws'" />
+  </invoke>
+  
+  <state id="working">
+    <onentry>
+      <!-- Send updates to partner in real-time -->
+      <send event="progress.update"
+            targetexpr="'#_websocket_partner_agent'"
+            type="http://www.w3.org/TR/scxml/#WebSocketEventProcessor">
+        <param name="percent_complete" expr="progress" />
+      </send>
+    </onentry>
+    
+    <!-- Receive real-time updates from partner -->
+    <transition event="partner.progress.update" target="sync_state">
+      <assign location="partner_progress" expr="_event.data.percent_complete" />
+    </transition>
+  </state>
+</state>
+```
+
+**Features:**
+- Persistent bidirectional connections
+- Low-latency event delivery
+- Automatic reconnection
+- Message ordering guarantees
+- Heartbeat/keepalive support
+
+#### 3. SCXML IOProcessor
+
+Direct agent-to-agent communication (same process or via network):
+
+```xml
+<state id="delegate_task">
+  <onentry>
+    <!-- Send event to another SCXML agent -->
+    <send event="task.delegate"
+          targetexpr="'#session_' + worker_agent_id"
+          type="http://www.w3.org/TR/scxml/#SCXMLEventProcessor">
+      <param name="task" expr="current_task" />
+    </send>
+  </onentry>
+  
+  <transition event="done.invoke" target="complete">
+    <assign location="result" expr="_event.data" />
+  </transition>
+</state>
+```
+
+**Features:**
+- Zero-copy local communication (same process)
+- Networked SCXML communication via HTTP/WebSocket
+- Session management and routing
+- Hierarchical agent addressing
+
+#### 4. Internal IOProcessor
+
+Fast in-memory event delivery (default):
+
+```xml
+<state id="process">
+  <onentry>
+    <!-- Raise internal event (default IOProcessor) -->
+    <raise event="internal.ready" />
+    
+    <!-- Or explicitly use internal IOProcessor -->
+    <send event="internal.ready"
+          type="http://www.w3.org/TR/scxml/#InternalEventProcessor" />
+  </onentry>
+</state>
+```
+
+### Distributed Agent Patterns
+
+#### Agent Swarm
+
+Multiple agents coordinating on a task:
+
+```xml
+<state id="coordinate_swarm">
+  <datamodel>
+    <data id="swarm_agents" expr="['http://agent1.com', 'http://agent2.com', 'http://agent3.com']" />
+    <data id="responses" expr="[]" />
+  </datamodel>
+  
+  <onentry>
+    <!-- Broadcast task to all agents -->
+    <foreach array="swarm_agents" item="agent_url">
+      <send event="task.execute"
+            targetexpr="agent_url"
+            type="http://www.w3.org/TR/scxml/#HTTPEventProcessor">
+        <param name="task_data" expr="task" />
+      </send>
+    </foreach>
+  </onentry>
+  
+  <!-- Collect responses -->
+  <transition event="task.complete">
+    <script>
+      responses.push(_event.data);
+    </script>
+    <if cond="responses.length === swarm_agents.length">
+      <raise event="all.complete" />
+    </if>
+  </transition>
+  
+  <transition event="all.complete" target="aggregate_results" />
+</state>
+```
+
+#### Supervisor-Worker Pattern
+
+Hierarchical agent delegation:
+
+```xml
+<state id="supervisor">
+  <state id="assign_work">
+    <onentry>
+      <!-- Invoke worker agents -->
+      <invoke type="scxml" id="worker1" src="./worker-agent.aml">
+        <param name="supervisor" expr="_ioprocessors.http.location" />
+        <param name="task" expr="tasks[0]" />
+      </invoke>
+      
+      <invoke type="scxml" id="worker2" src="./worker-agent.aml">
+        <param name="supervisor" expr="_ioprocessors.http.location" />
+        <param name="task" expr="tasks[1]" />
+      </invoke>
+    </onentry>
+    
+    <!-- Workers report back via HTTP -->
+    <transition event="worker.complete" target="check_completion">
+      <assign location="completed_tasks" expr="completed_tasks + 1" />
+    </transition>
+    
+    <transition event="worker.error" target="reassign_work">
+      <assign location="failed_tasks" expr="failed_tasks + 1" />
+    </transition>
+  </state>
+</state>
+```
+
+#### Request-Response Pattern
+
+Synchronous-style communication with timeout:
+
+```xml
+<state id="query_remote">
+  <onentry>
+    <!-- Send query with auto-generated ID -->
+    <send event="query.execute"
+          target="https://remote-agent.com/query"
+          type="http://www.w3.org/TR/scxml/#HTTPEventProcessor"
+          idlocation="query_id">
+      <param name="query" expr="user_query" />
+    </send>
+    
+    <!-- Set timeout for response -->
+    <send event="query.timeout" delay="30s">
+      <param name="query_id" expr="query_id" />
+    </send>
+  </onentry>
+  
+  <!-- Handle response -->
+  <transition event="query.response"
+              cond="_event.data.query_id === query_id"
+              target="process_response">
+    <cancel sendidexpr="query_id + '_timeout'" />
+    <assign location="result" expr="_event.data.result" />
+  </transition>
+  
+  <!-- Handle timeout -->
+  <transition event="query.timeout"
+              cond="_event.data.query_id === query_id"
+              target="timeout_error" />
+</state>
+```
+
+#### Pub/Sub Pattern
+
+Event broadcasting with subscriptions:
+
+```xml
+<state id="event_hub">
+  <datamodel>
+    <data id="subscribers" expr="{}" />
+  </datamodel>
+  
+  <!-- Handle subscription requests -->
+  <transition event="subscribe.request">
+    <script>
+      var topic = _event.data.topic;
+      var callback_url = _event.data.callback_url;
+      
+      if (!subscribers[topic]) subscribers[topic] = [];
+      subscribers[topic].push(callback_url);
+    </script>
+    
+    <!-- Acknowledge subscription -->
+    <send event="subscribe.confirmed"
+          targetexpr="_event.origin"
+          type="http://www.w3.org/TR/scxml/#HTTPEventProcessor">
+      <param name="topic" expr="_event.data.topic" />
+    </send>
+  </transition>
+  
+  <!-- Broadcast events to subscribers -->
+  <transition event="publish.*">
+    <script>
+      var topic = _event.name.split('.')[1];
+      var subs = subscribers[topic] || [];
+      
+      subs.forEach(function(url) {
+        // Send will be called per subscriber
+        sendToSubscriber(url, _event.data);
+      });
+    </script>
+  </transition>
+</state>
+```
+
+### Service Discovery
+
+Agents can discover each other using the `_ioprocessors` system variable:
+
+```xml
+<state id="register_with_discovery">
+  <onentry>
+    <script>
+      // Get this agent's HTTP endpoint
+      var my_location = _ioprocessors.http.location;
+      
+      // Register with discovery service
+    </script>
+    
+    <send event="agent.register"
+          target="https://discovery.example.com/register"
+          type="http://www.w3.org/TR/scxml/#HTTPEventProcessor">
+      <param name="agent_id" expr="_sessionid" />
+      <param name="location" expr="_ioprocessors.http.location" />
+      <param name="capabilities" expr="['booking', 'search', 'payment']" />
+    </send>
+  </onentry>
+</state>
+```
+
+### Security & Authentication
+
+IOProcessors support standard security mechanisms:
+
+```xml
+<state id="secure_communication">
+  <onentry>
+    <!-- Send with authentication -->
+    <send event="secure.request"
+          target="https://secure-agent.com/api"
+          type="http://www.w3.org/TR/scxml/#HTTPEventProcessor">
+      <param name="_auth_type" expr="'bearer'" />
+      <param name="_auth_token" expr="auth_token" />
+      <param name="sensitive_data" expr="data" />
+    </send>
+  </onentry>
+</state>
+```
+
+**Security Features:**
+- TLS/SSL encryption
+- Bearer token authentication
+- OAuth 2.0 support
+- mTLS (mutual TLS) for agent-to-agent auth
+- Request signing
+- Rate limiting per remote endpoint
+
+### Observability
+
+All IOProcessor communication includes:
+
+- **Distributed Tracing**: OpenTelemetry trace context propagated automatically
+- **Metrics**: Request/response times, error rates, queue depths
+- **Logging**: Structured logs for all communication events
+- **Health Checks**: Built-in liveness/readiness endpoints
+
+```xml
+<state id="monitored_communication">
+  <onentry>
+    <!-- All sends automatically include trace context -->
+    <send event="task.execute"
+          target="https://remote-agent.com/tasks"
+          type="http://www.w3.org/TR/scxml/#HTTPEventProcessor">
+      <param name="task" expr="task_data" />
+      <!-- Trace context automatically added to headers/metadata -->
+    </send>
+  </onentry>
+</state>
+```
+
+### Benefits of Built-in Remote Communication
+
+1. **Standard Protocol**: W3C SCXML IOProcessor specification ensures interoperability
+2. **Framework Agnostic**: Agents can communicate regardless of implementation (Go, Python, JS)
+3. **Transport Flexibility**: Choose HTTP, WebSocket, or custom transports based on needs
+4. **Automatic Routing**: Event routing handled by runtime, not application code
+5. **Trace Propagation**: Distributed traces work out of the box
+6. **Type Safety**: Event schemas validated across agent boundaries
+7. **Retry & Resilience**: Built-in retry, timeout, and error handling
+8. **Zero Configuration**: IOProcessors configured automatically by runtime
+
+### Cross-Framework Communication
+
+Because AgentML uses standard protocols, agents can communicate across frameworks:
+
+```
+┌─────────────┐         HTTP/WebSocket        ┌─────────────┐
+│  AgentML    │  ◄──────────────────────────► │  LangGraph  │
+│   (Go)      │    Event: task.execute        │   (Python)  │
+└─────────────┘    Schema: {...}              └─────────────┘
+       │                                              │
+       │                                              │
+       ▼                                              ▼
+┌─────────────┐                              ┌─────────────┐
+│   CrewAI    │                              │    n8n      │
+│  (Python)   │                              │   (Node)    │
+└─────────────┘                              └─────────────┘
+```
+
+All agents use the same event schemas and IOProcessor protocols, enabling true polyglot agent systems.
 
 ## Getting Started
 
@@ -942,8 +1565,10 @@ func (n *customNamespace) Unload(ctx context.Context) error { return nil }
 
 1. **Use specific event names**: `intent.flight.search` vs `process`
 2. **Validate with schemas**: Always use `event:schema` on transitions
-3. **Consistent data structure**: Use the same schema across similar events
-4. **Const for literals**: Use `{"const": "value"}` for specific values
+3. **Use JSON pointers**: Reference schemas from `use:spec` for reusability
+4. **Consistent data structure**: Use the same schema across similar events
+5. **Const for literals**: Use `{"const": "value"}` for specific values
+6. **Version your schemas**: Keep event schemas in version-controlled files
 
 ### Datamodel Management
 
@@ -951,6 +1576,33 @@ func (n *customNamespace) Unload(ctx context.Context) error { return nil }
 2. **Clear naming**: `conversation_history` vs `data1`
 3. **Initialize properly**: Set default values in `<datamodel>` section
 4. **Type consistency**: ECMAScript datamodel allows flexible types
+
+### Schema Organization
+
+1. **Separate schema files**: Keep event schemas in `schemas/` directory
+2. **OpenAPI format**: Use OpenAPI 3.x for API-aligned agents
+3. **Descriptive paths**: Organize by domain (e.g., `schemas/flights.json`, `schemas/hotels.json`)
+4. **Version control**: Track schema versions separately from agent logic
+5. **Shared schemas**: Create common schema libraries for reuse across agents
+6. **Documentation**: Use JSON Schema `description` fields extensively
+
+**Example Project Structure:**
+```
+project/
+├── agents/
+│   ├── customer-support.aml
+│   ├── booking-agent.aml
+│   └── notification-agent.aml
+├── schemas/
+│   ├── events.json           # Common event schemas
+│   ├── flights.json          # Flight-specific schemas
+│   ├── hotels.json           # Hotel-specific schemas
+│   └── common/
+│       ├── base-event.json   # Base event schema
+│       └── error-response.json
+└── specs/
+    └── openapi.yaml          # External API specifications
+```
 
 ### LLM Prompt Engineering
 
@@ -1009,6 +1661,7 @@ Before generating any `event:schema`, ensure:
 <?xml version="1.0" encoding="UTF-8"?>
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
+       use:spec="./schemas/events.json"
        use:gemini="github.com/agentflare-ai/agentml/gemini">
   
   <!-- 1. Datamodel: Define all state variables -->
@@ -1185,12 +1838,13 @@ When using LLMs to generate events:
 ### Key Reminders
 
 1. **Always use `event:schema` with descriptions** ⭐ — Both schema-level and property-level descriptions are crucial for LLM success
-2. **Describe every property** — Even simple properties benefit from clear descriptions
-3. **Keep prompts minimal** — context comes from runtime snapshot
-4. **Use hierarchical states** for agent-lifetime services
-5. **Handle errors** — include fallback transitions for unexpected events
-6. **Document event flows** — use XML comments to explain complex transitions
-7. **Test event schemas** — ensure LLM can generate valid events
+2. **Use JSON pointers for reusability** ⭐ — Load schemas with `use:spec` and reference with `event:schema="#/path/to/schema"`
+3. **Describe every property** — Even simple properties benefit from clear descriptions
+4. **Keep prompts minimal** — context comes from runtime snapshot
+5. **Use hierarchical states** for agent-lifetime services
+6. **Handle errors** — include fallback transitions for unexpected events
+7. **Document event flows** — use XML comments to explain complex transitions
+8. **Test event schemas** — ensure LLM can generate valid events
 
 ### Token Optimization
 
