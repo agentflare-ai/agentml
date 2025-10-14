@@ -222,11 +222,15 @@ func (e *memExec) execPut(ctx context.Context, dm agentml.DataModel) error {
 	if err := e.ensureKV(ctx); err != nil {
 		return err
 	}
-	key := string(e.Element.GetAttribute("key"))
+	// Support both key and keyexpr
+	key, err := getStringOrExpr(ctx, dm, e.Element, "key", "keyexpr")
+	if err != nil {
+		return err
+	}
 	if strings.TrimSpace(key) == "" {
 		return &agentml.PlatformError{
 			EventName: "error.execution",
-			Message:   "missing key",
+			Message:   "missing key or keyexpr",
 			Cause:     fmt.Errorf("missing key"),
 		}
 	}
@@ -234,7 +238,6 @@ func (e *memExec) execPut(ctx context.Context, dm agentml.DataModel) error {
 	// Handle both value and valueexpr attributes
 	var v any
 	if valExpr := string(e.Element.GetAttribute("valueexpr")); valExpr != "" {
-		var err error
 		v, err = dm.EvaluateValue(ctx, valExpr)
 		if err != nil {
 			return err
@@ -262,7 +265,11 @@ func (e *memExec) execGet(ctx context.Context, dm agentml.DataModel) error {
 	if err := e.ensureKV(ctx); err != nil {
 		return err
 	}
-	key := string(e.Element.GetAttribute("key"))
+	// Support both key and keyexpr
+	key, err := getStringOrExpr(ctx, dm, e.Element, "key", "keyexpr")
+	if err != nil {
+		return err
+	}
 	// Handle both location and dataid attributes
 	loc := string(e.Element.GetAttribute("location"))
 	if loc == "" {
@@ -285,8 +292,12 @@ func (e *memExec) execDelete(ctx context.Context, dm agentml.DataModel) error {
 	if err := e.ensureKV(ctx); err != nil {
 		return err
 	}
-	key := string(e.Element.GetAttribute("key"))
-	_, err := e.deps.dbtx().ExecContext(ctx, "DELETE FROM kv WHERE key=?", key)
+	// Support both key and keyexpr
+	key, err := getStringOrExpr(ctx, dm, e.Element, "key", "keyexpr")
+	if err != nil {
+		return err
+	}
+	_, err = e.deps.dbtx().ExecContext(ctx, "DELETE FROM kv WHERE key=?", key)
 	return err
 }
 
@@ -294,18 +305,32 @@ func (e *memExec) execCopy(ctx context.Context, dm agentml.DataModel) error {
 	if err := e.ensureKV(ctx); err != nil {
 		return err
 	}
-	srcKey := string(e.Element.GetAttribute("src"))
-	if srcKey == "" {
-		srcKey = string(e.Element.GetAttribute("srckey"))
+	// Support both src/srcexpr and srckey/srckeyexpr
+	srcKey, err := getStringOrExpr(ctx, dm, e.Element, "src", "srcexpr")
+	if err != nil {
+		return err
 	}
-	dstKey := string(e.Element.GetAttribute("dst"))
+	if srcKey == "" {
+		srcKey, err = getStringOrExpr(ctx, dm, e.Element, "srckey", "srckeyexpr")
+		if err != nil {
+			return err
+		}
+	}
+	// Support both dst/dstexpr and dstkey/dstkeyexpr
+	dstKey, err := getStringOrExpr(ctx, dm, e.Element, "dst", "dstexpr")
+	if err != nil {
+		return err
+	}
 	if dstKey == "" {
-		dstKey = string(e.Element.GetAttribute("dstkey"))
+		dstKey, err = getStringOrExpr(ctx, dm, e.Element, "dstkey", "dstkeyexpr")
+		if err != nil {
+			return err
+		}
 	}
 	if srcKey == "" || dstKey == "" {
-		return fmt.Errorf("copy requires src and dst attributes")
+		return fmt.Errorf("copy requires src/srckey and dst/dstkey attributes")
 	}
-	_, err := e.deps.dbtx().ExecContext(ctx,
+	_, err = e.deps.dbtx().ExecContext(ctx,
 		"INSERT INTO kv(key,value) SELECT ?, value FROM kv WHERE key=? ON CONFLICT(key) DO UPDATE SET value=excluded.value",
 		dstKey, srcKey)
 	return err
@@ -315,16 +340,30 @@ func (e *memExec) execMove(ctx context.Context, dm agentml.DataModel) error {
 	if err := e.ensureKV(ctx); err != nil {
 		return err
 	}
-	srcKey := string(e.Element.GetAttribute("src"))
-	if srcKey == "" {
-		srcKey = string(e.Element.GetAttribute("srckey"))
+	// Support both src/srcexpr and srckey/srckeyexpr
+	srcKey, err := getStringOrExpr(ctx, dm, e.Element, "src", "srcexpr")
+	if err != nil {
+		return err
 	}
-	dstKey := string(e.Element.GetAttribute("dst"))
+	if srcKey == "" {
+		srcKey, err = getStringOrExpr(ctx, dm, e.Element, "srckey", "srckeyexpr")
+		if err != nil {
+			return err
+		}
+	}
+	// Support both dst/dstexpr and dstkey/dstkeyexpr
+	dstKey, err := getStringOrExpr(ctx, dm, e.Element, "dst", "dstexpr")
+	if err != nil {
+		return err
+	}
 	if dstKey == "" {
-		dstKey = string(e.Element.GetAttribute("dstkey"))
+		dstKey, err = getStringOrExpr(ctx, dm, e.Element, "dstkey", "dstkeyexpr")
+		if err != nil {
+			return err
+		}
 	}
 	if srcKey == "" || dstKey == "" {
-		return fmt.Errorf("move requires src and dst attributes")
+		return fmt.Errorf("move requires src/srckey and dst/dstkey attributes")
 	}
 	// If a transaction is active, use it; otherwise create a short-lived transaction for atomicity
 	if e.deps != nil && e.deps.tx != nil {
@@ -358,16 +397,23 @@ func (e *memExec) execMove(ctx context.Context, dm agentml.DataModel) error {
 
 func (e *memExec) execQuery(ctx context.Context, dm agentml.DataModel) error {
 	// Query is similar to SQL but for KV operations
-	sql := string(e.Element.GetAttribute("sql"))
+	// Support both sql/sqlexpr and query/queryexpr
+	sql, err := getStringOrExpr(ctx, dm, e.Element, "sql", "sqlexpr")
+	if err != nil {
+		return err
+	}
 	if sql == "" {
-		sql = string(e.Element.GetAttribute("query"))
+		sql, err = getStringOrExpr(ctx, dm, e.Element, "query", "queryexpr")
+		if err != nil {
+			return err
+		}
 	}
 	loc := string(e.Element.GetAttribute("location"))
 	if loc == "" {
 		loc = string(e.Element.GetAttribute("dataid"))
 	}
 	if sql == "" {
-		return fmt.Errorf("query requires sql attribute")
+		return fmt.Errorf("query requires sql/query attribute")
 	}
 	rows, err := e.deps.dbtx().QueryContext(ctx, sql)
 	if err != nil {
@@ -440,11 +486,15 @@ func (e *memExec) execSavepoint(ctx context.Context, dm agentml.DataModel) error
 	if e.deps == nil || e.deps.DB == nil {
 		return fmt.Errorf("memory DB not configured")
 	}
-	name := string(e.Element.GetAttribute("name"))
+	// Support both name and nameexpr
+	name, err := getStringOrExpr(ctx, dm, e.Element, "name", "nameexpr")
+	if err != nil {
+		return err
+	}
 	if name == "" {
 		name = "sp_" + fmt.Sprintf("%d", time.Now().UnixNano())
 	}
-	_, err := e.deps.dbtx().ExecContext(ctx, "SAVEPOINT "+name)
+	_, err = e.deps.dbtx().ExecContext(ctx, "SAVEPOINT "+name)
 	return err
 }
 
@@ -452,11 +502,15 @@ func (e *memExec) execRelease(ctx context.Context, dm agentml.DataModel) error {
 	if e.deps == nil || e.deps.DB == nil {
 		return fmt.Errorf("memory DB not configured")
 	}
-	name := string(e.Element.GetAttribute("name"))
-	if name == "" {
-		return fmt.Errorf("release requires name attribute")
+	// Support both name and nameexpr
+	name, err := getStringOrExpr(ctx, dm, e.Element, "name", "nameexpr")
+	if err != nil {
+		return err
 	}
-	_, err := e.deps.dbtx().ExecContext(ctx, "RELEASE SAVEPOINT "+name)
+	if name == "" {
+		return fmt.Errorf("release requires name or nameexpr attribute")
+	}
+	_, err = e.deps.dbtx().ExecContext(ctx, "RELEASE SAVEPOINT "+name)
 	return err
 }
 
@@ -523,11 +577,23 @@ func (e *memExec) execEmbed(ctx context.Context, dm agentml.DataModel) error {
 			Cause:     fmt.Errorf("no embedder"),
 		}
 	}
-	model := string(e.Element.GetAttribute("model"))
-	textExpr := string(e.Element.GetAttribute("textexpr"))
+	// Support both model and modelexpr
+	model, err := getStringOrExpr(ctx, dm, e.Element, "model", "modelexpr")
+	if err != nil {
+		return err
+	}
+	// Support both text and textexpr
+	text, err := getStringOrExpr(ctx, dm, e.Element, "text", "textexpr")
+	if err != nil {
+		return err
+	}
 	loc := string(e.Element.GetAttribute("location"))
-	key := string(e.Element.GetAttribute("key"))
-	vec, err := e.deps.Embed(ctx, model, mustEvalString(ctx, dm, textExpr))
+	// Support both key and keyexpr
+	key, err := getStringOrExpr(ctx, dm, e.Element, "key", "keyexpr")
+	if err != nil {
+		return err
+	}
+	vec, err := e.deps.Embed(ctx, model, text)
 	if err != nil {
 		return err
 	}
@@ -546,15 +612,29 @@ func (e *memExec) execUpsertVector(ctx context.Context, dm agentml.DataModel) er
 	if e.deps == nil || e.deps.Vector == nil {
 		return fmt.Errorf("vector store not configured")
 	}
-	key := string(e.Element.GetAttribute("key"))
-	vecExpr := string(e.Element.GetAttribute("vectorexpr"))
-	v, err := dm.EvaluateValue(ctx, vecExpr)
+	// Support both key and keyexpr
+	key, err := getStringOrExpr(ctx, dm, e.Element, "key", "keyexpr")
 	if err != nil {
 		return err
 	}
+	// Support both vector and vectorexpr
+	var v any
+	if vecExpr := string(e.Element.GetAttribute("vectorexpr")); vecExpr != "" {
+		v, err = dm.EvaluateValue(ctx, vecExpr)
+		if err != nil {
+			return err
+		}
+	} else if vec := string(e.Element.GetAttribute("vector")); vec != "" {
+		v, err = dm.EvaluateValue(ctx, vec)
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("upsertvector requires vector or vectorexpr")
+	}
 	arr, ok := toFloat32Slice(v)
 	if !ok {
-		return fmt.Errorf("vectorexpr must evaluate to []number")
+		return fmt.Errorf("vector must evaluate to []number")
 	}
 	return e.deps.Vector.InsertVector(ctx, hashKey(key), arr)
 }
@@ -563,15 +643,27 @@ func (e *memExec) execSearch(ctx context.Context, dm agentml.DataModel) error {
 	if e.deps == nil || e.deps.Vector == nil || e.deps.Embed == nil {
 		return fmt.Errorf("vector search not available")
 	}
-	model := string(e.Element.GetAttribute("model"))
-	textExpr := string(e.Element.GetAttribute("textexpr"))
-	loc := string(e.Element.GetAttribute("location"))
-	topkAttr := string(e.Element.GetAttribute("topk"))
-	topk := 5
-	if strings.TrimSpace(topkAttr) != "" {
-		fmt.Sscan(topkAttr, &topk)
+	// Support both model and modelexpr
+	model, err := getStringOrExpr(ctx, dm, e.Element, "model", "modelexpr")
+	if err != nil {
+		return err
 	}
-	qvec, err := e.deps.Embed(ctx, model, mustEvalString(ctx, dm, textExpr))
+	// Support both text and textexpr
+	text, err := getStringOrExpr(ctx, dm, e.Element, "text", "textexpr")
+	if err != nil {
+		return err
+	}
+	loc := string(e.Element.GetAttribute("location"))
+	// Support both topk and topkexpr
+	topkStr, err := getStringOrExpr(ctx, dm, e.Element, "topk", "topkexpr")
+	if err != nil {
+		return err
+	}
+	topk := 5
+	if strings.TrimSpace(topkStr) != "" {
+		fmt.Sscan(topkStr, &topk)
+	}
+	qvec, err := e.deps.Embed(ctx, model, text)
 	if err != nil {
 		return err
 	}
@@ -592,8 +684,12 @@ func (e *memExec) execDeleteVector(ctx context.Context, dm agentml.DataModel) er
 	if e.deps == nil || e.deps.Vector == nil {
 		return fmt.Errorf("vector store not configured")
 	}
-	key := string(e.Element.GetAttribute("key"))
-	_, err := e.deps.dbtx().ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE rowid=?", e.deps.Vector.tableName), int64(hashKey(key)))
+	// Support both key and keyexpr
+	key, err := getStringOrExpr(ctx, dm, e.Element, "key", "keyexpr")
+	if err != nil {
+		return err
+	}
+	_, err = e.deps.dbtx().ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE rowid=?", e.deps.Vector.tableName), int64(hashKey(key)))
 	return err
 }
 
@@ -603,8 +699,19 @@ func (e *memExec) execAddNode(ctx context.Context, dm agentml.DataModel) error {
 	if e.deps == nil || e.deps.Graph == nil {
 		return fmt.Errorf("graph not configured")
 	}
-	labels := parseLabels(string(e.Element.GetAttribute("labels")))
-	props, _ := evalMap(ctx, dm, string(e.Element.GetAttribute("propsexpr")))
+	// Support both labels and labelsexpr
+	labelsStr, err := getStringOrExpr(ctx, dm, e.Element, "labels", "labelsexpr")
+	if err != nil {
+		return err
+	}
+	labels := parseLabels(labelsStr)
+	// Support both props and propsexpr
+	var props map[string]any
+	if propsExpr := string(e.Element.GetAttribute("propsexpr")); propsExpr != "" {
+		props, _ = evalMap(ctx, dm, propsExpr)
+	} else if propsVal := string(e.Element.GetAttribute("props")); propsVal != "" {
+		props, _ = evalMap(ctx, dm, propsVal)
+	}
 	n, err := e.deps.Graph.CreateNode(ctx, labels, props)
 	if err != nil {
 		return err
@@ -617,20 +724,30 @@ func (e *memExec) execAddEdge(ctx context.Context, dm agentml.DataModel) error {
 	if e.deps == nil || e.deps.Graph == nil {
 		return fmt.Errorf("graph not configured")
 	}
-	srcExpr := string(e.Element.GetAttribute("srcexpr"))
-	if srcExpr == "" {
-		srcExpr = string(e.Element.GetAttribute("src"))
+	// Support both src and srcexpr
+	src, err := getIntOrExpr(ctx, dm, e.Element, "src", "srcexpr")
+	if err != nil {
+		return err
 	}
-	dstExpr := string(e.Element.GetAttribute("dstexpr"))
-	if dstExpr == "" {
-		dstExpr = string(e.Element.GetAttribute("dst"))
+	// Support both dst and dstexpr
+	dst, err := getIntOrExpr(ctx, dm, e.Element, "dst", "dstexpr")
+	if err != nil {
+		return err
 	}
-	rel := string(e.Element.GetAttribute("rel"))
-	props, _ := evalMap(ctx, dm, string(e.Element.GetAttribute("propsexpr")))
-	src, _ := evalInt64(ctx, dm, srcExpr)
-	dst, _ := evalInt64(ctx, dm, dstExpr)
+	// Support both rel and relexpr
+	rel, err := getStringOrExpr(ctx, dm, e.Element, "rel", "relexpr")
+	if err != nil {
+		return err
+	}
+	// Support both props and propsexpr
+	var props map[string]any
+	if propsExpr := string(e.Element.GetAttribute("propsexpr")); propsExpr != "" {
+		props, _ = evalMap(ctx, dm, propsExpr)
+	} else if propsVal := string(e.Element.GetAttribute("props")); propsVal != "" {
+		props, _ = evalMap(ctx, dm, propsVal)
+	}
 	slog.InfoContext(ctx, "memory: adding edge", "src", src, "dst", dst, "rel", rel)
-	_, err := e.deps.Graph.CreateRelationship(ctx, src, dst, rel, props)
+	_, err = e.deps.Graph.CreateRelationship(ctx, src, dst, rel, props)
 	if err != nil {
 		slog.WarnContext(ctx, "memory: failed to add edge", "error", err)
 		return err
@@ -643,7 +760,11 @@ func (e *memExec) execGetNode(ctx context.Context, dm agentml.DataModel) error {
 	if e.deps == nil || e.deps.Graph == nil {
 		return fmt.Errorf("graph not configured")
 	}
-	id, _ := evalInt64(ctx, dm, string(e.Element.GetAttribute("id")))
+	// Support both id and idexpr
+	id, err := getIntOrExpr(ctx, dm, e.Element, "id", "idexpr")
+	if err != nil {
+		return err
+	}
 	loc := string(e.Element.GetAttribute("location"))
 	row := e.deps.dbtx().QueryRowContext(ctx, fmt.Sprintf("SELECT id, labels, properties FROM %s WHERE id=?", e.deps.Graph.nodesTable), id)
 	var nid int64
@@ -664,7 +785,11 @@ func (e *memExec) execDeleteNode(ctx context.Context, dm agentml.DataModel) erro
 	if e.deps == nil || e.deps.Graph == nil {
 		return fmt.Errorf("graph not configured")
 	}
-	id, _ := evalInt64(ctx, dm, string(e.Element.GetAttribute("id")))
+	// Support both id and idexpr
+	id, err := getIntOrExpr(ctx, dm, e.Element, "id", "idexpr")
+	if err != nil {
+		return err
+	}
 	return e.deps.Graph.DeleteNode(ctx, id)
 }
 
@@ -672,10 +797,22 @@ func (e *memExec) execDeleteEdge(ctx context.Context, dm agentml.DataModel) erro
 	if e.deps == nil || e.deps.Graph == nil {
 		return fmt.Errorf("graph not configured")
 	}
-	src, _ := evalInt64(ctx, dm, string(e.Element.GetAttribute("src")))
-	dst, _ := evalInt64(ctx, dm, string(e.Element.GetAttribute("dst")))
-	rel := string(e.Element.GetAttribute("rel"))
-	_, err := e.deps.dbtx().ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE source=? AND target=? AND edge_type=?", e.deps.Graph.edgesTable), src, dst, rel)
+	// Support both src and srcexpr
+	src, err := getIntOrExpr(ctx, dm, e.Element, "src", "srcexpr")
+	if err != nil {
+		return err
+	}
+	// Support both dst and dstexpr
+	dst, err := getIntOrExpr(ctx, dm, e.Element, "dst", "dstexpr")
+	if err != nil {
+		return err
+	}
+	// Support both rel and relexpr
+	rel, err := getStringOrExpr(ctx, dm, e.Element, "rel", "relexpr")
+	if err != nil {
+		return err
+	}
+	_, err = e.deps.dbtx().ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE source=? AND target=? AND edge_type=?", e.deps.Graph.edgesTable), src, dst, rel)
 	return err
 }
 
@@ -683,15 +820,19 @@ func (e *memExec) execNeighbors(ctx context.Context, dm agentml.DataModel) error
 	if e.deps == nil || e.deps.Graph == nil {
 		return fmt.Errorf("graph not configured")
 	}
-	idExpr := string(e.Element.GetAttribute("idexpr"))
-	if idExpr == "" {
-		idExpr = string(e.Element.GetAttribute("id"))
+	// Support both id and idexpr
+	id, err := getIntOrExpr(ctx, dm, e.Element, "id", "idexpr")
+	if err != nil {
+		return err
 	}
-	id, _ := evalInt64(ctx, dm, idExpr)
-	dir := strings.ToLower(string(e.Element.GetAttribute("direction")))
+	// Support both direction and directionexpr
+	dir, err := getStringOrExpr(ctx, dm, e.Element, "direction", "directionexpr")
+	if err != nil {
+		return err
+	}
+	dir = strings.ToLower(dir)
 	loc := string(e.Element.GetAttribute("location"))
 	var rows *sql.Rows
-	var err error
 	if dir == "in" {
 		rows, err = e.deps.dbtx().QueryContext(ctx, fmt.Sprintf("SELECT source FROM %s WHERE target=?", e.deps.Graph.edgesTable), id)
 	} else {
@@ -717,7 +858,11 @@ func (e *memExec) execGetEdge(ctx context.Context, dm agentml.DataModel) error {
 	if e.deps == nil || e.deps.Graph == nil {
 		return fmt.Errorf("graph database not configured")
 	}
-	id := string(e.Element.GetAttribute("id"))
+	// Support both id and idexpr
+	id, err := getStringOrExpr(ctx, dm, e.Element, "id", "idexpr")
+	if err != nil {
+		return err
+	}
 	loc := string(e.Element.GetAttribute("location"))
 	if loc == "" {
 		loc = string(e.Element.GetAttribute("dataid"))
@@ -761,8 +906,16 @@ func (e *memExec) execGraphPath(ctx context.Context, dm agentml.DataModel) error
 	if e.deps == nil || e.deps.Graph == nil {
 		return fmt.Errorf("graph database not configured")
 	}
-	src, _ := evalInt64(ctx, dm, string(e.Element.GetAttribute("src")))
-	dst, _ := evalInt64(ctx, dm, string(e.Element.GetAttribute("dst")))
+	// Support both src and srcexpr
+	src, err := getIntOrExpr(ctx, dm, e.Element, "src", "srcexpr")
+	if err != nil {
+		return err
+	}
+	// Support both dst and dstexpr
+	dst, err := getIntOrExpr(ctx, dm, e.Element, "dst", "dstexpr")
+	if err != nil {
+		return err
+	}
 	loc := string(e.Element.GetAttribute("location"))
 	if loc == "" {
 		loc = string(e.Element.GetAttribute("dataid"))
@@ -1053,6 +1206,30 @@ func evalString(ctx context.Context, dm agentml.DataModel, expr string) (string,
 func mustEvalString(ctx context.Context, dm agentml.DataModel, expr string) string {
 	s, _ := evalString(ctx, dm, expr)
 	return s
+}
+
+// getStringOrExpr retrieves a string from either a literal attribute or an expression attribute.
+// It checks attrExpr first (e.g., "keyexpr"), then falls back to attr (e.g., "key").
+func getStringOrExpr(ctx context.Context, dm agentml.DataModel, el xmldom.Element, attr, attrExpr string) (string, error) {
+	// Try expression attribute first
+	if exprVal := string(el.GetAttribute(xmldom.DOMString(attrExpr))); exprVal != "" {
+		return evalString(ctx, dm, exprVal)
+	}
+	// Fall back to literal attribute
+	return string(el.GetAttribute(xmldom.DOMString(attr))), nil
+}
+
+// getIntOrExpr retrieves an int64 from either a literal attribute or an expression attribute.
+func getIntOrExpr(ctx context.Context, dm agentml.DataModel, el xmldom.Element, attr, attrExpr string) (int64, error) {
+	// Try expression attribute first
+	if exprVal := string(el.GetAttribute(xmldom.DOMString(attrExpr))); exprVal != "" {
+		return evalInt64(ctx, dm, exprVal)
+	}
+	// Fall back to literal attribute - need to evaluate if it's a number string
+	if litVal := string(el.GetAttribute(xmldom.DOMString(attr))); litVal != "" {
+		return evalInt64(ctx, dm, litVal)
+	}
+	return 0, nil
 }
 
 func toFloat32Slice(v any) ([]float32, bool) {

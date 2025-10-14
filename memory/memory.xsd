@@ -18,7 +18,8 @@
             <xs:documentation>Store a key-value pair in the memory store</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="key" type="xs:string" use="required" />
+            <xs:attribute name="key" type="xs:string" />
+            <xs:attribute name="keyexpr" type="xs:string" />
             <xs:attribute name="value" type="xs:string" />
             <xs:attribute name="valueexpr" type="xs:string" />
         </xs:complexType>
@@ -29,7 +30,8 @@
             <xs:documentation>Retrieve a value from the memory store by key</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="key" type="xs:string" use="required" />
+            <xs:attribute name="key" type="xs:string" />
+            <xs:attribute name="keyexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
         </xs:complexType>
@@ -40,7 +42,8 @@
             <xs:documentation>Delete a key-value pair from the memory store</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="key" type="xs:string" use="required" />
+            <xs:attribute name="key" type="xs:string" />
+            <xs:attribute name="keyexpr" type="xs:string" />
         </xs:complexType>
     </xs:element>
 
@@ -50,9 +53,13 @@
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="src" type="xs:string" />
+            <xs:attribute name="srcexpr" type="xs:string" />
             <xs:attribute name="srckey" type="xs:string" />
+            <xs:attribute name="srckeyexpr" type="xs:string" />
             <xs:attribute name="dst" type="xs:string" />
+            <xs:attribute name="dstexpr" type="xs:string" />
             <xs:attribute name="dstkey" type="xs:string" />
+            <xs:attribute name="dstkeyexpr" type="xs:string" />
         </xs:complexType>
     </xs:element>
 
@@ -62,9 +69,13 @@
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="src" type="xs:string" />
+            <xs:attribute name="srcexpr" type="xs:string" />
             <xs:attribute name="srckey" type="xs:string" />
+            <xs:attribute name="srckeyexpr" type="xs:string" />
             <xs:attribute name="dst" type="xs:string" />
+            <xs:attribute name="dstexpr" type="xs:string" />
             <xs:attribute name="dstkey" type="xs:string" />
+            <xs:attribute name="dstkeyexpr" type="xs:string" />
         </xs:complexType>
     </xs:element>
 
@@ -74,7 +85,9 @@
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="sql" type="xs:string" />
+            <xs:attribute name="sqlexpr" type="xs:string" />
             <xs:attribute name="query" type="xs:string" />
+            <xs:attribute name="queryexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
         </xs:complexType>
@@ -116,6 +129,7 @@
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="name" type="xs:string" />
+            <xs:attribute name="nameexpr" type="xs:string" />
         </xs:complexType>
     </xs:element>
 
@@ -124,7 +138,8 @@
             <xs:documentation>Release a savepoint</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="name" type="xs:string" use="required" />
+            <xs:attribute name="name" type="xs:string" />
+            <xs:attribute name="nameexpr" type="xs:string" />
         </xs:complexType>
     </xs:element>
 
@@ -162,9 +177,12 @@
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="model" type="xs:string" />
-            <xs:attribute name="textexpr" type="xs:string" use="required" />
+            <xs:attribute name="modelexpr" type="xs:string" />
+            <xs:attribute name="text" type="xs:string" />
+            <xs:attribute name="textexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="key" type="xs:string" />
+            <xs:attribute name="keyexpr" type="xs:string" />
         </xs:complexType>
     </xs:element>
 
@@ -173,8 +191,10 @@
             <xs:documentation>Insert or update a vector in the vector store</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="key" type="xs:string" use="required" />
-            <xs:attribute name="vectorexpr" type="xs:string" use="required" />
+            <xs:attribute name="key" type="xs:string" />
+            <xs:attribute name="keyexpr" type="xs:string" />
+            <xs:attribute name="vector" type="xs:string" />
+            <xs:attribute name="vectorexpr" type="xs:string" />
         </xs:complexType>
     </xs:element>
 
@@ -184,9 +204,12 @@
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="model" type="xs:string" />
-            <xs:attribute name="textexpr" type="xs:string" use="required" />
+            <xs:attribute name="modelexpr" type="xs:string" />
+            <xs:attribute name="text" type="xs:string" />
+            <xs:attribute name="textexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="topk" type="xs:integer" />
+            <xs:attribute name="topkexpr" type="xs:string" />
         </xs:complexType>
     </xs:element>
 
@@ -195,7 +218,8 @@
             <xs:documentation>Delete a vector from the vector store</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="key" type="xs:string" use="required" />
+            <xs:attribute name="key" type="xs:string" />
+            <xs:attribute name="keyexpr" type="xs:string" />
         </xs:complexType>
     </xs:element>
 
@@ -214,6 +238,8 @@
         </xs:annotation>
         <xs:complexType>
             <xs:attribute name="labels" type="xs:string" />
+            <xs:attribute name="labelsexpr" type="xs:string" />
+            <xs:attribute name="props" type="xs:string" />
             <xs:attribute name="propsexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
         </xs:complexType>
@@ -228,7 +254,9 @@
             <xs:attribute name="srcexpr" type="xs:string" />
             <xs:attribute name="dst" type="xs:string" />
             <xs:attribute name="dstexpr" type="xs:string" />
-            <xs:attribute name="rel" type="xs:string" use="required" />
+            <xs:attribute name="rel" type="xs:string" />
+            <xs:attribute name="relexpr" type="xs:string" />
+            <xs:attribute name="props" type="xs:string" />
             <xs:attribute name="propsexpr" type="xs:string" />
         </xs:complexType>
     </xs:element>
@@ -238,7 +266,8 @@
             <xs:documentation>Retrieve a node from the graph by ID</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="id" type="xs:string" use="required" />
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="idexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
         </xs:complexType>
     </xs:element>
@@ -248,7 +277,8 @@
             <xs:documentation>Retrieve an edge from the graph by ID</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="id" type="xs:string" use="required" />
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="idexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
         </xs:complexType>
@@ -259,7 +289,8 @@
             <xs:documentation>Delete a node from the graph</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="id" type="xs:string" use="required" />
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="idexpr" type="xs:string" />
         </xs:complexType>
     </xs:element>
 
@@ -268,9 +299,12 @@
             <xs:documentation>Delete an edge from the graph</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="src" type="xs:string" use="required" />
-            <xs:attribute name="dst" type="xs:string" use="required" />
-            <xs:attribute name="rel" type="xs:string" use="required" />
+            <xs:attribute name="src" type="xs:string" />
+            <xs:attribute name="srcexpr" type="xs:string" />
+            <xs:attribute name="dst" type="xs:string" />
+            <xs:attribute name="dstexpr" type="xs:string" />
+            <xs:attribute name="rel" type="xs:string" />
+            <xs:attribute name="relexpr" type="xs:string" />
         </xs:complexType>
     </xs:element>
 
@@ -282,6 +316,7 @@
             <xs:attribute name="id" type="xs:string" />
             <xs:attribute name="idexpr" type="xs:string" />
             <xs:attribute name="direction" type="xs:string" />
+            <xs:attribute name="directionexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
         </xs:complexType>
     </xs:element>
@@ -294,6 +329,7 @@
             <xs:attribute name="id" type="xs:string" />
             <xs:attribute name="idexpr" type="xs:string" />
             <xs:attribute name="direction" type="xs:string" />
+            <xs:attribute name="directionexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
         </xs:complexType>
     </xs:element>
@@ -303,8 +339,10 @@
             <xs:documentation>Find a path between two nodes in the graph</xs:documentation>
         </xs:annotation>
         <xs:complexType>
-            <xs:attribute name="src" type="xs:string" use="required" />
-            <xs:attribute name="dst" type="xs:string" use="required" />
+            <xs:attribute name="src" type="xs:string" />
+            <xs:attribute name="srcexpr" type="xs:string" />
+            <xs:attribute name="dst" type="xs:string" />
+            <xs:attribute name="dstexpr" type="xs:string" />
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />
         </xs:complexType>
