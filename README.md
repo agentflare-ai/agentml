@@ -111,9 +111,15 @@ Benefits:
 
 **Critical**: Always include `description` fields at both the schema level and property level. These descriptions are the primary way to guide LLMs in generating correct event data.
 
-### JSON Pointer References
+### JSON Pointer References with `use:*`
 
-AgentML supports **JSON Pointer (RFC 6901)** references for event schemas, enabling schema reuse and cleaner documents:
+AgentML uses a **unified `use:*` pattern** that automatically detects whether you're loading a namespace implementation or an external specification. The loader intelligently determines the type based on the URI/path format.
+
+**How it works:**
+- Namespace URI (e.g., `github.com/...`) → Loads custom namespace implementation
+- Spec file (e.g., `./api.json`, `https://...`) → Loads OpenAPI/JSON Schema specification
+
+This enables schema reuse via **JSON Pointer (RFC 6901)** references with namespace prefixes.
 
 #### External Schema Files
 
@@ -186,7 +192,7 @@ AgentML supports **JSON Pointer (RFC 6901)** references for event schemas, enabl
 <?xml version="1.0" encoding="UTF-8"?>
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       use:spec="./schemas/events.json"
+       use:events="./schemas/events.json"
        use:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <state id="classify_intent">
@@ -194,33 +200,36 @@ AgentML supports **JSON Pointer (RFC 6901)** references for event schemas, enabl
       <gemini:generate location="_event" promptexpr="'Classify: ' + user_input" />
     </onentry>
     
-    <!-- Reference schemas using JSON pointers -->
+    <!-- Reference schemas using namespace-prefixed JSON pointers -->
     <transition event="intent.flight"
-                event:schema="#/components/schemas/FlightRequest"
+                event:schema="events:#/components/schemas/FlightRequest"
                 target="handle_flight" />
     
     <transition event="intent.hotel"
-                event:schema="#/components/schemas/HotelRequest"
+                event:schema="events:#/components/schemas/HotelRequest"
                 target="handle_hotel" />
   </state>
   
   <state id="confirm_action">
     <transition event="confirmation.accepted"
-                event:schema="#/components/schemas/ConfirmationAccepted"
+                event:schema="events:#/components/schemas/ConfirmationAccepted"
                 target="execute" />
   </state>
 </agent>
 ```
 
-#### Benefits of JSON Pointers
+#### Benefits of Unified `use:*` Pattern
 
-1. **DRY Principle**: Define schemas once, reference everywhere
-2. **Maintainability**: Update schema in one place, affects all references
-3. **Readability**: Keep `.aml` files clean and focused on behavior
-4. **Reusability**: Share schemas across multiple agents
-5. **Standards Compliance**: Use OpenAPI 3.x specifications directly
-6. **Validation**: External schemas can be validated independently
-7. **Versioning**: Version control schemas separately from agents
+1. **Single Pattern**: One `use:*` syntax for both namespaces and specifications
+2. **Auto-Detection**: Runtime automatically detects namespace URIs vs. spec files
+3. **DRY Principle**: Define schemas once, reference everywhere with namespace prefix
+4. **Maintainability**: Update schema in one place, affects all references
+5. **Readability**: Keep `.aml` files clean and focused on behavior
+6. **Reusability**: Share schemas across multiple agents
+7. **Standards Compliance**: Use OpenAPI 3.x specifications directly
+8. **Validation**: External schemas can be validated independently
+9. **Versioning**: Version control schemas separately from agents
+10. **Clear References**: Namespace prefix shows which spec contains the schema
 
 #### OpenAPI 3.x Integration
 
@@ -256,10 +265,10 @@ components:
 
 **agent.aml:**
 ```xml
-<agent use:spec="https://api.example.com/openapi.yaml">
+<agent use:api="https://api.example.com/openapi.yaml">
   <state id="handle_task">
     <transition event="task.request"
-                event:schema="#/components/schemas/TaskRequest"
+                event:schema="api:#/components/schemas/TaskRequest"
                 target="process_task" />
   </state>
 </agent>
@@ -267,78 +276,100 @@ components:
 
 #### Multiple Specification Files
 
-Load multiple specs and reference them:
+Load multiple specs with different namespace prefixes:
 
 ```xml
-<agent use:spec1="./events.json"
-       use:spec2="./openapi.yaml"
-       use:spec3="https://external-api.com/schema.json">
+<agent use:events="./events.json"
+       use:api="./openapi.yaml"
+       use:external="https://external-api.com/schema.json"
+       use:gemini="github.com/agentflare-ai/agentml/gemini">
   
-  <!-- Reference schemas from different specs -->
+  <!-- Reference schemas from different specs using namespace prefixes -->
   <transition event="local.event"
-              event:schema="spec1#/components/schemas/LocalEvent"
+              event:schema="events:#/components/schemas/LocalEvent"
               target="..." />
   
   <transition event="api.event"
-              event:schema="spec2#/components/schemas/ApiEvent"
+              event:schema="api:#/components/schemas/ApiEvent"
               target="..." />
   
   <transition event="external.event"
-              event:schema="spec3#/definitions/ExternalEvent"
+              event:schema="external:#/definitions/ExternalEvent"
               target="..." />
 </agent>
 ```
 
+**Note**: The same `use:*` pattern works for both namespace implementations (like `use:gemini`) and specification files (like `use:events`). The runtime auto-detects the type.
+
 #### JSON Pointer Syntax
 
-AgentML supports standard JSON Pointer syntax (RFC 6901):
+AgentML supports standard JSON Pointer syntax (RFC 6901) with namespace prefixes:
 
-- **`#/components/schemas/MySchema`** - OpenAPI 3.x style
-- **`#/definitions/MySchema`** - JSON Schema / OpenAPI 2.0 style
-- **`#/properties/myField`** - Direct property reference
-- **`spec1#/components/schemas/MySchema`** - Named spec reference
+**Namespace-Prefixed Format (Recommended):**
+- **`events:#/components/schemas/MySchema`** - OpenAPI 3.x style with namespace
+- **`api:#/definitions/MySchema`** - JSON Schema / Swagger 2.0 with namespace
+- **`models:#/$defs/MySchema`** - JSON Schema Draft 2019-09+ with namespace
+
+**Default Format (uses first loaded spec):**
+- **`#/components/schemas/MySchema`** - References first loaded specification
+- **`#/definitions/MySchema`** - Alternative path for JSON Schema
+
+**Supported JSON Pointer Paths:**
+- OpenAPI 3.x: `#/components/schemas/SchemaName`
+- Swagger 2.0: `#/definitions/SchemaName`
+- JSON Schema: `#/definitions/SchemaName` or `#/$defs/SchemaName`
 
 #### Remote Specifications
 
-Load specifications from HTTP(S) URLs:
+Load specifications from HTTP(S) URLs using the same `use:*` pattern:
 
 ```xml
-<agent use:spec="https://api.github.com/openapi.yaml">
+<agent use:github="https://api.github.com/openapi.yaml">
   <!-- Schemas are fetched and cached at agent startup -->
   <transition event="github.webhook"
-              event:schema="#/components/schemas/WebhookEvent"
+              event:schema="github:#/components/schemas/WebhookEvent"
               target="handle_webhook" />
 </agent>
 ```
 
 **Caching Behavior:**
-- Specifications loaded once at agent initialization
+- Specifications loaded once at agent initialization (both local and remote)
 - Cached for agent lifetime
-- Support for ETags and conditional requests
+- Remote specs support ETags and conditional requests
 - Optional refresh intervals for long-running agents
+
+**Format Auto-Detection:**
+The runtime automatically detects the specification format:
+- OpenAPI 3.x (JSON/YAML)
+- Swagger 2.0 (JSON/YAML)
+- JSON Schema (Draft 4, 2019-09, 2020-12)
 
 #### Schema Composition
 
-Combine inline schemas with references:
+Combine inline schemas with namespace-prefixed references:
 
 ```xml
-<transition event="custom.event"
-            event:schema='{
-              "allOf": [
-                {"$ref": "#/components/schemas/BaseEvent"},
-                {
-                  "type": "object",
-                  "properties": {
-                    "custom_field": {
-                      "type": "string",
-                      "description": "Custom field for this transition"
+<agent use:base="./schemas/base.json">
+  <transition event="custom.event"
+              event:schema='{
+                "allOf": [
+                  {"$ref": "base:#/components/schemas/BaseEvent"},
+                  {
+                    "type": "object",
+                    "properties": {
+                      "custom_field": {
+                        "type": "string",
+                        "description": "Custom field for this transition"
+                      }
                     }
                   }
-                }
-              ]
-            }'
-            target="handle_custom" />
+                ]
+              }'
+              target="handle_custom" />
+</agent>
 ```
+
+**Note**: When using `$ref` inside inline schemas, you can reference loaded specs with the same namespace-prefixed syntax.
 
 #### Why Descriptions Are Critical
 
@@ -1565,10 +1596,11 @@ func (n *customNamespace) Unload(ctx context.Context) error { return nil }
 
 1. **Use specific event names**: `intent.flight.search` vs `process`
 2. **Validate with schemas**: Always use `event:schema` on transitions
-3. **Use JSON pointers**: Reference schemas from `use:spec` for reusability
+3. **Use namespace-prefixed JSON pointers**: Load with `use:events="./events.json"` and reference with `events:#/components/schemas/MySchema`
 4. **Consistent data structure**: Use the same schema across similar events
 5. **Const for literals**: Use `{"const": "value"}` for specific values
 6. **Version your schemas**: Keep event schemas in version-controlled files
+7. **Clear namespace prefixes**: Use descriptive prefixes like `api`, `events`, `models`
 
 ### Datamodel Management
 
@@ -1661,7 +1693,7 @@ Before generating any `event:schema`, ensure:
 <?xml version="1.0" encoding="UTF-8"?>
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       use:spec="./schemas/events.json"
+       use:events="./schemas/events.json"
        use:gemini="github.com/agentflare-ai/agentml/gemini">
   
   <!-- 1. Datamodel: Define all state variables -->
@@ -1701,6 +1733,7 @@ When using LLMs to generate events:
   </onentry>
   
   <!-- Define ALL possible events with schemas (WITH DESCRIPTIONS!) -->
+  <!-- Option 1: Inline schemas -->
   <transition event="intent.flight"
               event:schema='{
                 "type": "object",
@@ -1719,22 +1752,9 @@ When using LLMs to generate events:
               }'
               target="handle_flight" />
   
+  <!-- Option 2: Reference from loaded spec (recommended) -->
   <transition event="intent.hotel"
-              event:schema='{
-                "type": "object",
-                "description": "User intent to search, book, update, or cancel a hotel",
-                "properties": {
-                  "category": {
-                    "const": "hotel",
-                    "description": "Category identifier for hotel requests"
-                  },
-                  "action": {
-                    "type": "string",
-                    "description": "Action type: search, book, update, or cancel"
-                  }
-                },
-                "required": ["category", "action"]
-              }'
+              event:schema="events:#/components/schemas/HotelRequest"
               target="handle_hotel" />
   
   <!-- Always include fallback for unmatched events -->
@@ -1838,13 +1858,14 @@ When using LLMs to generate events:
 ### Key Reminders
 
 1. **Always use `event:schema` with descriptions** ⭐ — Both schema-level and property-level descriptions are crucial for LLM success
-2. **Use JSON pointers for reusability** ⭐ — Load schemas with `use:spec` and reference with `event:schema="#/path/to/schema"`
-3. **Describe every property** — Even simple properties benefit from clear descriptions
-4. **Keep prompts minimal** — context comes from runtime snapshot
-5. **Use hierarchical states** for agent-lifetime services
-6. **Handle errors** — include fallback transitions for unexpected events
-7. **Document event flows** — use XML comments to explain complex transitions
-8. **Test event schemas** — ensure LLM can generate valid events
+2. **Use namespace-prefixed JSON pointers** ⭐ — Load schemas with `use:events="./events.json"` and reference with `event:schema="events:#/path/to/schema"`
+3. **Unified `use:*` pattern** ⭐ — Use the same pattern for both namespaces (`use:gemini="github.com/..."`) and specs (`use:api="./api.json"`)
+4. **Describe every property** — Even simple properties benefit from clear descriptions
+5. **Keep prompts minimal** — context comes from runtime snapshot
+6. **Use hierarchical states** for agent-lifetime services
+7. **Handle errors** — include fallback transitions for unexpected events
+8. **Document event flows** — use XML comments to explain complex transitions
+9. **Test event schemas** — ensure LLM can generate valid events
 
 ### Token Optimization
 
@@ -1853,15 +1874,18 @@ To minimize token usage:
 1. **Store conversation history in datamodel** instead of passing in prompts
 2. **Reference datamodel variables** via `promptexpr` instead of copying values
 3. **Let runtime generate event lists** — don't list them in prompts
-4. **Use schema descriptions** ⭐ — Put ALL documentation in `event:schema` descriptions, not prompts. The runtime sends schemas to the LLM automatically.
+4. **Use external schemas with `use:*`** ⭐ — Load schemas once with `use:events="./events.json"`, reference with `event:schema="events:#/..."`
+5. **Use schema descriptions** ⭐ — Put ALL documentation in external schema files, not prompts. The runtime sends schemas to the LLM automatically.
 
-**Why Descriptions Matter:**
+**Why External Schemas Matter:**
 
-The runtime automatically provides available events and their schemas to the LLM. By putting comprehensive descriptions in the schema, you:
-- Guide the LLM without inflating your prompt
-- Ensure consistent event generation across different prompts
-- Make schemas self-documenting for both LLMs and humans
-- Leverage prompt caching (schemas change rarely)
+The runtime automatically provides available events and their schemas to the LLM. By using external schema files with the `use:*` pattern:
+- **Better caching**: Schema files change rarely, maximizing LLM prompt cache hits
+- **Guide the LLM** without inflating your prompt
+- **Reusability**: Share schemas across multiple agents
+- **Maintainability**: Update schemas independently from agent logic
+- **Ensure consistent** event generation across different prompts
+- **Self-documenting**: Schemas serve both LLMs and humans
 
 Example:
 
