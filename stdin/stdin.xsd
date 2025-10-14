@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="github.com/agentflare-ai/agentml/stdin"
+    xmlns:stdin="github.com/agentflare-ai/agentml/stdin"
+    elementFormDefault="qualified">
+
+    <!-- Stdin read element -->
+    <xs:element name="read">
+        <xs:complexType>
+            <xs:attribute name="location" type="xs:string" />
+            <xs:attribute name="dataid" type="xs:string" />
+            <xs:attribute name="prompt" type="xs:string" />
+            <xs:attribute name="promptexpr" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
