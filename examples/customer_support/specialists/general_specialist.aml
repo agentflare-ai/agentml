@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       use:events="../schemas/events.json"
+       use:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <!--
+    General Specialist Agent
+
+    Handles general conversational queries that don't fit specific categories.
+
+    Parameters:
+    - user_message: The user's general message
+
+    Returns:
+    - response: The conversational response
+  -->
+
+  <datamodel>
+    <data id="user_message" expr="''" />
+    <data id="llm_response" expr="''" />
+  </datamodel>
+
+  <state id="process">
+    <onentry>
+      <log label="SYSTEM" expr="'General specialist processing: ' + user_message" />
+
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Respond to user: ' + user_message" />
+
+      <log label="SYSTEM" expr="'Generated event: ' + JSON.stringify(_event)" />
+    </onentry>
+
+    <transition event="action.response"
+                event:schema="events:#/components/schemas/ActionResponse"
+                target="respond" />
+  </state>
+
+  <state id="respond">
+    <onentry>
+      <log label="SYSTEM" expr="'General specialist sending response...'" />
+
+      <assign location="llm_response" expr="_event.data.message" />
+
+      <log label="BOT" expr="llm_response" />
+    </onentry>
+    <transition target="done" />
+  </state>
+
+  <final id="done">
+    <donedata>
+      <param name="response" expr="llm_response" />
+    </donedata>
+  </final>
+
+</agent>

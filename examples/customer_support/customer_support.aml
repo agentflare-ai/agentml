@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       use:events="./schemas/events.json"
+       use:memory="github.com/agentflare-ai/agentml/memory"
+       use:gemini="github.com/agentflare-ai/agentml/gemini"
+       use:stdin="github.com/agentflare-ai/agentml/stdin">
+
+  <!--
+    Customer Support Orchestrator for Airlines (Part 4: Specialized Workflows)
+
+    This agent demonstrates proper SCXML decomposition using invoked services.
+    Instead of one monolithic file with compound states, we use separate .aml files
+    for each specialist, connected via <invoke>.
+
+    Architecture (following README.md Section 5: Decomposition Through Invoked Services):
+
+    Main Orchestrator (this file):
+    - Routes user intents to appropriate specialists
+    - Manages conversation loop
+    - Handles service invocation and responses
+
+    Specialist Services (specialists/*.aml):
+    - flight_specialist.aml - Flight search, booking, updates, cancellations
+    - hotel_specialist.aml - Hotel search and reservations
+    - car_specialist.aml - Car rental search and bookings
+    - excursion_specialist.aml - Activity and tour bookings
+    - policy_specialist.aml - Policy lookups via vector search
+    - general_specialist.aml - General conversational queries
+
+    Benefits of this decomposition:
+    - Reusability: Each specialist can be used in other agents
+    - Maintainability: Smaller, focused files (~150-200 lines each)
+    - Testing: Test specialists in isolation
+    - Composition: Build complex agents from simple components
+    - Team collaboration: Multiple developers can work independently
+
+    Event Flow:
+    1. User input → primary_assistant (intent classification)
+    2. Intent → <invoke> appropriate specialist service
+    3. Specialist processes request and returns via done.invoke.*
+    4. Display response and return to conversation loop
+  -->
+
+  <datamodel>
+    <data id="conversation_history" expr="[]" />
+    <data id="current_user_message" expr="''" />
+    <data id="llm_response" expr="''" />
+    <data id="passenger_id" expr="'3442 587242'" />
+    <data id="db_path" expr="'travel2.sqlite'" />
+    <data id="user_flight_info" expr="''" />
+    <data id="error_context" expr="''" />
+  </datamodel>
+
+  <!-- Initial State: Setup and Welcome -->
+  <state id="initialize">
+    <onentry>
+      <log label="SYSTEM" expr="'Customer Support Bot Starting...'" />
+
+      <!-- Initialize memory with SQLite database -->
+      <memory:init dbpath="travel2.sqlite" />
+
+      <log label="SYSTEM" expr="'Initialized memory with database: ' + db_path" />
+
+      <!-- Fetch user flight information upfront (Part 2-4 pattern) -->
+      <memory:get key="user_flight_info_3442_587242" location="user_flight_info" />
+      <log label="SYSTEM" expr="'Loaded user flight info: ' + (user_flight_info ? 'Found' : 'None')" />
+
+      <!-- Welcome message -->
+      <assign location="llm_response" expr="'Welcome to Swiss Airlines Customer Support! I can help you with flight bookings, hotels, car rentals, excursions, and answer policy questions. How can I assist you today?'" />
+
+      <log label="BOT" expr="llm_response" />
+    </onentry>
+
+    <transition target="conversation_loop" />
+  </state>
+
+  <!-- Main Conversation Loop -->
+  <state id="conversation_loop">
+
+    <!-- Await User Input -->
+    <state id="await_user_input">
+      <onentry>
+        <log label="SYSTEM" expr="'Waiting for user input...'" />
+
+        <!-- Read from stdin -->
+        <stdin:read location="current_user_message" prompt="You: " />
+
+        <!-- Add to conversation history -->
+        <script>
+          conversation_history.push({
+            role: 'user',
+            content: current_user_message
+          });
+        </script>
+
+        <log label="USER" expr="'' + current_user_message" />
+      </onentry>
+
+      <!-- Check if user wants to exit -->
+      <transition cond="current_user_message.toLowerCase().match(/^(exit|quit|bye|goodbye)$/)"
+                  target="farewell" />
+
+      <!-- Route to primary assistant for intent classification -->
+      <transition target="classify_intent" />
+    </state>
+
+    <!-- Primary Assistant: Intent Classification -->
+    <state id="classify_intent">
+      <onentry>
+        <log label="SYSTEM" expr="'Primary assistant classifying intent...'" />
+
+        <!-- Use LLM to determine user intent -->
+        <gemini:generate
+          model="gemini-2.0-flash-exp"
+          location="_event"
+          promptexpr="'Classify user intent: ' + current_user_message" />
+
+        <log label="SYSTEM" expr="'Primary assistant generated event: ' + JSON.stringify(_event)" />
+      </onentry>
+
+      <!-- Route to specialists via invoke -->
+      <transition event="intent.flight"
+                  event:schema="events:#/components/schemas/FlightIntent"
+                  target="invoke_flight_specialist" />
+
+      <transition event="intent.hotel"
+                  event:schema="events:#/components/schemas/HotelIntent"
+                  target="invoke_hotel_specialist" />
+
+      <transition event="intent.car"
+                  event:schema="events:#/components/schemas/CarIntent"
+                  target="invoke_car_specialist" />
+
+      <transition event="intent.excursion"
+                  event:schema="events:#/components/schemas/ExcursionIntent"
+                  target="invoke_excursion_specialist" />
+
+      <transition event="intent.policy"
+                  event:schema="events:#/components/schemas/PolicyIntent"
+                  target="invoke_policy_specialist" />
+
+      <transition event="intent.general"
+                  event:schema="events:#/components/schemas/GeneralIntent"
+                  target="invoke_general_specialist" />
+
+      <!-- Direct response (simple queries handled by primary) -->
+      <transition event="action.response"
+                  event:schema="events:#/components/schemas/ActionResponse"
+                  target="display_response" />
+    </state>
+
+    <!-- Invoke Flight Specialist -->
+    <state id="invoke_flight_specialist">
+      <invoke type="scxml" id="flight" src="./specialists/flight_specialist.aml">
+        <param name="user_message" expr="current_user_message" />
+        <param name="passenger_id" expr="passenger_id" />
+      </invoke>
+
+      <!-- Handle completion -->
+      <transition event="done.invoke.flight" target="display_response">
+        <assign location="llm_response" expr="_event.data.response" />
+      </transition>
+
+      <!-- Handle errors -->
+      <transition event="error.invoke.flight" target="handle_error">
+        <script>
+          error_context = 'flight request: ' + (_event.data || 'unknown error');
+        </script>
+      </transition>
+    </state>
+
+    <!-- Invoke Hotel Specialist -->
+    <state id="invoke_hotel_specialist">
+      <invoke type="scxml" id="hotel" src="./specialists/hotel_specialist.aml">
+        <param name="user_message" expr="current_user_message" />
+        <param name="passenger_id" expr="passenger_id" />
+      </invoke>
+
+      <transition event="done.invoke.hotel" target="display_response">
+        <assign location="llm_response" expr="_event.data.response" />
+      </transition>
+
+      <transition event="error.invoke.hotel" target="handle_error">
+        <script>
+          error_context = 'hotel request: ' + (_event.data || 'unknown error');
+        </script>
+      </transition>
+    </state>
+
+    <!-- Invoke Car Specialist -->
+    <state id="invoke_car_specialist">
+      <invoke type="scxml" id="car" src="./specialists/car_specialist.aml">
+        <param name="user_message" expr="current_user_message" />
+        <param name="passenger_id" expr="passenger_id" />
+      </invoke>
+
+      <transition event="done.invoke.car" target="display_response">
+        <assign location="llm_response" expr="_event.data.response" />
+      </transition>
+
+      <transition event="error.invoke.car" target="handle_error">
+        <script>
+          error_context = 'car rental request: ' + (_event.data || 'unknown error');
+        </script>
+      </transition>
+    </state>
+
+    <!-- Invoke Excursion Specialist -->
+    <state id="invoke_excursion_specialist">
+      <invoke type="scxml" id="excursion" src="./specialists/excursion_specialist.aml">
+        <param name="user_message" expr="current_user_message" />
+        <param name="passenger_id" expr="passenger_id" />
+      </invoke>
+
+      <transition event="done.invoke.excursion" target="display_response">
+        <assign location="llm_response" expr="_event.data.response" />
+      </transition>
+
+      <transition event="error.invoke.excursion" target="handle_error">
+        <script>
+          error_context = 'excursion request: ' + (_event.data || 'unknown error');
+        </script>
+      </transition>
+    </state>
+
+    <!-- Invoke Policy Specialist -->
+    <state id="invoke_policy_specialist">
+      <invoke type="scxml" id="policy" src="./specialists/policy_specialist.aml">
+        <param name="user_message" expr="current_user_message" />
+      </invoke>
+
+      <transition event="done.invoke.policy" target="display_response">
+        <assign location="llm_response" expr="_event.data.response" />
+      </transition>
+
+      <transition event="error.invoke.policy" target="handle_error">
+        <script>
+          error_context = 'policy lookup: ' + (_event.data || 'unknown error');
+        </script>
+      </transition>
+    </state>
+
+    <!-- Invoke General Specialist -->
+    <state id="invoke_general_specialist">
+      <invoke type="scxml" id="general" src="./specialists/general_specialist.aml">
+        <param name="user_message" expr="current_user_message" />
+      </invoke>
+
+      <transition event="done.invoke.general" target="display_response">
+        <assign location="llm_response" expr="_event.data.response" />
+      </transition>
+
+      <transition event="error.invoke.general" target="handle_error">
+        <script>
+          error_context = 'general request: ' + (_event.data || 'unknown error');
+        </script>
+      </transition>
+    </state>
+
+    <!-- Display Response to User -->
+    <state id="display_response">
+      <onentry>
+        <log label="SYSTEM" expr="'Sending response to user...'" />
+
+        <!-- Handle event.data.message if it exists (direct response from primary) -->
+        <script>
+          if (_event && _event.data && _event.data.message) {
+            llm_response = _event.data.message;
+          }
+        </script>
+
+        <script>
+          conversation_history.push({
+            role: 'assistant',
+            content: llm_response
+          });
+        </script>
+
+        <log label="BOT" expr="llm_response" />
+      </onentry>
+
+      <transition target="await_user_input" />
+    </state>
+
+    <!-- Handle Errors -->
+    <state id="handle_error">
+      <onentry>
+        <log label="SYSTEM" expr="'Error occurred: ' + error_context" />
+
+        <!-- Use Lite model to generate contextual error message -->
+        <gemini:generate
+          model="gemini-2.5-flash-lite"
+          location="_event"
+          promptexpr="'Generate friendly error message for: ' + error_context" />
+
+        <assign location="llm_response" expr="_event.data.message" />
+
+        <script>
+          conversation_history.push({
+            role: 'assistant',
+            content: llm_response
+          });
+        </script>
+
+        <log label="BOT" expr="llm_response" />
+      </onentry>
+
+      <transition target="await_user_input" />
+    </state>
+
+  </state>
+
+  <!-- Farewell State -->
+  <state id="farewell">
+    <onentry>
+      <log label="SYSTEM" expr="'User ending conversation'" />
+
+      <assign location="llm_response" expr="'Thank you for using Swiss Airlines customer support! Have a great day and safe travels!'" />
+
+      <log label="BOT" expr="llm_response" />
+    </onentry>
+
+    <transition target="end" />
+  </state>
+
+  <!-- Final State -->
+  <final id="end" />
+
+</agent>
