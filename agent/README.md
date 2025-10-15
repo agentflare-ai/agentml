@@ -19,20 +19,40 @@ Root element that replaces `<scxml>` in agent documents. Provides namespace decl
 - **`datamodel`** (optional): Specifies the datamodel implementation to use for this agent
   - Example: `datamodel="ecmascript"`, `datamodel="xpath"`
 
-- **`use:*`** (optional): Namespace declarations (equivalent to `xmlns:*`) that also load the namespace loader
-  - Format: `use:prefix="namespace-uri"`
+- **`use:*`** (optional): Universal loader for both namespace implementations and external specifications
+  - Format: `use:prefix="namespace-uri-or-spec-path"`
   - Multiple `use:*` attributes can be specified
-  - Example: `use:memory="github.com/agentflare-ai/agentml/memory"` is equivalent to `xmlns:memory="..."`
-  - Example: `use:gemini="github.com/agentflare-ai/agentml/gemini"`
+  - The loader automatically detects whether the value is:
+    - A namespace URI (e.g., `github.com/...`) - loads custom namespace implementation
+    - A spec file (e.g., `./api.json`, `https://...`) - loads OpenAPI/JSON Schema
+
+  **Namespace Examples:**
+  - `use:memory="github.com/agentflare-ai/agentml/memory"` - loads memory namespace
+  - `use:gemini="github.com/agentflare-ai/agentml/gemini"` - loads Gemini namespace
+
+  **Spec Examples (OpenAPI, JSON Schema, etc.):**
+  - `use:api="./api-spec.json"` - loads local spec, referenced as "api"
+  - `use:events="https://api.example.com/events.json"` - loads remote spec, referenced as "events"
+  - `use:models="./schemas/models.json"` - loads another spec, referenced as "models"
+
+  Supported spec formats: OpenAPI 3.x, Swagger 2.0, JSON Schema (auto-detected)
 
 ### `event:schema` Attribute on `<transition>`
 
 The agent namespace also supports an `event:schema` attribute on `<transition>` elements to specify a JSON schema for event payload validation.
 
-- **`event:schema`**: JSON schema string for validating the event payload
+- **`event:schema`**: JSON schema string or JSON Pointer reference for validating the event payload
   - Applied to `<transition>` elements
-  - Format: `event:schema='{"type": "object", "properties": {...}}'`
-  - Used to validate event data matches the expected schema
+  - **Inline format**: `event:schema='{"type": "object", "properties": {...}}'`
+  - **Namespace-prefixed format**: `event:schema="api:#/components/schemas/UserInput"` (references `use:api` spec)
+  - **Namespace-prefixed format**: `event:schema="events:#/definitions/WebhookEvent"` (references `use:events` spec)
+  - **Default format**: `event:schema="#/components/schemas/MySchema"` (uses first loaded spec)
+  - Supports standard JSON Pointer syntax (RFC 6901)
+
+  **Supported JSON Pointer paths:**
+  - OpenAPI 3.x: `#/components/schemas/SchemaName`
+  - Swagger 2.0: `#/definitions/SchemaName`
+  - JSON Schema: `#/definitions/SchemaName` or `#/$defs/SchemaName`
 
 #### Child Elements
 
@@ -44,6 +64,8 @@ The `<agent>` element contains standard SCXML content (states, transitions, data
 <?xml version="1.0" encoding="UTF-8"?>
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
+       use:api="./schemas/api-spec.json"
+       use:events="https://api.example.com/events.json"
        use:memory="github.com/agentflare-ai/agentml/memory"
        use:gemini="github.com/agentflare-ai/agentml/gemini">
 
@@ -56,9 +78,19 @@ The `<agent>` element contains standard SCXML content (states, transitions, data
       </gemini:generate>
     </onentry>
 
-    <!-- Transition with event schema validation -->
+    <!-- Transition with inline event schema -->
     <transition event="user.input"
                 event:schema='{"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}'
+                target="processing" />
+
+    <!-- Transition with namespace-prefixed JSON Pointer reference -->
+    <transition event="user.message"
+                event:schema="api:#/components/schemas/UserMessage"
+                target="processing" />
+
+    <!-- Transition with reference to different spec -->
+    <transition event="webhook.received"
+                event:schema="events:#/definitions/WebhookEvent"
                 target="processing" />
   </state>
 
@@ -107,9 +139,19 @@ The agent namespace includes an XSD schema file (`agent.xsd`) that defines the s
 
 - **Replaces `<scxml>` root element**: Use `<agent>` as the document root instead of `<scxml>`
 - **Datamodel Declaration**: Explicitly specify which datamodel implementation to use
-- **Namespace Loading**: Use `use:*` attributes (equivalent to `xmlns:*`) to declare and load namespaces
-- **Event Schema Validation**: Use `event:schema` attribute on `<transition>` elements to specify JSON schemas for event payloads
-- **Repository Integration**: Each `use:*` declaration references a repository that contains:
+- **Universal Loader (`use:*`)**: Unified pattern for loading both namespaces and specifications
+  - Auto-detects namespace URIs vs. spec files
+  - Loads custom namespace implementations (e.g., `use:memory="github.com/..."`)
+  - Loads OpenAPI/JSON Schema specs (e.g., `use:api="./api.json"`)
+  - Supports both local files and remote URLs
+- **Event Schema Validation**: Use `event:schema` attribute on `<transition>` elements with:
+  - Inline JSON schemas
+  - Namespace-prefixed JSON Pointer references (e.g., `api:#/components/schemas/User`)
+  - Default JSON Pointer references (uses first loaded spec)
+- **Multiple Spec Support**: Load multiple OpenAPI/JSON Schema specifications with different namespace prefixes
+- **Format Auto-Detection**: Automatically detects OpenAPI 3.x, Swagger 2.0, and JSON Schema formats
+- **JSON Pointer Support**: Reference schemas using RFC 6901 JSON Pointers
+- **Repository Integration**: Each namespace `use:*` declaration references a repository that contains:
   - An XSD schema file for validation
   - A namespace loader implementation
 - **Transparent Execution**: Child elements (states, transitions, etc.) are executed normally by the interpreter

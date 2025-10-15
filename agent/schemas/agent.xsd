@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="github.com/agentflare-ai/agentml/agent"
+    xmlns:agent="github.com/agentflare-ai/agentml/agent"
+    xmlns:scxml="http://www.w3.org/2005/07/scxml"
+    elementFormDefault="qualified">
+
+    <xs:import namespace="http://www.w3.org/2005/07/scxml"
+        schemaLocation="scxml.xsd">
+        <xs:annotation>
+            <xs:documentation>
+                Import SCXML 1.0 schema to enable validation of SCXML content within agent elements.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:import>
+
+    <xs:element name="agent">
+        <xs:annotation>
+            <xs:documentation>
+                Agent root element replaces scxml as the document root.
+                The datamodel attribute specifies which datamodel implementation to use.
+                The use:* attributes are namespace declarations (equivalent to xmlns:*) that also load the namespace loader.
+                Example: &lt;agent datamodel="ecmascript" use:memory="github.com/agentflare-ai/agentml/memory"&gt;
+                Contains standard SCXML content (states, transitions, data, etc.) as direct children.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:group ref="scxml:scxml.scxml.mix" minOccurs="0" maxOccurs="unbounded" />
+            </xs:sequence>
+            <xs:attribute name="datamodel" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>The datamodel implementation to use for this agent</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:anyAttribute processContents="lax">
+                <xs:annotation>
+                    <xs:documentation>
+                        Supports use:* attributes for loading external resources.
+
+                        Namespace loaders:
+                        - use:prefix="namespace-uri" (loads custom namespace implementation)
+                        - Example: use:memory="github.com/agentflare-ai/agentml/memory"
+
+                        Spec loaders (OpenAPI, JSON Schema, etc.):
+                        - use:prefix="path-or-url" (loads spec file, auto-detects format)
+                        - Local: use:api="./api-spec.json"
+                        - Remote: use:events="https://api.example.com/events.json"
+                        - Multiple specs: use:api="./api.json" use:models="./models.json"
+
+                        The loader auto-detects OpenAPI 3.x, Swagger 2.0, JSON Schema, and other formats.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:anyAttribute>
+        </xs:complexType>
+    </xs:element>
+
+    <!-- Event schema attribute for transitions -->
+    <xs:attribute name="schema" type="xs:string">
+        <xs:annotation>
+            <xs:documentation>
+                JSON schema for validating event payloads on transition elements.
+                Use as event:schema on &lt;transition&gt; elements.
+
+                Inline schema example:
+                event:schema='{"type": "object", "properties": {"text": {"type": "string"}}}'
+
+                When use:* specs are loaded, event:schema can use namespace-prefixed JSON pointers:
+                - With namespace: event:schema="api:#/components/schemas/UserInput"
+                - With namespace: event:schema="events:#/definitions/WebhookEvent"
+                - Default (first loaded): event:schema="#/components/schemas/User"
+
+                Supported JSON pointer formats:
+                - OpenAPI 3.x: "#/components/schemas/SchemaName"
+                - Swagger 2.0: "#/definitions/SchemaName"
+                - JSON Schema: "#/definitions/SchemaName" or "#/$defs/SchemaName"
+            </xs:documentation>
+        </xs:annotation>
+    </xs:attribute>
+
+</xs:schema>
