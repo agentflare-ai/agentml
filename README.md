@@ -33,7 +33,7 @@ By separating behavior from runtime, your agents outlive framework trends.
 - [Architecture](#architecture)
 - [Write Once, Deploy Anywhere (Planned)](#write-once-deploy-anywhere-)
 - [Extensibility with WebAssembly (Planned)](#extensibility-with-webassembly-planned)
-- [Remote Agent Communication (In Development)](#remote-agent-communication-in-development)
+- [Remote Agent Communication](#remote-agent-communication)
 - [Current Status & Roadmap](#current-status--roadmap)
 - [Getting Started](#getting-started)
 - [Namespaces](#namespaces)
@@ -233,9 +233,7 @@ This is the "JavaScript for agents," enabling a dynamic and polyglot ecosystem o
 
 ## Remote Agent Communication
 
-> IOProcessors for HTTP and WebSockets are functional in `agentmlx`, enabling distributed agent communication.
-
-AgentML is designed for distributed agent communication using the W3C SCXML `IOProcessor` interface. This will enable agents to communicate across processes and networks using standard protocols like HTTP and WebSockets.
+AgentML supports distributed agent communication using the W3C SCXML `IOProcessor` interface. Agents can communicate across processes and networks using standard protocols like HTTP and WebSockets.
 
 ```xml
 <state id="notify_remote_agent">
@@ -252,7 +250,7 @@ AgentML is designed for distributed agent communication using the W3C SCXML `IOP
   <transition event="task.acknowledged" target="confirmed" />
 </state>
 ```
-This architecture will support patterns like agent swarms, supervisor-worker delegation, and pub/sub, with built-in support for security, observability, and automatic trace propagation.
+This architecture supports patterns like agent swarms, supervisor-worker delegation, and pub/sub, with built-in support for security, observability, and automatic trace propagation.
 
 ---
 
