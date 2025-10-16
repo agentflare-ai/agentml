@@ -399,4 +399,25 @@ Custom namespaces can be implemented in Go, or in the future, any language that 
 - **Use meaningful state IDs**: `handle_flight_request` is better than `state_5`.
 - **Validate with schemas**: Always use `event:schema` and provide detailed `description` fields to guide the LLM.
 - **Use external schemas**: Define schemas in `.json`/`.yaml` files and load them with `import:` for reuse and maintainability.
-- **Handle Scripts Carefully**: For complex logic, prefer external scripts (`<script src="./utils.js" />`). When writing scripts inline, remember that standard XML escaping rules apply for characters like `<` and `&`. To avoid this, it is highly recommended to wrap your script content in a `<![CDATA[...]]>` section.
+- **Prefer external scripts**: Use `<script src="./utils.js" />` for better linting, IDE support, and maintainability. Only use inline scripts for simple expressions. When you must write inline scripts with comparison operators (`<`, `>`) or other special XML characters, wrap your code in `<![CDATA[...]]>`:
+
+  ```xml
+  <!-- Best: External script with full linting support -->
+  <script src="./validation.js" />
+  
+  <!-- Inline without CDATA: XML parser errors -->
+  <script>
+    if (count < 10 && value > 5) {  <!-- This will break! -->
+      return true;
+    }
+  </script>
+  
+  <!-- Inline with CDATA: Works but no linting -->
+  <script>
+    <![CDATA[
+    if (count < 10 && value > 5) {
+      return true;
+    }
+    ]]>
+  </script>
+  ```
