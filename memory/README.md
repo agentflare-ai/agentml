@@ -32,7 +32,7 @@ This package includes two powerful SQLite extensions:
 ## Installation
 
 ```bash
-go get github.com/gogo-agent/memory
+go get github.com/agentflare-ai/agentml/memory
 ```
 
 **Note**: This package requires CGO and SQLite development headers.
@@ -47,7 +47,7 @@ import (
     "database/sql"
     "log"
     
-    "github.com/gogo-agent/memory"
+    "github.com/agentflare-ai/agentml/memory"
 )
 
 func main() {
@@ -132,4 +132,4 @@ make build-extensions
 
 ## License
 
-This project is part of the gogo-agent ecosystem.
+This project is part of the AgentML ecosystem.

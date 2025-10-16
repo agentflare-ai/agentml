@@ -13,7 +13,7 @@ A Go client library for Google's Gemini AI models with advanced rate limiting, m
 ## Installation
 
 ```bash
-go get github.com/gogo-agent/gemini
+go get github.com/agentflare-ai/agentml/gemini
 ```
 
 ## Quick Start
@@ -25,7 +25,7 @@ import (
     "context"
     "log"
     
-    "github.com/gogo-agent/gemini"
+    "github.com/agentflare-ai/agentml/gemini"
     "google.golang.org/genai"
 )
 
