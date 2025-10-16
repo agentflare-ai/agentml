@@ -94,7 +94,11 @@ The installer automatically falls back if a channel is empty: `latest` → `next
 **Verify installation:**
 ```bash
 agentmlx --version
+# or use the shorter alias
+amlx --version
 ```
+
+Both `agentmlx` and `amlx` commands are available after installation.
 
 For more installation options and manual downloads, see the [agentmlx documentation](https://github.com/agentflare-ai/agentmlx#installation).
 
@@ -248,8 +252,10 @@ The core promise of AgentML is to end the cycle of constant rewrites caused by f
 The **`agentmlx`** runtime is the recommended way to execute AgentML files. It is a high-performance, portable Go/WASM binary that is fully compliant with the W3C SCXML specification, passing all 193 official conformance tests. `agentmlx` will be open-sourced soon.
 
 ```bash
-# Future: Run directly with agentmlx
+# Future: Run directly with agentmlx (or amlx)
 agentmlx run customer-support.aml
+# or shorter
+amlx run customer-support.aml
 ```
 
 #### Framework Transformers (Planned)
@@ -353,7 +359,7 @@ We are building AgentML in the open. Your feedback is critical.
 
 **To use AgentML:**
 1. Write your agent in `.aml` files (see example below)
-2. Run with `agentmlx run your-agent.aml` (runtime in development)
+2. Run with `agentmlx run your-agent.aml` or `amlx run your-agent.aml` (runtime in development)
 3. The runtime handles all namespaces, extensions, and execution
 
 ### Basic Agent Example
@@ -405,7 +411,7 @@ We are building AgentML in the open. Your feedback is critical.
 
 
 
-**For most users:** Just write `.aml` files and run them with `agentmlx` - no Go code needed!
+**For most users:** Just write `.aml` files and run them with `agentmlx` (or `amlx`) - no Go code needed!
 
 ---
 
