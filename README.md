@@ -1,100 +1,289 @@
 # AgentML
 
 > **🚧 Early Alpha - Building in Public**
->
-> AgentML is in early alpha. The vision is ambitious and the foundation is solid, but many features are still in development. Join us in shaping the future of agent standards.
-
-**AgentML is a universal language for AI agents, designed to outlive the churn of frameworks.**
+> 
+> AgentML is in early alpha and being built openly with the community. The vision is ambitious, the foundation is solid, but many features are still in development. Join us in shaping the future of agent standards.
 
 ---
 
-## The Vision: HTML for Agents
+## The Vision: A Universal Language for AI Agents
 
-A new agent framework is released every week. LangGraph, CrewAI, Autogen, n8n—the landscape is fragmented and constantly changing. Choosing the wrong one leads to vendor lock-in and costly rewrites.
+The AI agent landscape is fragmented and accelerating, with new frameworks appearing weekly. This creates vendor lock-in and forces costly rewrites when a chosen framework becomes limiting or unmaintained.
 
-AgentML solves this by separating agent *behavior* from the *runtime*.
+**AgentML is the universal language for agents, inspired by the success of HTML for the web.**
 
 ```
 AgentML : Agent Frameworks  =  HTML : Web Browsers
 ```
 
-You write your agent's logic once in AgentML. Then, you can:
+Just as HTML lets you write content once and have it render in any browser, AgentML lets you define your agent's behavior once and run it anywhere. This is achieved by building on the battle-tested [W3C SCXML standard](https://www.w3.org/TR/scxml/), a formal model for state machines that has been proven for over 20 years in complex industrial systems.
 
-1.  **Run it natively** with **`agentmlx`**, our high-performance Go/WASM runtime. This is the recommended approach for production.
-2.  **Transform it** to other popular frameworks. (This is a planned feature).
+This provides two primary paths for execution:
 
-When a framework becomes obsolete, your agent logic remains portable. No more rewrites.
+1.  **Native Execution (Recommended)**: Run agents with **`agentmlx`**, the reference runtime built in Go/WASM. It's designed for high performance and portability.
+2.  **Transformation (Planned)**: To integrate with existing ecosystems, we are planning transformers to convert AgentML into other popular frameworks like LangGraph, CrewAI, n8n, and more. **This feature is not yet implemented but is a key part of our roadmap.**
 
-## How It Works
+By separating behavior from runtime, your agents outlive framework trends.
 
-AgentML is built on [W3C SCXML](https://www.w3.org/TR/scxml/), a battle-tested standard for state machines, and extends it for the AI era.
+---
+## Table of Contents
 
--   **Define Behavior**: You model your agent as a state machine in an `.aml` file. This provides a deterministic, predictable, and auditable structure.
--   **Guide LLMs with Schemas**: Instead of unpredictable outputs, LLMs generate structured events that are validated against JSON schemas. This makes agent behavior reliable.
--   **Extend with WebAssembly**: Import functionality written in any language (Rust, Go, Python) that compiles to WASM. This enables true polyglot development and secure, sandboxed execution.
+- [Core Concepts](#core-concepts)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Write Once, Deploy Anywhere (Planned)](#write-once-deploy-anywhere-)
+- [Extensibility with WebAssembly (Planned)](#extensibility-with-webassembly-planned)
+- [Remote Agent Communication (In Development)](#remote-agent-communication-in-development)
+- [Current Status & Roadmap](#current-status--roadmap)
+- [Getting Started](#getting-started)
+- [Namespaces](#namespaces)
+- [Best Practices](#best-practices)
 
-### Execution: `agentmlx` Runtime
+---
 
-The primary way to run AgentML is with `agentmlx`, the native reference runtime.
+## Core Concepts
+
+AgentML uses SCXML state machines to define **deterministic behavior**, moving beyond prompt-only approaches where behavior is emergent and unpredictable.
+
+1.  **State Machines**: Explicitly define valid states, transitions, and the agent's lifecycle. This enables formal verification and testing.
+
+2.  **Schema-Guided Events**: LLM outputs are constrained to structured JSON events validated against schemas using the `event:schema` attribute. This ensures reliability and type safety.
+
+    > ⚠️ **Work in Progress**: Event schema validation and external schema loading (`import` directive) are in active development. APIs and features may change as we refine the implementation based on community feedback.
+
+    The `event:schema` attribute on a transition provides JSON schema validation for an event. **It is critical to include `description` fields** at both the schema and property level, as these descriptions are the primary way to guide LLMs in generating correct event data.
+
+    **With Descriptions (Good):**
+    ```json
+    {
+      "type": "object",
+      "description": "User intent to perform a flight-related action (search, book, update, cancel)",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["search", "book", "update", "cancel"],
+          "description": "The specific action: search for flights, book a new flight, etc."
+        },
+        "details": {
+          "type": "object",
+          "description": "Flight-specific information extracted from user message",
+          "properties": {
+            "from": {
+              "type": "string",
+              "description": "Departure location: city name or airport code (e.g., 'New York' or 'JFK')"
+            }
+          }
+        }
+      }
+    }
+    ```
+
+3.  **Efficient Token Usage**: The runtime provides the LLM with a "snapshot" of the current state, datamodel, and available events. This context allows prompts to be minimal, and the static parts (the agent's SCXML definition) can be cached by the LLM provider, reducing token consumption.
+
+4.  **Decomposition**: Complex agents can be broken down into smaller, reusable state machines using the `<invoke>` tag. This is ideal for managing complexity and sharing components like authentication or payment processing.
+
+### Schema References with `import`
+
+To keep agent files clean and promote reuse, schemas can be defined in external JSON or YAML files (including OpenAPI specs) and loaded with an `import` directive. The runtime intelligently detects the file type.
+
+This enables schema reuse via **JSON Pointer (RFC 6901)** references with namespace prefixes.
+
+**schemas/events.json:**
+```json
+{
+  "components": {
+    "schemas": {
+      "FlightRequest": {
+        "type": "object",
+        "description": "Schema for a flight-related request.",
+        "properties": {
+            "action": { "$ref": "#/components/schemas/FlightAction" }
+        }
+      },
+      "FlightAction": {
+          "type": "string",
+          "enum": ["search", "book", "cancel"]
+      }
+    }
+  }
+}
+```
+
+**agent.aml:**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:events="./schemas/events.json">
+
+  <!-- Reference schemas using a namespace and JSON Pointer -->
+  <transition event="intent.flight"
+              event:schema="events:#/components/schemas/FlightRequest"
+              target="handle_flight" />
+</agent>
+```
+
+This unified `import` directive is designed to work for schemas, namespace implementations, and future WASM components.
+
+---
+## Key Features
+
+- 🎯 **Deterministic Behavior**: Predictable, auditable agent behavior via state machines.
+- 📝 **Schema-Guided Events**: `event:schema` attributes validate LLM-generated events. 🚧
+- 🔄 **Runtime Snapshots**: Efficiently provide LLM context, minimizing token usage. ✅
+- 📦 **Modular Design**: Decompose complex agents into reusable components with `<invoke>`. ✅
+- 🔌 **Extensible Namespaces**: Plug in custom functionality (LLMs, memory, I/O). ✅
+- 📊 **Observable**: Foundation for OpenTelemetry tracing and logging. ✅
+- 🌐 **Universal Standard**: Write once, deploy anywhere via native runtime or transformation. 🔮
+- 🔗 **Remote Communication**: Built-in distributed agent communication via IOProcessors. ✅
+
+**Legend:** ✅ Working | 🚧 In Development | 🔮 Planned
+
+---
+
+## Architecture
+
+- **Document Structure**: AgentML files use an `<agent>` root element, which is a compatible extension of SCXML's `<scxml>` element.
+- **Namespace System**: Functionality is extended through namespaces (e.g., for Gemini, Ollama, Memory) declared with the `import:prefix="uri"` directive.
+- **Runtime Snapshot**: At each step, the runtime creates an XML snapshot containing the active states, datamodel, and available events. This, combined with the SCXML document, gives the LLM complete and current context.
+
+---
+
+## Write Once, Deploy Anywhere 🔮
+
+> **🚧 Vision Statement**: This section describes our goal for AgentML. Framework transformers are planned and not yet available.
+
+The core promise of AgentML is to end the cycle of constant rewrites caused by framework fragmentation.
+
+```
+        AgentML (.aml)
+               |
+       ┌───────┴──────────────────┐
+       ▼                          ▼
+   agentmlx                   Transform to: (Planned)
+  (Primary                    - LangGraph
+   Runtime)                   - CrewAI
+       |                      - n8n
+       ▼                      - ...and more
+   Go/WASM
+   Anywhere
+```
+
+#### Native Runtime: `agentmlx`
+
+The **`agentmlx`** runtime is the recommended way to execute AgentML files. It is a high-performance, portable Go/WASM binary that is fully compliant with the W3C SCXML specification, passing all 193 official conformance tests. `agentmlx` will be open-sourced soon.
 
 ```bash
-# Run your agent natively
+# Future: Run directly with agentmlx
 agentmlx run customer-support.aml
 ```
 
-`agentmlx` is designed to be a lightweight, high-performance, and portable runtime that can be deployed anywhere—from servers to edge devices.
+#### Framework Transformers (Planned)
 
-### Transformation (Planned)
-
-To provide an escape hatch and integrate with existing ecosystems, we are planning to build transformers that convert AgentML to other formats.
+When you need to integrate with an existing ecosystem, transformers will convert AgentML into framework-specific code.
 
 ```bash
-# PLANNED: Transform AgentML to other frameworks
-agentmlx transform customer-support.aml --target langgraph --output agent.py
-agentmlx transform customer-support.aml --target crewai --output agent.py
+# PLANNED: Transform AgentML to LangGraph
+agentmlx transform customer-support.aml --target langgraph --output customer-support.py
 ```
 
-**This functionality is not yet implemented.** It is a core part of our forward-looking roadmap to ensure AgentML remains a truly universal standard.
+This provides framework insurance, eliminating vendor lock-in and allowing you to choose a runtime based on deployment needs, not sunk costs.
+
+---
+
+## Extensibility with WebAssembly (Planned) 🔮
+
+> **🚧 Vision Statement**: WASM-based namespaces are a forward-looking goal.
+
+Our vision for true interoperability and extensibility is to load namespaces as **WebAssembly (WASM) components** that adhere to the `agentml.wit` interface.
+
+```xml
+<!-- Future: Load namespace from a WASM module -->
+<agent import:gemini="https://cdn.example.com/gemini-namespace.wasm"
+       import:custom="./my-namespace.wasm">
+  
+  <gemini:generate ... />
+  <custom:process ... />
+</agent>
+```
+
+This means you can:
+- **Write extensions in any language** (Rust, Go, Python, C++) that compiles to WASM.
+- **Run on any runtime** that supports the WASM component model.
+- **Securely sandbox** custom code.
+
+This is the "JavaScript for agents," enabling a dynamic and polyglot ecosystem on top of AgentML's "HTML for agents" structure.
+
+---
+
+## Remote Agent Communication
+
+> IOProcessors for HTTP and WebSockets are functional in `agentmlx`, enabling distributed agent communication.
+
+AgentML is designed for distributed agent communication using the W3C SCXML `IOProcessor` interface. This will enable agents to communicate across processes and networks using standard protocols like HTTP and WebSockets.
+
+```xml
+<state id="notify_remote_agent">
+  <onentry>
+    <!-- Send an event to a remote agent via HTTP -->
+    <send event="task.assigned"
+          target="https://agent.example.com/events"
+          type="http://www.w3.org/TR/scxml/#HTTPEventProcessor">
+      <param name="task_id" expr="task.id" />
+    </send>
+  </onentry>
+  
+  <!-- Wait for a response -->
+  <transition event="task.acknowledged" target="confirmed" />
+</state>
+```
+This architecture will support patterns like agent swarms, supervisor-worker delegation, and pub/sub, with built-in support for security, observability, and automatic trace propagation.
 
 ---
 
 ## Current Status & Roadmap
 
-AgentML is actively being built in public. Here's a snapshot of our progress:
+We are building AgentML in the open. Your feedback is critical.
 
 **What's working now:**
 - ✅ Core SCXML interpreter (Go implementation)
-- ✅ Gemini LLM integration namespace
+- ✅ Gemini & Ollama LLM integration namespaces
 - ✅ Basic event-driven agent workflows
 - ✅ Datamodel and state machine semantics
+- ✅ OpenTelemetry tracing foundation
+- ✅ IOProcessor implementations (HTTP, WebSocket)
 
 **What's in active development:**
 - 🚧 **`agentmlx` runtime** - Native Go/WASM execution (primary focus)
 - 🚧 Memory namespace (vector search, graph database)
-- 🚧 Event schema validation and external schema loading
-- 🚧 WASM namespace loading via `agentml.wit`
+- 🚧 Event schema validation (`event:schema`) and external schema loading (`import`)
 
 **What's planned:**
-- 🔮 **Framework transformers** (LangGraph, CrewAI, n8n, Autogen, etc.)
+- 🔮 **Framework transformers** (LangGraph, CrewAI, n8n, OpenAI, Autogen)
+- 🔮 **WASM namespace loading** via `agentml.wit`
 - 🔮 Visual editor and debugger
-- 🔮 Additional LLM provider namespaces (Anthropic, OpenAI, etc.)
-- 🔮 Distributed agent communication (IOProcessors)
+- 🔮 Agent marketplace
 
----
-
-## Get Involved
-
-The vision for a universal agent standard can only succeed with community collaboration.
-
+**How to participate:**
 - **🗣️ Share your use cases** in [GitHub Discussions](https://github.com/agentflare-ai/agentml/discussions).
 - **💡 Propose features** via [GitHub Issues](https://github.com/agentflare-ai/agentml/issues).
 - **🔧 Contribute code** through pull requests.
 
 ---
 
-## A Quick Example
+## Getting Started
 
-Here is a conceptual look at a simple AgentML file. It defines states, transitions, and uses a namespace (`gemini`) to call an LLM.
+> **⚠️ Alpha Software**: APIs may change, features may be incomplete, and you may encounter bugs.
+
+### What You Need
+
+**AgentML is a language specification** - you write `.aml` files that define your agent's behavior. The `agentmlx` runtime (coming soon) executes these files. No installation of AgentML itself is needed.
+
+**To use AgentML:**
+1. Write your agent in `.aml` files (see example below)
+2. Run with `agentmlx run your-agent.aml` (runtime in development)
+3. The runtime handles all namespaces, extensions, and execution
+
+### Basic Agent Example
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -104,17 +293,14 @@ Here is a conceptual look at a simple AgentML file. It defines states, transitio
 
   <datamodel>
     <data id="user_input" expr="''" />
+    <data id="response" expr="''" />
   </datamodel>
 
   <state id="main">
-    <initial>
-      <transition target="awaiting_input" />
-    </initial>
-
     <state id="awaiting_input">
-      <!-- In a real agent, this would come from an I/O processor -->
       <onentry>
-        <assign location="user_input" expr="'Hello, world!'" />
+        <!-- In a real agent, input comes from an IOProcessor -->
+        <assign location="user_input" expr="getUserInput()" />
       </onentry>
       <transition target="processing" />
     </state>
@@ -129,15 +315,111 @@ Here is a conceptual look at a simple AgentML file. It defines states, transitio
       </onentry>
       
       <!-- Transition only if the LLM output matches the event schema -->
-      <transition event="action.response" target="responding" />
+      <transition event="action.response"
+                  event:schema='{"type": "object", "properties": {"message": {"type": "string"}}, "required": ["message"]}'
+                  target="responding" />
     </state>
 
     <state id="responding">
       <onentry>
-        <log expr="'LLM responded with: ' + _event.data.message" />
+        <assign location="response" expr="_event.data.message" />
+        <log expr="'Response: ' + response" />
       </onentry>
       <transition target="awaiting_input" />
     </state>
   </state>
 </agent>
 ```
+
+### For Runtime Developers (Embedding the Interpreter)
+
+If you're building a custom runtime or embedding the AgentML interpreter in a Go application, you can use the Go package directly:
+
+```go
+package main
+
+import (
+    "context"
+    "github.com/agentflare-ai/agentml"
+    "github.com/agentflare-ai/agentml/agent"
+)
+
+func main() {
+    ctx := context.Background()
+
+    // Load agent document
+    doc, err := xmldom.ParseFile("agent.aml")
+    if err != nil {
+        panic(err)
+    }
+
+    // Create interpreter
+    interp, err := agentml.NewInterpreter(ctx, doc)
+    if err != nil {
+        panic(err)
+    }
+
+    // Start the agent
+    if err := interp.Start(ctx); err != nil {
+        panic(err)
+    }
+
+    // Agent runs until completion
+    <-interp.Done()
+}
+```
+
+**For most users:** Just write `.aml` files and run them with `agentmlx` - no Go code needed!
+
+---
+
+## Namespaces
+
+AgentML's functionality is extended through namespaces. Here are the currently available or planned ones:
+
+- **Agent (`.../agentml/agent`)**: Core namespace for `<agent>` root element and `event:schema` validation.
+- **Gemini (`.../agentml/gemini`)**: Google Gemini LLM integration.
+- **Ollama (`.../agentml/ollama`)**: Local LLM integration via Ollama.
+- **Memory (`github.com/agentflare-ai/agentml/memory`)**: High-performance memory with SQLite, vector search, and graph database capabilities.
+
+```xml
+<agent import:memory="github.com/agentflare-ai/agentml/memory">
+  <!-- Vector operations -->
+  <memory:embed location="embedding" expr="text_content" />
+  <memory:search location="results" expr="query_embedding" limit="10" />
+  
+  <!-- Graph operations -->
+  <memory:graph-query location="results">
+    <query>
+      MATCH (p:Person)-[:KNOWS]->(friend)
+      WHERE p.age > 25
+      RETURN p.name, friend.name
+    </query>
+  </memory:graph-query>
+  
+  <!-- Key-value storage -->
+  <memory:put key="user_preference" expr="preference_value" />
+  <memory:get key="user_preference" location="preference" />
+</agent>
+```
+
+Features:
+- Vector similarity search
+- Graph database with Cypher queries
+- Embedding generation
+- Persistent key-value storage
+
+See [memory/README.md](./memory/README.md) for details.
+- **Stdin (`.../agentml/stdin`)**: Simple stdin/stdout I/O for console agents.
+
+Custom namespaces can be implemented in Go, or in the future, any language that compiles to WASM.
+
+---
+
+## Best Practices
+
+- **Keep `.aml` files focused**: Decompose large agents into smaller, invoked services.
+- **Use meaningful state IDs**: `handle_flight_request` is better than `state_5`.
+- **Validate with schemas**: Always use `event:schema` and provide detailed `description` fields to guide the LLM.
+- **Use external schemas**: Define schemas in `.json`/`.yaml` files and load them with `import:` for reuse and maintainability.
+- **Prefer external scripts**: Use `<script src="./utils.js" />` over large inline scripts. If you must use inline scripts, wrap them in `<![CDATA[...]]>` to avoid XML escaping issues.
