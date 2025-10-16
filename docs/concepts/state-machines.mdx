@@ -1,485 +1,431 @@
 ---
 title: "State Machines"
-description: "Build complex workflows with declarative state machines"
+description: "Learn how to use W3C SCXML state machines to build deterministic agents in AgentML"
 ---
 
 # State Machines
 
-State machines are the foundation of workflow control in Agentic Flow. They allow you to define complex, multi-step processes in a clear, declarative way.
+State machines are the foundation of AgentML. By explicitly defining states, transitions, and behaviors, you create agents with deterministic, auditable, and formally verifiable behavior.
 
 ## Why State Machines?
 
-Traditional imperative code for workflows becomes messy quickly:
-
-\`\`\`javascript
-// Traditional approach - hard to maintain
-let currentState = 'idle';
+Traditional LLM applications rely on emergent behavior from prompts, leading to unpredictable and difficult-to-debug systems. State machines provide:
+
+- **Deterministic Behavior**: Same inputs produce same state paths
+- **Explicit Control Flow**: Clear understanding of agent behavior
+- **Formal Verification**: Prove correctness of agent logic
+- **Better Debugging**: Trace exact state transitions
+- **Compositional**: Build complex agents from simple machines
+
+## Basic Concepts
+
+### States
+
+A state represents what the agent is currently doing:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <!-- The agent starts in the 'idle' state -->
+  <state id="idle">
+    <!-- State content here -->
+  </state>
+
+  <state id="processing">
+    <!-- State content here -->
+  </state>
+
+  <state id="responding">
+    <!-- State content here -->
+  </state>
+</agent>
+```
 
-async function handleMessage(msg) {
-  if (currentState === 'idle') {
-    currentState = 'processing';
-    const response = await callLLM(msg);
-    currentState = 'responding';
-    return response;
-  } else if (currentState === 'processing') {
-    // Handle concurrent messages?
-    // What if LLM fails?
-    // How to add new states?
-  }
-}
-\`\`\`
-
-With Agentic Flow state machines:
-
-\`\`\`
-import: std/state
-import: std/llm
-
-state: idle
-  on: user.message
-    llm.chat: event.content
-    transition: processing
-
-state: processing
-  on: llm.response
-    emit: bot.message
-      content: event.text
-    transition: idle
-  
-  on: llm.error
-    transition: error
-\`\`\`
-
-## Basic State Machine
-
-### Defining States
-
-States are defined with the `state:` keyword:
-
-\`\`\`
-state: idle
-  # Event handlers go here
-
-state: processing
-  # Event handlers go here
-
-state: complete
-  # Event handlers go here
-\`\`\`
-
-### State Transitions
-
-Move between states with `transition:`:
-
-\`\`\`
-state: idle
-  on: start
-    transition: processing
-
-state: processing
-  on: complete
-    transition: done
-\`\`\`
-
-### Initial State
-
-The first state defined is the initial state:
-
-\`\`\`
-# This is the initial state
-state: waiting
-  on: begin
-    transition: active
-
-state: active
-  on: finish
-    transition: complete
-\`\`\`
-
-## Event Handlers
-
-### Basic Event Handling
-
-Handle events within states:
-
-\`\`\`
-state: idle
-  on: user.message
-    emit: processing.started
-    transition: processing
-\`\`\`
-
-### Multiple Event Handlers
-
-A state can handle multiple event types:
-
-\`\`\`
-state: active
-  on: user.message
-    # Handle user input
-    transition: processing
-  
-  on: system.shutdown
-    # Handle shutdown
-    transition: cleanup
-  
-  on: error
-    # Handle errors
-    transition: error
-\`\`\`
-
-### Event Data Access
-
-Access event data with `event.*`:
-
-\`\`\`
-state: processing
-  on: user.message
-    llm.chat:
-      message: event.content
-      userId: event.userId
-      timestamp: event.timestamp
-\`\`\`
-
-## Complex Workflows
-
-### Multi-Step Process
-
-\`\`\`
-import: std/llm
-import: std/state
-
-state: idle
-  on: user.query
-    transition: analyzing
-
-state: analyzing
-  on: enter
-    llm.chat:
-      system: "Analyze the user's intent"
-      message: event.content
-  on: llm.response
-    transition: processing
-
-state: processing
-  on: enter
-    llm.chat:
-      system: "Generate a detailed response"
-      context: event.analysis
-  on: llm.response
-    transition: formatting
-
-state: formatting
-  on: enter
-    emit: response.ready
-      content: event.text
-    transition: idle
-\`\`\`
-
-### Conditional Transitions
-
-Use guards for conditional transitions:
-
-\`\`\`
-state: validating
-  on: data.received
-    if: event.isValid
-      transition: processing
-    else:
-      transition: error
-\`\`\`
-
-### Parallel States
-
-Handle multiple concurrent workflows:
-
-\`\`\`
-state: main
-  parallel:
-    - workflow: user_interaction
-    - workflow: background_tasks
-
-workflow: user_interaction
-  state: idle
-    on: user.message
-      transition: responding
-
-workflow: background_tasks
-  state: monitoring
-    on: system.check
-      transition: analyzing
-\`\`\`
-
-## State Entry and Exit
-
-### Entry Actions
-
-Execute actions when entering a state:
-
-\`\`\`
-state: processing
-  on: enter
-    emit: processing.started
-    llm.chat: "Begin processing"
-  
-  on: llm.response
-    transition: complete
-\`\`\`
-
-### Exit Actions
-
-Execute actions when leaving a state:
-
-\`\`\`
-state: processing
-  on: exit
-    emit: processing.complete
-    cleanup: true
-  
-  on: complete
-    transition: done
-\`\`\`
-
-## Error Handling
-
-### Error States
-
-Define dedicated error states:
-
-\`\`\`
-state: processing
-  on: llm.error
-    transition: error
-
-state: error
-  on: enter
-    emit: error.occurred
-      message: event.error
-  
-  on: retry
-    transition: processing
-  
-  on: cancel
-    transition: idle
-\`\`\`
-
-### Timeout Handling
-
-Handle timeouts in long-running states:
-
-\`\`\`
-state: waiting
-  timeout: 30s
-  on: timeout
-    emit: timeout.occurred
-    transition: error
-  
-  on: response.received
-    transition: processing
-\`\`\`
-
-## State History
-
-### Tracking Previous States
-
-Access previous state information:
-
-\`\`\`
-state: processing
-  on: error
-    emit: error.context
-      previousState: state.previous
-      errorMessage: event.error
-    transition: error
-\`\`\`
-
-### State Stack
-
-Maintain a stack of states for complex navigation:
-
-\`\`\`
-state: main
-  on: open.modal
-    push: modal
-  
-state: modal
-  on: close
-    pop: previous
-\`\`\`
+### Transitions
+
+Transitions move the agent from one state to another when events occur:
+
+```xml
+<state id="idle">
+  <!-- When 'user.message' event occurs, transition to 'processing' -->
+  <transition event="user.message" target="processing" />
+</state>
+```
+
+### Entry and Exit Actions
+
+Execute code when entering or leaving a state:
+
+```xml
+<state id="processing">
+  <!-- Execute when entering this state -->
+  <onentry>
+    <log expr="'Started processing'" />
+    <assign location="startTime" expr="Date.now()" />
+  </onentry>
+
+  <!-- Execute when leaving this state -->
+  <onexit>
+    <log expr="'Finished processing in ' + (Date.now() - startTime) + 'ms'" />
+  </onexit>
+
+  <transition event="complete" target="idle" />
+</state>
+```
+
+## Complete Example
+
+Here's a simple customer support agent:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <datamodel>
+    <data id="user_input" expr="''" />
+    <data id="response" expr="''" />
+  </datamodel>
+
+  <!-- Start in 'idle' state -->
+  <state id="idle">
+    <onentry>
+      <log expr="'Waiting for user input'" />
+    </onentry>
+
+    <transition event="user.message" target="processing">
+      <assign location="user_input" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <state id="processing">
+    <onentry>
+      <log expr="'Processing: ' + user_input" />
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'You are a helpful assistant. User: ' + user_input" />
+    </onentry>
+
+    <transition event="action.response" target="responding">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
+
+    <transition event="action.error" target="error" />
+  </state>
+
+  <state id="responding">
+    <onentry>
+      <log expr="'Bot: ' + response" />
+    </onentry>
+
+    <transition target="idle" />
+  </state>
+
+  <state id="error">
+    <onentry>
+      <log expr="'An error occurred'" />
+    </onentry>
+
+    <transition target="idle" />
+  </state>
+</agent>
+```
+
+## Hierarchical States
+
+Nest states within states to manage complexity:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <!-- Top-level state -->
+  <state id="authenticated">
+    <!-- Nested states -->
+    <state id="browsing">
+      <transition event="select.product" target="viewing_product" />
+    </state>
+
+    <state id="viewing_product">
+      <transition event="add.to.cart" target="cart" />
+      <transition event="back" target="browsing" />
+    </state>
+
+    <state id="cart">
+      <transition event="checkout" target="payment" />
+      <transition event="continue.shopping" target="browsing" />
+    </state>
+
+    <state id="payment">
+      <transition event="payment.success" target="order_complete" />
+      <transition event="payment.failed" target="cart" />
+    </state>
+
+    <final id="order_complete" />
+
+    <!-- Global transition for authenticated states -->
+    <transition event="logout" target="logged_out" />
+  </state>
+
+  <state id="logged_out">
+    <transition event="login.success" target="authenticated" />
+  </state>
+</agent>
+```
+
+Benefits of hierarchical states:
+- **Shared transitions**: Common transitions apply to all nested states
+- **Shared entry/exit actions**: Execute code for entire state groups
+- **Better organization**: Group related states together
+
+## Parallel States
+
+Execute multiple state machines simultaneously:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <!-- Both state machines run in parallel -->
+  <parallel id="monitoring">
+    <!-- First parallel region: Health checks -->
+    <state id="health_monitor">
+      <state id="checking">
+        <onentry>
+          <log expr="'Running health check'" />
+        </onentry>
+
+        <transition event="health.ok" target="healthy" />
+        <transition event="health.degraded" target="unhealthy" />
+      </state>
+
+      <state id="healthy">
+        <transition target="checking">
+          <after delay="30s" />
+        </transition>
+      </state>
+
+      <state id="unhealthy">
+        <onentry>
+          <raise event="alert.health_issue" />
+        </onentry>
+
+        <transition target="checking">
+          <after delay="10s" />
+        </transition>
+      </state>
+    </state>
+
+    <!-- Second parallel region: Performance monitoring -->
+    <state id="performance_monitor">
+      <state id="measuring">
+        <onentry>
+          <log expr="'Measuring performance'" />
+        </onentry>
+
+        <transition event="perf.good" target="optimal" />
+        <transition event="perf.slow" target="degraded" />
+      </state>
+
+      <state id="optimal">
+        <transition target="measuring">
+          <after delay="60s" />
+        </transition>
+      </state>
+
+      <state id="degraded">
+        <onentry>
+          <raise event="alert.performance_issue" />
+        </onentry>
+
+        <transition target="measuring">
+          <after delay="30s" />
+        </transition>
+      </state>
+    </state>
+  </parallel>
+</agent>
+```
+
+Parallel states are useful for:
+- **Monitoring systems**: Multiple independent checks
+- **Multi-modal interfaces**: Handle voice and text simultaneously
+- **Background tasks**: Process data while maintaining UI state
+
+## Conditional Transitions
+
+Use conditions to control which transition executes:
+
+```xml
+<state id="validate">
+  <onentry>
+    <assign location="input" expr="_event.data.input" />
+  </onentry>
+
+  <!-- Conditions evaluated in order -->
+  <transition cond="input.length === 0" target="empty_input" />
+  <transition cond="input.length < 5" target="too_short" />
+  <transition cond="input.length > 100" target="too_long" />
+  <transition target="valid" />  <!-- Default: no condition -->
+</state>
+```
+
+## History States
+
+Remember and return to the last active substate:
+
+```xml
+<state id="application">
+  <history id="app_history" type="shallow" />
+
+  <state id="editing">
+    <state id="text_mode" />
+    <state id="voice_mode" />
+  </state>
+
+  <state id="paused">
+    <transition event="resume" target="app_history" />
+  </state>
+
+  <transition event="pause" target="paused" />
+</state>
+```
+
+History types:
+- **shallow**: Remember top-level state only
+- **deep**: Remember entire nested state configuration
+
+## Final States
+
+Mark the end of a state machine or sub-machine:
+
+```xml
+<state id="processing_task">
+  <state id="step1">
+    <transition event="step1.done" target="step2" />
+  </state>
+
+  <state id="step2">
+    <transition event="step2.done" target="complete" />
+  </state>
+
+  <!-- Final state -->
+  <final id="complete">
+    <donedata>
+      <param name="result" expr="task_result" />
+    </donedata>
+  </final>
+</state>
+
+<!-- This transition executes when 'processing_task' reaches final state -->
+<transition event="done.state.processing_task" target="next_task">
+  <assign location="last_result" expr="_event.data.result" />
+</transition>
+```
+
+## Delayed Transitions
+
+Execute transitions after a delay:
+
+```xml
+<state id="waiting">
+  <!-- Transition after 5 seconds -->
+  <transition target="timeout">
+    <after delay="5s" />
+  </transition>
+
+  <!-- Can still transition immediately on event -->
+  <transition event="user.input" target="processing" />
+</state>
+```
+
+Delay formats:
+- Milliseconds: `1000ms`
+- Seconds: `5s`
+- Minutes: `2m`
+- Hours: `1h`
+
+## State Machine Composition
+
+Invoke other state machines as services:
+
+```xml
+<state id="orchestrator">
+  <onentry>
+    <!-- Invoke a worker agent -->
+    <invoke id="worker1" type="scxml" src="worker_agent.aml">
+      <param name="task_id" expr="current_task.id" />
+    </invoke>
+  </onentry>
+
+  <!-- Handle completion -->
+  <transition event="done.invoke.worker1" target="aggregate_results">
+    <assign location="worker_result" expr="_event.data" />
+  </transition>
+
+  <!-- Handle errors -->
+  <transition event="error.execution.worker1" target="handle_error" />
+</state>
+```
+
+This enables:
+- **Code reuse**: Share common state machines
+- **Separation of concerns**: Isolate functionality
+- **Parallel execution**: Multiple workers simultaneously
+- **Fault isolation**: Errors don't crash parent
 
 ## Best Practices
 
-### Keep States Focused
-
-Each state should have a single responsibility:
-
-\`\`\`
-# Good - focused states
-state: validating
-  on: data.received
-    validate: event.data
-    transition: processing
-
-state: processing
-  on: validation.passed
-    process: event.data
-    transition: complete
-
-# Bad - doing too much in one state
-state: handle_everything
-  on: data.received
-    validate: event.data
-    process: event.data
-    format: event.data
-    send: event.data
-\`\`\`
-
-### Use Meaningful State Names
-
-\`\`\`
-# Good - clear intent
-state: waiting_for_user_input
-state: processing_llm_request
-state: formatting_response
-
-# Bad - vague names
-state: state1
-state: doing_stuff
-state: temp
-\`\`\`
-
-### Handle All Possible Events
-
-\`\`\`
-state: processing
-  on: llm.response
-    transition: complete
-  
-  on: llm.error
-    transition: error
-  
-  on: user.cancel
-    transition: cancelled
-  
-  on: timeout
-    transition: error
-\`\`\`
-
-### Document Complex Transitions
-
-\`\`\`
-state: analyzing
-  # Transition to processing if confidence > 0.8
-  # Otherwise, ask for clarification
-  on: analysis.complete
-    if: event.confidence > 0.8
-      transition: processing
-    else:
-      transition: clarifying
-\`\`\`
-
-## Advanced Patterns
-
-### State Machine Composition
-
-Compose multiple state machines:
-
-\`\`\`
-import: workflows/authentication
-import: workflows/data_processing
-
-state: main
-  on: user.login
-    include: authentication
-  
-  on: auth.success
-    include: data_processing
-\`\`\`
-
-### Hierarchical States
-
-Create nested state machines:
-
-\`\`\`
-state: application
-  state: authenticated
-    state: browsing
-      on: select.item
-        transition: viewing
-    
-    state: viewing
-      on: back
-        transition: browsing
-  
-  state: unauthenticated
-    on: login
-      transition: authenticated
-\`\`\`
-
-## Testing State Machines
-
-### Unit Testing States
-
-\`\`\`javascript
-import { AgenticFlow } from 'agentic-flow';
-
-test('transitions from idle to processing', async () => {
-  const af = new AgenticFlow();
-  await af.loadDocument(document);
-  
-  expect(af.currentState).toBe('idle');
-  
-  await af.emit('user.message', { content: 'Hello' });
-  
-  expect(af.currentState).toBe('processing');
-});
-\`\`\`
-
-### Testing Transitions
-
-\`\`\`javascript
-test('handles error transition', async () => {
-  const af = new AgenticFlow();
-  await af.loadDocument(document);
-  
-  await af.emit('llm.error', { error: 'API failed' });
-  
-  expect(af.currentState).toBe('error');
-});
-\`\`\`
+1. **Keep states focused**: Each state should have one clear purpose
+2. **Use meaningful names**: `awaiting_user_input` not `state_1`
+3. **Document transitions**: Add comments explaining event flow
+4. **Provide fallback transitions**: Handle unexpected events gracefully
+5. **Use hierarchical states**: Group related states for maintainability
+6. **Limit nesting depth**: Too many levels make debugging difficult
+7. **Test state coverage**: Ensure all states are reachable
+8. **Use final states**: Clearly mark completion points
+9. **Log state transitions**: Aid debugging with `<log>` statements
+10. **Validate early**: Check conditions before expensive operations
 
 ## Debugging State Machines
 
-### State Logging
+### Validation
 
-\`\`\`
-state: processing
-  on: enter
-    log: "Entered processing state"
-  
-  on: llm.response
-    log: "Received LLM response"
-    transition: complete
-\`\`\`
+Validate your state machine before running:
 
-### State Visualization
+```bash
+agentmlx validate agent.aml
+```
 
-Use the AF debugger to visualize state transitions:
+### Runtime Snapshots
 
-\`\`\`javascript
-const af = new AgenticFlow({ debug: true });
-af.on('state.transition', (from, to) => {
-  console.log(`${from} -> ${to}`);
-});
-\`\`\`
+Capture snapshots to see the current state:
+
+```bash
+agentmlx run agent.aml --save-snapshots ./debug --snapshot-interval 1
+```
+
+### Logging
+
+Add logging to track state transitions:
+
+```xml
+<state id="processing">
+  <onentry>
+    <log expr="'Entered processing state at ' + Date.now()" />
+  </onentry>
+
+  <onexit>
+    <log expr="'Exiting processing state'" />
+  </onexit>
+</state>
+```
 
 ## Next Steps
 
-- Learn about [Events & Schemas](/concepts/events-schemas) for structured data
-- Explore [Namespaces](/concepts/namespaces) for organizing functionality
-- Read [Best Practices](/best-practices) for production patterns
-
----
-
-**Need Help?** Check out [example state machines](https://github.com/agentic-flow/examples/state-machines) or ask in our [Discord](https://discord.gg/agentic-flow).
-\`\`\`
+- Explore [Events & Schemas](/concepts/events-schemas) for data validation
+- Learn about [Namespaces](/concepts/namespaces) for extending functionality
+- Understand [Token Efficiency](/concepts/token-efficiency) for optimization
+- Read [Document Structure](/architecture/document-structure) for syntax details

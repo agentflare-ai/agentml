@@ -1,584 +1,434 @@
 ---
 title: "Namespaces"
-description: "Organize and reuse functionality with Agentic Flow's namespace system"
+description: "Extend AgentML functionality with namespaces using the import:prefix directive"
 ---
 
 # Namespaces
 
-Namespaces are the primary way to organize and reuse functionality in Agentic Flow. They provide a clean, modular way to structure your applications.
+Namespaces are the primary way to extend AgentML functionality. They provide modular, reusable components for LLM integration, memory, I/O, and custom functionality.
 
 ## What Are Namespaces?
 
-Namespaces are collections of related functionality that can be imported and used in your documents:
+Namespaces extend the SCXML vocabulary with custom actions and elements. In AgentML, namespaces are declared using the `import:prefix="uri"` directive on the `<agent>` root element.
 
-\`\`\`
-import: std/llm
-import: std/state
-import: custom/analytics
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:memory="github.com/agentflare-ai/agentml/memory">
 
-on: user.message
-  llm.chat: event.content
-  analytics.track: "message_received"
-\`\`\`
+  <state id="processing">
+    <onentry>
+      <!-- Use Gemini namespace -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Process this: ' + userInput" />
 
-Think of namespaces as libraries or modules in traditional programming.
+      <!-- Use Memory namespace -->
+      <memory:put key="last_input" expr="userInput" />
+    </onentry>
+  </state>
+</agent>
+```
 
 ## Built-in Namespaces
 
-Agentic Flow includes several standard namespaces:
+AgentML provides several built-in namespaces:
 
-### std/llm
+### Agent Namespace
 
-LLM integration and chat functionality:
+The core namespace for AgentML-specific features (default namespace):
 
-\`\`\`
-import: std/llm
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-on: user.message
-  llm.chat:
-    model: gpt-4
-    system: "You are helpful"
-    message: event.content
-  
-  llm.stream:
-    model: gpt-4
-    message: event.content
-  
-  llm.embed:
-    text: event.content
-\`\`\`
+  <!-- event:schema is from the agent namespace -->
+  <transition event="user.message"
+              event:schema='{"type": "object", "properties": {"message": {"type": "string"}}}'
+              target="processing" />
+</agent>
+```
 
-### std/state
+### Gemini Namespace
 
-State machine functionality:
+Google Gemini LLM integration:
 
-\`\`\`
-import: std/state
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-state: idle
-  on: start
-    transition: active
+  <state id="generate">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'You are a helpful assistant. ' + userInput" />
+    </onentry>
 
-state: active
-  on: complete
-    transition: done
-\`\`\`
+    <transition event="action.response" target="process_response" />
+  </state>
+</agent>
+```
 
-### std/memory
+### Ollama Namespace
 
-Memory and storage:
+Local LLM integration via Ollama:
 
-\`\`\`
-import: std/memory
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:ollama="github.com/agentflare-ai/agentml/ollama">
 
-on: user.message
-  memory.store:
-    key: "conversation"
-    value: event.content
-  
-  memory.get:
-    key: "conversation"
-  
-  memory.delete:
-    key: "conversation"
-\`\`\`
+  <state id="generate">
+    <onentry>
+      <ollama:generate
+        model="llama2"
+        location="_event"
+        promptexpr="userInput" />
+    </onentry>
+  </state>
+</agent>
+```
 
-### std/cache
+### Memory Namespace
 
-Caching functionality:
+High-performance memory with vector search and graph database:
 
-\`\`\`
-import: std/cache
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:memory="github.com/agentflare-ai/agentml/memory">
 
-on: user.query
-  cache.get:
-    key: event.content
-  
-on: cache.miss
-  # Process and cache result
-  cache.set:
-    key: event.query
-    value: event.result
-    ttl: 3600
-\`\`\`
+  <state id="store_data">
+    <onentry>
+      <!-- Vector embedding -->
+      <memory:embed location="embedding" expr="textContent" />
 
-### std/http
+      <!-- Key-value storage -->
+      <memory:put key="user_preference" expr="preferenceValue" />
 
-HTTP requests:
+      <!-- Graph query -->
+      <memory:graph-query location="results">
+        <query>
+          MATCH (p:Person)-[:KNOWS]->(friend)
+          WHERE p.age > 25
+          RETURN p.name, friend.name
+        </query>
+      </memory:graph-query>
 
-\`\`\`
-import: std/http
+      <!-- Vector search -->
+      <memory:search location="results" expr="queryEmbedding" limit="10" />
+    </onentry>
+  </state>
+</agent>
+```
 
-on: fetch.data
-  http.get:
-    url: "https://api.example.com/data"
-    headers:
-      Authorization: "Bearer token"
-  
-on: http.response
-  emit: data.received
-    data: event.body
-\`\`\`
+The memory namespace is powered by `sqlite-graph`, providing:
+- Vector similarity search
+- Graph database with Cypher queries
+- Embedding generation
+- Persistent key-value storage
+- All in a single SQLite file
 
-### std/error
+### Stdin Namespace
 
-Error handling:
+Simple stdin/stdout I/O for console agents:
 
-\`\`\`
-import: std/error
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:stdin="github.com/agentflare-ai/agentml/stdin">
 
-on: llm.error
-  error.log:
-    message: "LLM request failed"
-    error: event.error
-  
-  error.retry:
-    maxAttempts: 3
-    backoff: exponential
-\`\`\`
+  <state id="get_input">
+    <onentry>
+      <stdin:read location="userInput" />
+    </onentry>
+
+    <transition event="stdin.received" target="process" />
+  </state>
+
+  <state id="output">
+    <onentry>
+      <stdin:write expr="response" />
+    </onentry>
+  </state>
+</agent>
+```
 
 ## Importing Namespaces
 
 ### Basic Import
 
-\`\`\`
-import: std/llm
-\`\`\`
+Use the `import:prefix="uri"` attribute:
 
-### Aliased Import
-
-\`\`\`
-import: std/llm as ai
-import: std/memory as mem
-
-on: user.message
-  ai.chat: event.content
-  mem.store: event.content
-\`\`\`
-
-### Selective Import
-
-\`\`\`
-import: std/llm { chat, stream }
-
-on: user.message
-  chat: event.content  # Direct access
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+  <!-- gemini:generate is now available -->
+</agent>
+```
 
 ### Multiple Imports
 
-\`\`\`
-import: std/llm
-import: std/state
-import: std/memory
-import: custom/analytics
-\`\`\`
+Import multiple namespaces:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:ollama="github.com/agentflare-ai/agentml/ollama"
+       import:memory="github.com/agentflare-ai/agentml/memory"
+       import:stdin="github.com/agentflare-ai/agentml/stdin">
+
+  <state id="multi_namespace">
+    <onentry>
+      <gemini:generate model="gemini-2.0-flash-exp" location="_event" promptexpr="'Hello'" />
+      <memory:put key="test" expr="'value'" />
+      <stdin:write expr="'Output'" />
+    </onentry>
+  </state>
+</agent>
+```
+
+### External Schema Import
+
+Import JSON/YAML files for schemas:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:events="./schemas/events.json"
+       import:api="./schemas/openapi.yaml">
+
+  <!-- Reference schemas with JSON Pointer -->
+  <transition event="user.message"
+              event:schema="events:#/components/schemas/UserMessage"
+              target="processing" />
+</agent>
+```
 
 ## Creating Custom Namespaces
 
-### Basic Custom Namespace
+### Go Implementation (Current)
 
-Create `namespaces/analytics.af`:
+Currently, custom namespaces are implemented in Go. Here's a basic structure:
 
-\`\`\`
-namespace: analytics
+**namespace.go:**
+```go
+package customnamespace
 
-function: track
-  params:
-    event: string
-    data: object
-  
-  emit: analytics.tracked
-    event: params.event
-    data: params.data
-    timestamp: now()
+import (
+    "github.com/agentflare-ai/agentmlx/pkg/scxml"
+)
 
-function: identify
-  params:
-    userId: string
-    traits: object
-  
-  emit: analytics.identified
-    userId: params.userId
-    traits: params.traits
-\`\`\`
+type CustomAction struct {
+    Model    string `xml:"model,attr"`
+    Location string `xml:"location,attr"`
+    Prompt   string `xml:"prompt,attr"`
+}
 
-Use it:
+func (a *CustomAction) Execute(ctx *scxml.Context) error {
+    // Implementation here
+    result := processPrompt(a.Prompt, a.Model)
+    ctx.SetVariable(a.Location, result)
+    return nil
+}
 
-\`\`\`
-import: custom/analytics
+func Register() {
+    scxml.RegisterNamespace("github.com/example/custom", map[string]interface{}{
+        "process": &CustomAction{},
+    })
+}
+```
 
-on: user.signup
-  analytics.track:
-    event: "user_signed_up"
-    data: event.userData
-\`\`\`
+**Usage:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:custom="github.com/example/custom">
 
-### Namespace with State
+  <state id="use_custom">
+    <onentry>
+      <custom:process model="mymodel" location="result" prompt="Hello" />
+    </onentry>
+  </state>
+</agent>
+```
 
-\`\`\`
-namespace: session
+### WASM Implementation (Planned)
 
-state: active
-  on: session.start
-    memory.store:
-      key: "session_" + event.userId
-      value: event.sessionData
-  
-  on: session.end
-    memory.delete:
-      key: "session_" + event.userId
+Future: Implement namespaces in any language via WebAssembly:
 
-function: get
-  params:
-    userId: string
-  
-  memory.get:
-    key: "session_" + params.userId
-\`\`\`
+**agentml.wit:**
+```wit
+package agentml:core
 
-### Namespace with Configuration
+interface namespace {
+    record action-params {
+        name: string,
+        attributes: list<tuple<string, string>>,
+        content: string,
+    }
 
-\`\`\`
-namespace: email
+    record action-result {
+        success: bool,
+        data: option<string>,
+        error: option<string>,
+    }
 
-config:
-  provider: "sendgrid"
-  apiKey: env.SENDGRID_API_KEY
-  from: "noreply@example.com"
+    execute-action: func(params: action-params) -> action-result
+}
+```
 
-function: send
-  params:
-    to: string
-    subject: string
-    body: string
-  
-  http.post:
-    url: "https://api.sendgrid.com/v3/mail/send"
-    headers:
-      Authorization: "Bearer " + config.apiKey
-    body:
-      from: config.from
-      to: params.to
-      subject: params.subject
-      html: params.body
-\`\`\`
-
-## Namespace Composition
-
-### Extending Namespaces
-
-\`\`\`
-namespace: enhanced_llm
-extends: std/llm
-
-function: chat_with_retry
-  params:
-    message: string
-    maxRetries: number
-  
-  llm.chat:
-    message: params.message
-  
-  on: llm.error
-    if: event.retries < params.maxRetries
-      retry: llm.chat
-\`\`\`
-
-### Combining Namespaces
-
-\`\`\`
-namespace: smart_chat
-uses:
-  - std/llm
-  - std/memory
-  - std/cache
-
-function: chat
-  params:
-    message: string
-  
-  # Check cache
-  cache.get:
-    key: params.message
-  
-  on: cache.miss
-    # Get conversation history
-    memory.get:
-      key: "conversation"
-    
-    # Call LLM with context
-    llm.chat:
-      context: event.history
-      message: params.message
-    
-    # Cache response
-    cache.set:
-      key: params.message
-      value: event.response
-\`\`\`
-
-## Namespace Best Practices
-
-### 1. Single Responsibility
-
-Each namespace should have one clear purpose:
-
-\`\`\`
-# Good - focused namespace
-namespace: authentication
-  function: login
-  function: logout
-  function: verify
-
-# Bad - too broad
-namespace: everything
-  function: login
-  function: sendEmail
-  function: processPayment
-\`\`\`
-
-### 2. Clear Naming
-
-Use descriptive names:
-
-\`\`\`
-# Good
-import: custom/user-authentication
-import: custom/payment-processing
-import: custom/email-notifications
-
-# Bad
-import: custom/utils
-import: custom/helpers
-import: custom/stuff
-\`\`\`
-
-### 3. Document Your Namespaces
-
-\`\`\`
-namespace: analytics
-description: "Track user events and analytics"
-version: "1.0.0"
-author: "Your Team"
-
-function: track
-  description: "Track a user event"
-  params:
-    event: string  # Event name
-    data: object   # Event data
-\`\`\`
-
-### 4. Version Your Namespaces
-
-\`\`\`
-namespace: analytics/v1
-# Version 1 implementation
-
-namespace: analytics/v2
-# Version 2 with breaking changes
-\`\`\`
-
-## Advanced Patterns
-
-### Dependency Injection
-
-\`\`\`
-namespace: database
-config:
-  connection: env.DATABASE_URL
-
-function: query
-  params:
-    sql: string
-  
-  # Use injected connection
-  execute:
-    connection: config.connection
-    query: params.sql
-\`\`\`
-
-### Middleware Pattern
-
-\`\`\`
-namespace: middleware
-
-function: authenticate
-  params:
-    handler: function
-  
-  # Check authentication
-  if: event.user.authenticated
-    call: params.handler
-  else:
-    emit: error.unauthorized
-\`\`\`
-
-### Factory Pattern
-
-\`\`\`
-namespace: llm_factory
-
-function: create
-  params:
-    provider: string
-  
-  if: params.provider == "openai"
-    return: openai_client
-  else if: params.provider == "anthropic"
-    return: anthropic_client
-\`\`\`
-
-## Testing Namespaces
-
-### Unit Testing
-
-\`\`\`javascript
-import { AgenticFlow } from 'agentic-flow';
-
-test('analytics namespace tracks events', async () => {
-  const af = new AgenticFlow();
-  await af.loadNamespace('custom/analytics');
-  
-  const events = [];
-  af.on('analytics.tracked', (event) => {
-    events.push(event);
-  });
-  
-  await af.call('analytics.track', {
-    event: 'test_event',
-    data: { foo: 'bar' }
-  });
-  
-  expect(events).toHaveLength(1);
-  expect(events[0].event).toBe('test_event');
+**Rust implementation:**
+```rust
+wit_bindgen::generate!({
+    path: "agentml.wit",
 });
-\`\`\`
 
-### Integration Testing
+struct MyNamespace;
 
-\`\`\`javascript
-test('namespaces work together', async () => {
-  const af = new AgenticFlow();
-  await af.loadDocument(`
-    import: std/llm
-    import: custom/analytics
-    
-    on: user.message
-      llm.chat: event.content
-      analytics.track: "message_sent"
-  `);
-  
-  await af.emit('user.message', { content: 'Hello' });
-  
-  // Verify both namespaces executed
-});
-\`\`\`
+impl Namespace for MyNamespace {
+    fn execute_action(params: ActionParams) -> ActionResult {
+        // Process action
+        ActionResult {
+            success: true,
+            data: Some("result".to_string()),
+            error: None,
+        }
+    }
+}
+```
 
-## Namespace Registry
+**Usage:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:custom="https://cdn.example.com/custom-namespace.wasm">
 
-### Publishing Namespaces
+  <state id="use_wasm">
+    <onentry>
+      <custom:action attr="value" />
+    </onentry>
+  </state>
+</agent>
+```
 
-Share your namespaces with the community:
+## Namespace Patterns
 
-\`\`\`bash
-# Package your namespace
-af namespace pack custom/analytics
+### LLM Integration Pattern
 
-# Publish to registry
-af namespace publish custom/analytics
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-### Installing Namespaces
+  <datamodel>
+    <data id="userInput" expr="''" />
+    <data id="llmResponse" expr="''" />
+  </datamodel>
 
-\`\`\`bash
-# Install from registry
-af namespace install community/stripe-payments
+  <state id="process">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Process: ' + userInput" />
+    </onentry>
 
-# Install specific version
-af namespace install community/stripe-payments@1.2.0
-\`\`\`
+    <transition event="action.response" target="handle_response">
+      <assign location="llmResponse" expr="_event.data.message" />
+    </transition>
 
-### Using Registry Namespaces
+    <transition event="action.error" target="handle_error" />
+  </state>
+</agent>
+```
 
-\`\`\`
-import: community/stripe-payments
+### Memory Persistence Pattern
 
-on: checkout.complete
-  stripe.charge:
-    amount: event.amount
-    customer: event.customerId
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:memory="github.com/agentflare-ai/agentml/memory">
 
-## Built-in Namespace Reference
+  <state id="save_state">
+    <onentry>
+      <!-- Save to memory -->
+      <memory:put key="conversation_state" expr="currentState" />
+      <memory:put key="user_context" expr="userContext" />
+    </onentry>
+  </state>
 
-### Complete std/llm API
+  <state id="restore_state">
+    <onentry>
+      <!-- Restore from memory -->
+      <memory:get key="conversation_state" location="currentState" />
+      <memory:get key="user_context" location="userContext" />
+    </onentry>
+  </state>
+</agent>
+```
 
-\`\`\`
-import: std/llm
+### Multi-Provider Pattern
 
-# Chat completion
-llm.chat:
-  model: string
-  system?: string
-  message: string
-  context?: string
-  temperature?: number
-  maxTokens?: number
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:ollama="github.com/agentflare-ai/agentml/ollama">
 
-# Streaming
-llm.stream:
-  model: string
-  message: string
+  <state id="classify">
+    <!-- Use fast local model for classification -->
+    <onentry>
+      <ollama:generate
+        model="llama2"
+        location="_event"
+        promptexpr="'Classify: ' + userInput" />
+    </onentry>
 
-# Embeddings
-llm.embed:
-  text: string
-  model?: string
+    <transition event="action.response" target="generate" />
+  </state>
 
-# Batch processing
-llm.batch:
-  requests: array
-\`\`\`
+  <state id="generate">
+    <!-- Use powerful cloud model for generation -->
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Generate response for: ' + classification" />
+    </onentry>
+  </state>
+</agent>
+```
 
-### Complete std/memory API
+## Best Practices
 
-\`\`\`
-import: std/memory
+1. **Use specific namespace URIs**: `github.com/org/project/namespace` not just `custom`
+2. **Document your namespace**: Provide clear usage examples
+3. **Version your namespace**: Include version in URI if needed
+4. **Handle errors**: Emit error events for failure cases
+5. **Follow SCXML conventions**: Use standard SCXML patterns
+6. **Test thoroughly**: Unit test namespace actions
+7. **Provide schemas**: Document expected data structures
+8. **Keep actions focused**: One action should do one thing
+9. **Use standard attributes**: Follow `location`, `expr`, etc. conventions
+10. **Plan for WASM**: Design with future WASM migration in mind
 
-# Store value
-memory.store:
-  key: string
-  value: any
-  ttl?: number
+## Namespace Registry (Planned)
 
-# Get value
-memory.get:
-  key: string
+Future: Centralized registry for discovering and installing namespaces:
 
-# Delete value
-memory.delete:
-  key: string
+```bash
+# Search for namespaces
+agentmlx namespace search stripe
 
-# List keys
-memory.keys:
-  pattern?: string
+# Install namespace
+agentmlx namespace install github.com/community/stripe
 
-# Clear all
-memory.clear:
-\`\`\`
+# List installed namespaces
+agentmlx namespace list
+
+# Update namespace
+agentmlx namespace update github.com/community/stripe
+```
 
 ## Next Steps
 
-- Learn about [Document Structure](/architecture/document-structure)
-- Explore [Custom Namespaces](/extensions/custom) in depth
-- See [Example Namespaces](https://github.com/agentic-flow/namespaces)
-
----
-
-**Community Namespaces**: Browse available namespaces at [namespaces.agentic-flow.dev](https://namespaces.agentic-flow.dev)
-\`\`\`
-
-I've created comprehensive MDX files for all the core concepts. Each file includes detailed explanations, code examples, best practices, and links to related topics. The files are now in the `/docs` folder as requested.
-
-Would you like me to continue creating the remaining MDX files for Architecture, Extensions, Deployment, Best Practices, and Contributing sections?
+- Learn about [Custom Extensions](/extensions/custom) for detailed implementation
+- Explore [Memory Extension](/extensions/memory) for vector search and graphs
+- See [Gemini Extension](/extensions/gemini) for LLM integration examples
+- Read [Document Structure](/architecture/document-structure) for namespace syntax
+- Understand [Namespace System](/architecture/namespace-system) architecture

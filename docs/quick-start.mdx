@@ -1,293 +1,350 @@
 ---
 title: "Quick Start"
-description: "Build your first Agentic Flow application in 5 minutes"
+description: "Build your first AgentML agent in 5 minutes"
 ---
 
 # Quick Start
 
-Build your first Agentic Flow application in just 5 minutes. This guide walks you through creating a simple chatbot that demonstrates the core concepts.
+Build your first AgentML agent in just 5 minutes. This guide walks you through creating a simple chatbot that demonstrates the core concepts of AgentML and W3C SCXML.
 
-## Your First AF Document
+## Prerequisites
 
-Create a file called `chatbot.af`:
+Make sure you have [installed agentmlx](/installation) before proceeding.
 
-\`\`\`
-import: std/llm
-import: std/state
+## Your First Agent
 
-state: idle
-  on: user.message
-    llm.chat:
-      model: gpt-4
-      system: "You are a helpful assistant"
-      message: event.content
-    transition: responding
+Create a file called `chatbot.aml`:
 
-state: responding
-  on: llm.response
-    emit: bot.message
-      content: event.text
-    transition: idle
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <datamodel>
+    <data id="user_input" expr="''" />
+    <data id="response" expr="''" />
+  </datamodel>
+
+  <state id="awaiting_input">
+    <transition event="user.message" target="processing">
+      <assign location="user_input" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <state id="processing">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'You are a helpful assistant. User said: ' + user_input" />
+    </onentry>
+
+    <transition event="action.response" target="responding">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <state id="responding">
+    <onentry>
+      <log expr="'Bot: ' + response" />
+    </onentry>
+    <transition target="awaiting_input" />
+  </state>
+</agent>
+```
 
 ## Understanding the Code
 
-Let's break down what's happening:
+Let's break down each part of this agent:
 
-### Imports
+### Root Element
 
-\`\`\`
-import: std/llm
-import: std/state
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+```
 
-We import two standard namespaces:
-- `std/llm`: Provides LLM integration
-- `std/state`: Enables state machine functionality
+- `<agent>` is the root element for AgentML files (extends W3C SCXML's `<scxml>`)
+- `xmlns` declares the default namespace
+- `datamodel="ecmascript"` specifies we're using JavaScript for expressions
+- `import:gemini` imports the Gemini LLM namespace
+
+### Data Model
+
+```xml
+<datamodel>
+  <data id="user_input" expr="''" />
+  <data id="response" expr="''" />
+</datamodel>
+```
+
+The datamodel holds the agent's state variables. Think of this as the agent's memory.
 
 ### State Machine
 
-\`\`\`
-state: idle
-  on: user.message
-    ...
-\`\`\`
+```xml
+<state id="awaiting_input">
+  <transition event="user.message" target="processing">
+    <assign location="user_input" expr="_event.data.message" />
+  </transition>
+</state>
+```
 
-We define states and event handlers. The chatbot starts in the `idle` state and responds to `user.message` events.
+States define what the agent is doing. Transitions move between states when events occur.
 
 ### LLM Integration
 
-\`\`\`
-llm.chat:
-  model: gpt-4
-  system: "You are a helpful assistant"
-  message: event.content
-\`\`\`
+```xml
+<gemini:generate
+  model="gemini-2.0-flash-exp"
+  location="_event"
+  promptexpr="'You are a helpful assistant. User said: ' + user_input" />
+```
 
-When a user message arrives, we call the LLM with the message content.
+The `<gemini:generate>` action calls the Gemini LLM. Results are stored in `_event`.
 
-### Event Emission
+## Running Your Agent
 
-\`\`\`
-emit: bot.message
-  content: event.text
-\`\`\`
+Set your Gemini API key:
 
-When the LLM responds, we emit a `bot.message` event with the response.
+```bash
+export GEMINI_API_KEY=your_api_key_here
+```
 
-## Running Your Application
+Run the agent:
 
-### Node.js
+```bash
+agentmlx run chatbot.aml --initial-event '{"type":"user.message","data":{"message":"Hello!"}}' --verbose
+```
 
-Create `index.js`:
+You should see output showing the agent's state transitions and the LLM response.
 
-\`\`\`javascript
-import { AgenticFlow } from 'agentic-flow';
-import fs from 'fs';
+## Adding Schema Validation
 
-// Load the document
-const document = fs.readFileSync('chatbot.af', 'utf-8');
+Let's enhance our agent with event schema validation to ensure type safety:
 
-// Create AF instance
-const af = new AgenticFlow();
-await af.loadDocument(document);
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-// Handle bot messages
-af.on('bot.message', (event) => {
-  console.log('Bot:', event.content);
-});
+  <datamodel>
+    <data id="user_input" expr="''" />
+    <data id="response" expr="''" />
+  </datamodel>
 
-// Send a user message
-await af.emit('user.message', {
-  content: 'Hello! How are you?'
-});
-\`\`\`
+  <state id="awaiting_input">
+    <transition event="user.message"
+                event:schema='{
+                  "type": "object",
+                  "description": "User message event",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "The user's message text"
+                    }
+                  },
+                  "required": ["message"]
+                }'
+                target="processing">
+      <assign location="user_input" expr="_event.data.message" />
+    </transition>
+  </state>
 
-Run it:
+  <state id="processing">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'You are a helpful assistant. User said: ' + user_input" />
+    </onentry>
 
-\`\`\`bash
-node index.js
-\`\`\`
+    <transition event="action.response"
+                event:schema='{
+                  "type": "object",
+                  "description": "LLM response event",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "The assistant's response"
+                    }
+                  },
+                  "required": ["message"]
+                }'
+                target="responding">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
+  </state>
 
-### Python
+  <state id="responding">
+    <onentry>
+      <log expr="'Bot: ' + response" />
+    </onentry>
+    <transition target="awaiting_input" />
+  </state>
+</agent>
+```
 
-Create `main.py`:
+The `event:schema` attribute validates incoming events against JSON Schema, ensuring data integrity.
 
-\`\`\`python
-from agentic_flow import AgenticFlow
+## Building a Multi-Intent Agent
 
-# Load the document
-with open('chatbot.af', 'r') as f:
-    document = f.read()
+Let's create a more sophisticated agent that can handle different user intents:
 
-# Create AF instance
-af = AgenticFlow()
-af.load_document(document)
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-# Handle bot messages
-@af.on('bot.message')
-def handle_bot_message(event):
-    print(f"Bot: {event['content']}")
+  <datamodel>
+    <data id="user_input" expr="''" />
+    <data id="response" expr="''" />
+  </datamodel>
 
-# Send a user message
-af.emit('user.message', {
-    'content': 'Hello! How are you?'
-})
-\`\`\`
+  <state id="awaiting_input">
+    <transition event="user.message" target="classify_intent">
+      <assign location="user_input" expr="_event.data.message" />
+    </transition>
+  </state>
 
-Run it:
+  <state id="classify_intent">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Classify the intent as greeting, question, or farewell: ' + user_input" />
+    </onentry>
 
-\`\`\`bash
-python main.py
-\`\`\`
+    <transition event="intent.greeting" target="handle_greeting" />
+    <transition event="intent.question" target="handle_question" />
+    <transition event="intent.farewell" target="handle_farewell" />
+    <transition target="handle_unknown" />
+  </state>
 
-## Adding Memory
+  <state id="handle_greeting">
+    <onentry>
+      <assign location="response" expr="'Hello! How can I help you today?'" />
+    </onentry>
+    <transition target="responding" />
+  </state>
 
-Let's enhance our chatbot with conversation memory:
+  <state id="handle_question">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Answer this question: ' + user_input" />
+    </onentry>
+    <transition event="action.response" target="responding">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
+  </state>
 
-\`\`\`
-import: std/llm
-import: std/state
-import: std/memory
+  <state id="handle_farewell">
+    <onentry>
+      <assign location="response" expr="'Goodbye! Have a great day!'" />
+    </onentry>
+    <transition target="final_state" />
+  </state>
 
-state: idle
-  on: user.message
-    # Store the message
-    memory.store:
-      key: "conversation"
-      value: event.content
-    
-    # Get conversation history
-    memory.get:
-      key: "conversation"
-    
-    transition: processing
+  <state id="handle_unknown">
+    <onentry>
+      <assign location="response" expr="'I\'m not sure how to help with that.'" />
+    </onentry>
+    <transition target="responding" />
+  </state>
 
-state: processing
-  on: memory.retrieved
-    llm.chat:
-      model: gpt-4
-      system: "You are a helpful assistant"
-      context: event.value
-      message: event.content
-    transition: responding
+  <state id="responding">
+    <onentry>
+      <log expr="'Bot: ' + response" />
+    </onentry>
+    <transition target="awaiting_input" />
+  </state>
 
-state: responding
-  on: llm.response
-    emit: bot.message
-      content: event.text
-    transition: idle
-\`\`\`
+  <final id="final_state" />
+</agent>
+```
 
-## Adding Error Handling
+## Validating Your Agent
 
-Make your chatbot more robust:
+Before running your agent, validate it for errors:
 
-\`\`\`
-import: std/llm
-import: std/state
-import: std/error
+```bash
+agentmlx validate chatbot.aml
+```
 
-state: idle
-  on: user.message
-    llm.chat:
-      model: gpt-4
-      system: "You are a helpful assistant"
-      message: event.content
-    transition: responding
+The validator provides compiler-like error messages to help you fix issues:
 
-state: responding
-  on: llm.response
-    emit: bot.message
-      content: event.text
-    transition: idle
-  
-  on: llm.error
-    error.log:
-      message: "LLM request failed"
-      error: event.error
-    emit: bot.message
-      content: "Sorry, I encountered an error"
-    transition: idle
-\`\`\`
+```
+chatbot.aml:15:5: WARNING[W340] State 'processing' has only conditional transitions and may deadlock
+  hint: Add an unconditional fallback transition
+  hint: Example: <transition target="error_state" />
+```
 
-## Interactive Example
+## Debugging with Snapshots
 
-Let's create a more interactive chatbot with a CLI:
+Save runtime snapshots to debug your agent's execution:
 
-\`\`\`javascript
-import { AgenticFlow } from 'agentic-flow';
-import readline from 'readline';
-import fs from 'fs';
+```bash
+agentmlx run chatbot.aml \
+  --initial-event '{"type":"user.message","data":{"message":"Hello!"}}' \
+  --save-snapshots ./debug \
+  --snapshot-interval 1
+```
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+This creates XML snapshots showing the agent's state at each step.
 
-// Load document
-const document = fs.readFileSync('chatbot.af', 'utf-8');
-const af = new AgenticFlow();
-await af.loadDocument(document);
+## Testing Your Agent
 
-// Handle bot responses
-af.on('bot.message', (event) => {
-  console.log('\nBot:', event.content, '\n');
-  promptUser();
-});
+Run W3C conformance tests to ensure your agent follows SCXML standards:
 
-// Prompt for user input
-function promptUser() {
-  rl.question('You: ', async (input) => {
-    if (input.toLowerCase() === 'exit') {
-      rl.close();
-      return;
-    }
-    
-    await af.emit('user.message', {
-      content: input
-    });
-  });
-}
-
-console.log('Chatbot ready! Type "exit" to quit.\n');
-promptUser();
-\`\`\`
+```bash
+agentmlx test conformance
+```
 
 ## Next Steps
 
-Congratulations! You've built your first Agentic Flow application. Here's what to explore next:
+Congratulations! You've built your first AgentML agent. Here's what to explore next:
 
 ### Learn Core Concepts
 
+- [Event-Driven LLM](/concepts/event-driven-llm) - Understand event-based architecture
 - [State Machines](/concepts/state-machines) - Build complex workflows
 - [Events & Schemas](/concepts/events-schemas) - Structure your data
-- [Namespaces](/concepts/namespaces) - Organize functionality
+- [Token Efficiency](/concepts/token-efficiency) - Optimize LLM costs
 
 ### Explore Architecture
 
-- [Document Structure](/architecture/document-structure) - Deep dive into AF documents
-- [Interpreter](/architecture/interpreter) - How execution works
-- [I/O Processors](/architecture/io-processors) - External integrations
+- [Document Structure](/architecture/document-structure) - Deep dive into AgentML syntax
+- [Namespace System](/architecture/namespace-system) - Extend functionality
+- [Interpreter](/architecture/interpreter) - How agentmlx works
+- [I/O Processors](/architecture/io-processors) - External communications
 
-### Build Real Applications
+### Add Extensions
 
-- [Extensions](/extensions) - Add Gemini, Memory, Ollama
-- [Best Practices](/best-practices) - Production-ready patterns
-- [Deployment](/deployment/interoperability) - Ship to production
+- [Gemini Extension](/extensions/gemini) - Google's Gemini models
+- [Ollama Extension](/extensions/ollama) - Local LLM integration
+- [Memory Extension](/extensions/memory) - Vector search and graph database
+- [Custom Extensions](/extensions/custom) - Build your own
+
+### Deploy Your Agent
+
+- [Docker Deployment](/deployment/docker) - Containerize your agent
+- [Self-Hosted](/deployment/self-hosted) - Run on your infrastructure
+- [Vercel](/deployment/vercel) - Deploy to the edge
 
 ## Example Projects
 
-Check out these complete examples:
+Check out complete example agents:
 
-- **Customer Support Bot**: Multi-turn conversations with context
-- **Data Analysis Agent**: Process and analyze data with LLMs
-- **Workflow Automation**: Complex multi-step workflows
+- **Customer Support Bot**: [examples/customer_support/](https://github.com/agentflare-ai/agentml/tree/main/examples/customer_support)
+- **Flight Booking Agent**: [examples/flight_booking/](https://github.com/agentflare-ai/agentml/tree/main/examples/flight_booking)
+- **Data Analysis Agent**: Multi-step analysis workflows
 - **RAG Application**: Retrieval-augmented generation
 
-Find them at [github.com/agentic-flow/examples](https://github.com/agentic-flow/examples)
+Find them at [github.com/agentflare-ai/agentml/tree/main/examples](https://github.com/agentflare-ai/agentml/tree/main/examples)
 
 ---
 
-**Questions?** Join our [Discord community](https://discord.gg/agentic-flow) for help and discussions.
-\`\`\`
+**Questions?** Join the [GitHub Discussions](https://github.com/agentflare-ai/agentml/discussions) for help and community support.

@@ -1,529 +1,453 @@
 ---
 title: "Events & Schemas"
-description: "Structure your data with events and schemas for type-safe applications"
+description: "Structure your data with event:schema validation for type-safe AgentML agents"
 ---
 
 # Events & Schemas
 
-Events are the primary communication mechanism in Agentic Flow. Schemas ensure your events are well-structured and validated.
-
-## Understanding Events
-
-### What Are Events?
-
-Events are messages that flow through your application:
-
-\`\`\`
-# Emit an event
-emit: user.message
-  content: "Hello, world!"
-  timestamp: 1234567890
-  userId: "user123"
-
-# Handle an event
-on: user.message
-  process: event.content
-\`\`\`
-
-### Event Naming
-
-Use dot notation for hierarchical event names:
-
-\`\`\`
-user.message          # User sent a message
-user.login            # User logged in
-user.logout           # User logged out
-
-llm.request           # LLM request started
-llm.response          # LLM response received
-llm.error             # LLM request failed
-
-system.startup        # System started
-system.shutdown       # System shutting down
-\`\`\`
-
-### Event Data
-
-Events carry data in their payload:
-
-\`\`\`
-emit: user.message
-  content: "What's the weather?"
-  metadata:
-    userId: "user123"
-    timestamp: 1234567890
-    channel: "web"
-\`\`\`
-
-Access event data with `event.*`:
-
-\`\`\`
-on: user.message
-  log: event.content
-  process:
-    user: event.metadata.userId
-    message: event.content
-\`\`\`
-
-## Defining Schemas
-
-### Basic Schema
-
-Define schemas to validate event data:
-
-\`\`\`
-schema: UserMessage
-  content: string
-  userId: string
-  timestamp: number
-
-on: user.message
-  validate: UserMessage
-  process: event.content
-\`\`\`
-
-### Schema Types
-
-Supported data types:
-
-\`\`\`
-schema: CompleteExample
-  # Primitives
-  name: string
-  age: number
-  active: boolean
-  
-  # Arrays
-  tags: string[]
-  scores: number[]
-  
-  # Objects
-  metadata:
-    created: number
-    updated: number
-  
-  # Optional fields
-  nickname?: string
-  
-  # Enums
-  status: "active" | "inactive" | "pending"
-\`\`\`
-
-### Nested Schemas
-
-Create reusable nested schemas:
-
-\`\`\`
-schema: Address
-  street: string
-  city: string
-  zipCode: string
-
-schema: User
-  name: string
-  email: string
-  address: Address
-\`\`\`
-
-### Array Schemas
-
-Define arrays of objects:
-
-\`\`\`
-schema: Message
-  content: string
-  timestamp: number
-
-schema: Conversation
-  messages: Message[]
-  participants: string[]
-\`\`\`
-
-## Schema Validation
-
-### Automatic Validation
-
-Validate events automatically:
-
-\`\`\`
-schema: UserMessage
-  content: string
-  userId: string
-
-on: user.message
-  validate: UserMessage
-  # Only executes if validation passes
-  process: event.content
-\`\`\`
-
-### Validation Errors
-
-Handle validation failures:
-
-\`\`\`
-on: user.message
-  validate: UserMessage
-  
-on: validation.error
-  emit: error.occurred
-    message: "Invalid message format"
-    errors: event.errors
-\`\`\`
-
-### Custom Validation
-
-Add custom validation rules:
-
-\`\`\`
-schema: UserMessage
-  content: string
-  userId: string
-  
-  validate:
-    content.length > 0
-    content.length < 1000
-    userId.startsWith("user_")
-\`\`\`
-
-## Event Patterns
-
-### Request-Response
-
-Implement request-response patterns:
-
-\`\`\`
-# Request
-emit: llm.request
-  prompt: "What is 2+2?"
-  requestId: "req123"
-
-# Response
-on: llm.response
-  if: event.requestId == "req123"
-    emit: calculation.complete
-      result: event.text
-\`\`\`
-
-### Event Chaining
-
-Chain events together:
-
-\`\`\`
-on: user.message
-  emit: message.received
-    content: event.content
-
-on: message.received
-  emit: message.processing
-    content: event.content
-
-on: message.processing
-  emit: message.complete
-    result: "processed"
-\`\`\`
-
-### Event Filtering
-
-Filter events based on conditions:
-
-\`\`\`
-on: user.message
-  if: event.content.includes("urgent")
-    emit: priority.message
-      content: event.content
-  else:
-    emit: normal.message
-      content: event.content
-\`\`\`
-
-## Built-in Events
-
-### System Events
-
-Agentic Flow emits system events:
-
-\`\`\`
-on: system.startup
-  log: "Application started"
-
-on: system.shutdown
-  log: "Application shutting down"
-
-on: system.error
-  log: event.error
-\`\`\`
-
-### State Events
-
-State machine events:
-
-\`\`\`
-on: state.enter
-  log: "Entered state: " + event.state
-
-on: state.exit
-  log: "Exited state: " + event.state
-
-on: state.transition
-  log: event.from + " -> " + event.to
-\`\`\`
-
-### Namespace Events
-
-Events from namespaces:
-
-\`\`\`
-on: llm.request.started
-  log: "LLM request started"
-
-on: llm.request.completed
-  log: "LLM request completed"
-
-on: llm.request.failed
-  log: "LLM request failed"
-\`\`\`
-
-## Event Lifecycle
-
-### Event Flow
-
-Understanding how events flow:
-
-\`\`\`
-1. Event emitted
-   ↓
-2. Schema validation (if defined)
-   ↓
-3. Event handlers triggered
-   ↓
-4. Actions executed
-   ↓
-5. New events emitted (if any)
-\`\`\`
-
-### Event Queue
-
-Events are processed in order:
-
-\`\`\`
-emit: event.1
-emit: event.2
-emit: event.3
-
-# Processed in order: 1, 2, 3
-\`\`\`
-
-### Event Priority
-
-Set event priority:
-
-\`\`\`
-emit: high.priority
-  priority: 10
-  content: "Important!"
-
-emit: low.priority
-  priority: 1
-  content: "Not urgent"
-\`\`\`
-
-## Advanced Patterns
-
-### Event Aggregation
-
-Aggregate multiple events:
-
-\`\`\`
-schema: UserAction
-  action: string
-  timestamp: number
-
-on: user.click
-  emit: user.action
-    action: "click"
-    timestamp: now()
-
-on: user.scroll
-  emit: user.action
-    action: "scroll"
-    timestamp: now()
-
-# Aggregate all user actions
-on: user.action
-  aggregate:
-    window: 1m
-    emit: user.activity.summary
-\`\`\`
-
-### Event Transformation
-
-Transform event data:
-
-\`\`\`
-on: user.message
-  transform:
-    content: event.content.toLowerCase()
-    words: event.content.split(" ")
-  emit: message.processed
-    content: transformed.content
-    wordCount: transformed.words.length
-\`\`\`
-
-### Event Routing
-
-Route events to different handlers:
-
-\`\`\`
-on: user.message
-  route:
-    if: event.content.startsWith("/")
-      emit: command.received
-        command: event.content
-    else:
-      emit: message.received
-        content: event.content
-\`\`\`
-
-## Schema Best Practices
-
-### Use Descriptive Names
-
-\`\`\`
-# Good
-schema: UserRegistrationRequest
-schema: LLMChatResponse
-schema: PaymentProcessedEvent
-
-# Bad
-schema: Data
-schema: Thing
-schema: Obj
-\`\`\`
-
-### Keep Schemas Focused
-
-\`\`\`
-# Good - focused schema
-schema: UserMessage
-  content: string
-  userId: string
-  timestamp: number
-
-# Bad - too many responsibilities
-schema: Everything
-  userContent: string
-  userId: string
-  llmResponse: string
-  systemStatus: string
-  errorMessage: string
-\`\`\`
-
-### Version Your Schemas
-
-\`\`\`
-schema: UserMessageV1
-  content: string
-  userId: string
-
-schema: UserMessageV2
-  content: string
-  userId: string
-  timestamp: number
-  metadata: object
-\`\`\`
-
-### Document Complex Schemas
-
-\`\`\`
-schema: PaymentRequest
-  # Amount in cents (e.g., 1000 = $10.00)
-  amount: number
-  
-  # ISO 4217 currency code
-  currency: string
-  
-  # Customer identifier
-  customerId: string
-\`\`\`
-
-## Testing Events
-
-### Unit Testing
-
-\`\`\`javascript
-import { AgenticFlow } from 'agentic-flow';
-
-test('emits correct event', async () => {
-  const af = new AgenticFlow();
-  await af.loadDocument(document);
-  
-  const events = [];
-  af.on('bot.message', (event) => {
-    events.push(event);
-  });
-  
-  await af.emit('user.message', { content: 'Hello' });
-  
-  expect(events).toHaveLength(1);
-  expect(events[0].content).toBeDefined();
-});
-\`\`\`
-
-### Schema Testing
-
-\`\`\`javascript
-test('validates schema correctly', async () => {
-  const af = new AgenticFlow();
-  await af.loadDocument(document);
-  
-  // Valid event
-  await expect(
-    af.emit('user.message', {
-      content: 'Hello',
-      userId: 'user123',
-      timestamp: 1234567890
-    })
-  ).resolves.not.toThrow();
-  
-  // Invalid event
-  await expect(
-    af.emit('user.message', {
-      content: 'Hello'
-      // Missing required fields
-    })
-  ).rejects.toThrow();
-});
-\`\`\`
-
-## Debugging Events
-
-### Event Logging
-
-\`\`\`
-on: user.message
-  log: "Received message: " + event.content
-  log: "From user: " + event.userId
-\`\`\`
-
-### Event Tracing
-
-Enable event tracing:
-
-\`\`\`javascript
-const af = new AgenticFlow({ trace: true });
-
-af.on('event.emitted', (event) => {
-  console.log('Event:', event.type, event.data);
-});
-\`\`\`
+AgentML uses JSON Schema to validate events, ensuring type safety and guiding LLMs to generate correctly structured data. The `event:schema` attribute is a key feature that makes agents reliable and predictable.
+
+## Understanding Events in AgentML
+
+Events are the primary communication mechanism in W3C SCXML state machines. In AgentML, events trigger state transitions and carry data payloads.
+
+### Event Structure
+
+Every event has:
+- **Name**: Dot-separated hierarchical identifier (e.g., `user.message.text`)
+- **Data**: JSON payload with the event's information
+- **Origin**: Source of the event (IOProcessor, internal raise, etc.)
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <state id="idle">
+    <!-- Event: user.message -->
+    <!-- Data: { message: "Hello", userId: "user123" } -->
+    <transition event="user.message" target="processing">
+      <assign location="userInput" expr="_event.data.message" />
+      <assign location="userId" expr="_event.data.userId" />
+    </transition>
+  </state>
+</agent>
+```
+
+### Event Naming Conventions
+
+Use dot-separated namespaces for hierarchical organization:
+
+```xml
+<!-- Good: Hierarchical, specific -->
+<transition event="user.message.text" target="handle_text" />
+<transition event="user.message.voice" target="handle_voice" />
+<transition event="llm.response.complete" target="process_response" />
+<transition event="error.network.timeout" target="retry" />
+
+<!-- Avoid: Flat, ambiguous -->
+<transition event="message" target="handle" />
+<transition event="done" target="next" />
+```
+
+Event matching supports wildcards:
+- `user.message` matches `user.message`, `user.message.text`, `user.message.voice`
+- `user.message.text` matches only `user.message.text`
+
+## Schema-Guided Events
+
+The `event:schema` attribute validates events against JSON Schema, providing:
+
+- **Type Safety**: Ensure data has correct types
+- **LLM Guidance**: Descriptions guide LLM output generation
+- **Runtime Validation**: Catch errors before they propagate
+- **Documentation**: Schemas document expected data structure
+
+### Basic Schema Validation
+
+```xml
+<transition event="intent.greeting"
+            event:schema='{
+              "type": "object",
+              "description": "Greeting intent from user",
+              "properties": {
+                "greeting_type": {
+                  "type": "string",
+                  "enum": ["hello", "hi", "hey"],
+                  "description": "Type of greeting"
+                },
+                "formality": {
+                  "type": "string",
+                  "enum": ["casual", "formal"],
+                  "description": "Formality level"
+                }
+              },
+              "required": ["greeting_type"]
+            }'
+            target="respond_greeting" />
+```
+
+### Complete Schema Example
+
+```xml
+<transition event="intent.flight"
+            event:schema='{
+              "type": "object",
+              "description": "Flight booking intent extracted from user message",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "enum": ["search", "book", "cancel", "modify"],
+                  "description": "The flight action to perform"
+                },
+                "departure": {
+                  "type": "object",
+                  "description": "Departure information",
+                  "properties": {
+                    "location": {
+                      "type": "string",
+                      "description": "Departure city or airport code (e.g., SFO, New York)"
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date",
+                      "description": "Departure date in YYYY-MM-DD format"
+                    },
+                    "time": {
+                      "type": "string",
+                      "description": "Preferred departure time (e.g., morning, 2pm, evening)"
+                    }
+                  },
+                  "required": ["location", "date"]
+                },
+                "arrival": {
+                  "type": "object",
+                  "description": "Arrival information",
+                  "properties": {
+                    "location": {
+                      "type": "string",
+                      "description": "Arrival city or airport code"
+                    }
+                  },
+                  "required": ["location"]
+                },
+                "passengers": {
+                  "type": "number",
+                  "minimum": 1,
+                  "description": "Number of passengers"
+                },
+                "class": {
+                  "type": "string",
+                  "enum": ["economy", "business", "first"],
+                  "description": "Cabin class preference"
+                }
+              },
+              "required": ["action", "departure", "arrival"]
+            }'
+            target="handle_flight" />
+```
+
+**Critical**: Always include `description` fields at both schema and property levels. These descriptions are the primary mechanism for guiding LLMs.
+
+## External Schema Files
+
+For maintainability, define schemas in separate JSON or YAML files:
+
+### JSON Schema File
+
+**schemas/events.json:**
+```json
+{
+  "components": {
+    "schemas": {
+      "FlightIntent": {
+        "type": "object",
+        "description": "Flight booking intent from user",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["search", "book", "cancel"],
+            "description": "The flight action to perform"
+          },
+          "from": {
+            "type": "string",
+            "description": "Departure location"
+          },
+          "to": {
+            "type": "string",
+            "description": "Arrival location"
+          }
+        },
+        "required": ["action", "from", "to"]
+      },
+      "GreetingIntent": {
+        "type": "object",
+        "description": "Greeting from user",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["hello", "goodbye"],
+            "description": "Greeting type"
+          }
+        },
+        "required": ["type"]
+      }
+    }
+  }
+}
+```
+
+### Using External Schemas
+
+Reference external schemas with JSON Pointer (RFC 6901):
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:events="./schemas/events.json">
+
+  <state id="classify_intent">
+    <!-- Reference using namespace:pointer syntax -->
+    <transition event="intent.flight"
+                event:schema="events:#/components/schemas/FlightIntent"
+                target="handle_flight" />
+
+    <transition event="intent.greeting"
+                event:schema="events:#/components/schemas/GreetingIntent"
+                target="handle_greeting" />
+  </state>
+</agent>
+```
+
+### OpenAPI Schemas
+
+You can also import OpenAPI specifications:
+
+**schemas/api.yaml:**
+```yaml
+openapi: 3.0.0
+components:
+  schemas:
+    UserMessage:
+      type: object
+      description: User message payload
+      properties:
+        message:
+          type: string
+          description: The message text
+        userId:
+          type: string
+          description: User identifier
+      required:
+        - message
+        - userId
+```
+
+**agent.aml:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:api="./schemas/api.yaml">
+
+  <transition event="user.message"
+              event:schema="api:#/components/schemas/UserMessage"
+              target="processing" />
+</agent>
+```
+
+## Accessing Event Data
+
+Use the `_event` system variable to access event data:
+
+```xml
+<state id="process">
+  <onentry>
+    <!-- Access event name -->
+    <log expr="'Event type: ' + _event.name" />
+
+    <!-- Access event data -->
+    <assign location="message" expr="_event.data.message" />
+    <assign location="userId" expr="_event.data.userId" />
+
+    <!-- Access origin -->
+    <log expr="'Event from: ' + _event.origin" />
+
+    <!-- Access nested properties -->
+    <assign location="departure" expr="_event.data.flight.departure" />
+  </onentry>
+</state>
+```
+
+## Schema Validation Patterns
+
+### Required vs Optional Fields
+
+```xml
+<transition event="user.profile"
+            event:schema='{
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "User full name (required)"
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email",
+                  "description": "User email address (required)"
+                },
+                "phone": {
+                  "type": "string",
+                  "description": "Phone number (optional)"
+                },
+                "age": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "User age (optional)"
+                }
+              },
+              "required": ["name", "email"]
+            }'
+            target="process_profile" />
+```
+
+### Array Validation
+
+```xml
+<transition event="order.items"
+            event:schema='{
+              "type": "object",
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "description": "List of items in order",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "productId": {
+                        "type": "string",
+                        "description": "Product identifier"
+                      },
+                      "quantity": {
+                        "type": "number",
+                        "minimum": 1,
+                        "description": "Quantity ordered"
+                      }
+                    },
+                    "required": ["productId", "quantity"]
+                  },
+                  "minItems": 1
+                }
+              },
+              "required": ["items"]
+            }'
+            target="process_order" />
+```
+
+### Enum Constraints
+
+```xml
+<transition event="status.update"
+            event:schema='{
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": ["pending", "processing", "completed", "failed"],
+                  "description": "Current status of the task"
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": ["low", "medium", "high", "urgent"],
+                  "description": "Task priority level"
+                }
+              },
+              "required": ["status"]
+            }'
+            target="update_status" />
+```
+
+## Raising Events
+
+Generate events internally with `<raise>`:
+
+```xml
+<state id="validate">
+  <onentry>
+    <if cond="userInput.length > 0">
+      <raise event="validation.success">
+        <param name="input" expr="userInput" />
+      </raise>
+    <else/>
+      <raise event="validation.failed">
+        <param name="error" expr="'Input cannot be empty'" />
+      </raise>
+    </if>
+  </onentry>
+
+  <transition event="validation.success" target="process" />
+  <transition event="validation.failed" target="request_input" />
+</state>
+```
+
+## Sending External Events
+
+Send events to external systems with `<send>`:
+
+```xml
+<state id="notify">
+  <onentry>
+    <send event="task.assigned"
+          target="https://api.example.com/webhooks"
+          type="github.com/agentflare-ai/agentml/ioprocessor/http">
+      <param name="taskId" expr="currentTask.id" />
+      <param name="assignee" expr="currentTask.assignee" />
+      <param name="priority" expr="currentTask.priority" />
+    </send>
+  </onentry>
+
+  <transition event="task.acknowledged" target="confirmed" />
+</state>
+```
+
+## Best Practices
+
+1. **Always provide descriptions**: LLMs rely on descriptions to generate correct data
+2. **Use specific event names**: `user.message.text` not `message`
+3. **Define required fields**: Make required fields explicit in schema
+4. **Use enums for limited options**: Constrain values to valid choices
+5. **External schemas for reuse**: Define schemas once, reference multiple times
+6. **Version your schemas**: Include version info for breaking changes
+7. **Document edge cases**: Note special values or formats in descriptions
+8. **Validate early**: Use schemas on all external event sources
+9. **Test schema coverage**: Ensure all transitions have appropriate schemas
+10. **Keep schemas focused**: One schema per event type
+
+## Error Handling
+
+Handle schema validation failures:
+
+```xml
+<state id="processing">
+  <transition event="user.input"
+              event:schema='{"type": "object", "properties": {"message": {"type": "string"}}, "required": ["message"]}'
+              target="valid_input" />
+
+  <!-- Catch validation errors -->
+  <transition event="error.execution.validation" target="invalid_input">
+    <assign location="validationError" expr="_event.data" />
+  </transition>
+</state>
+
+<state id="invalid_input">
+  <onentry>
+    <log expr="'Invalid input: ' + validationError.message" />
+  </onentry>
+  <transition target="awaiting_input" />
+</state>
+```
 
 ## Next Steps
 
-- Learn about [Token Efficiency](/concepts/token-efficiency) for optimizing LLM usage
-- Explore [Namespaces](/concepts/namespaces) for organizing functionality
-- Read [Schema Management](/best-practices/schema-management) best practices
-
----
-
-**Examples**: Check out [event patterns](https://github.com/agentic-flow/examples/events) in our GitHub repository.
-\`\`\`
+- Learn about [Namespaces](/concepts/namespaces) for extending functionality
+- Explore [Token Efficiency](/concepts/token-efficiency) for cost optimization
+- Read [Document Structure](/architecture/document-structure) for syntax details
+- See [Namespace System](/architecture/namespace-system) for external schema loading

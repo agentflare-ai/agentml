@@ -1,259 +1,453 @@
 ---
 title: "Document Structure"
-description: "Understanding the ActiveDocs document architecture"
+description: "Understanding AgentML document structure with the <agent> root element"
 ---
 
 # Document Structure
 
-ActiveDocs documents are the core building blocks of the framework. Understanding their structure is essential for building effective applications.
+AgentML documents use XML syntax based on W3C SCXML, with an `<agent>` root element that extends the standard `<scxml>` specification. Understanding this structure is essential for building effective agents.
 
-## Document Anatomy
+## The `<agent>` Root Element
 
-An ActiveDocs document consists of several key components:
+The `<agent>` element is the root of every AgentML document. It extends SCXML's `<scxml>` element with AgentML-specific features:
 
-\`\`\`typescript
-import: activedocs/core
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-const document = createDocument({
-  namespace: 'myapp',
-  state: {
-    // Initial state
-    content: '',
-    status: 'idle'
-  },
-  schema: {
-    // State validation schema
-    content: z.string(),
-    status: z.enum(['idle', 'processing', 'complete'])
-  },
-  handlers: {
-    // Event handlers
-    'llm:complete': async (event) => {
-      // Handle completion
-    }
-  }
-})
-\`\`\`
+  <!-- Document content -->
 
-## Core Components
+</agent>
+```
 
-### Namespace
+### Required Attributes
 
-The namespace identifies the document and isolates its state:
+**xmlns** - The default namespace URI:
+```xml
+xmlns="github.com/agentflare-ai/agentml/agent"
+```
 
-\`\`\`typescript
-import: activedocs/core
+This identifies the document as an AgentML agent.
 
-// Each namespace is isolated
-const doc1 = createDocument({ namespace: 'app1' })
-const doc2 = createDocument({ namespace: 'app2' })
+### Standard SCXML Attributes
 
-// These don't interfere with each other
-doc1.setState({ value: 'A' })
-doc2.setState({ value: 'B' })
-\`\`\`
+**datamodel** - The scripting language for expressions:
+```xml
+datamodel="ecmascript"  <!-- JavaScript/ECMAScript -->
+```
 
-### State
+AgentML currently supports ECMAScript (JavaScript) as the datamodel language.
 
-State holds the current data for the document:
+**name** - Optional agent identifier:
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       name="customer-support-bot"
+       datamodel="ecmascript">
+```
 
-\`\`\`typescript
-import: activedocs/core
+**initial** - Initial state (if not using document order):
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       initial="awaiting_input">
 
-const document = createDocument({
-  namespace: 'myapp',
-  state: {
-    messages: [],
-    currentUser: null,
-    isLoading: false
-  }
-})
+  <state id="awaiting_input">...</state>
+  <state id="processing">...</state>
+</agent>
+```
 
-// Update state
-document.setState({
-  isLoading: true
-})
+### Namespace Imports
 
-// Get state
-const state = document.getState()
-\`\`\`
+**import:prefix="uri"** - Import external namespaces:
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:memory="github.com/agentflare-ai/agentml/memory"
+       import:events="./schemas/events.json">
+```
 
-### Schema
+The `import:` prefix declares namespace imports. Each import maps a prefix to a URI.
 
-Schemas validate state changes and ensure data integrity:
+## Document Components
 
-\`\`\`typescript
-import: activedocs/core
-import: zod
+### 1. Datamodel
 
-const document = createDocument({
-  namespace: 'myapp',
-  schema: {
-    messages: z.array(z.object({
-      id: z.string(),
-      content: z.string(),
-      timestamp: z.number()
-    })),
-    currentUser: z.object({
-      id: z.string(),
-      name: z.string()
-    }).nullable(),
-    isLoading: z.boolean()
-  }
-})
+The `<datamodel>` element defines the agent's variables:
 
-// This will throw an error
-document.setState({
-  isLoading: 'yes' // Type error: expected boolean
-})
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-### Handlers
+  <datamodel>
+    <data id="user_input" expr="''" />
+    <data id="conversation_history" expr="[]" />
+    <data id="current_state" expr="'idle'" />
+    <data id="user_preferences" expr="{}" />
+  </datamodel>
 
-Event handlers respond to document events:
+  <!-- States -->
 
-\`\`\`typescript
-import: activedocs/core
+</agent>
+```
 
-const document = createDocument({
-  namespace: 'myapp',
-  handlers: {
-    'llm:start': (event) => {
-      console.log('LLM started')
-    },
-    'llm:complete': async (event) => {
-      await saveResponse(event.content)
-    },
-    'state:change': (event) => {
-      console.log('State changed:', event.changes)
-    }
-  }
-})
-\`\`\`
+**Attributes:**
+- `id`: Variable name (required)
+- `expr`: Initial value expression (optional)
+- `src`: Load from external source (optional)
 
-## Document Lifecycle
+### 2. States
 
-Documents go through several lifecycle stages:
+States define what the agent is doing:
 
-### 1. Creation
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-\`\`\`typescript
-import: activedocs/core
+  <!-- Simple state -->
+  <state id="idle">
+    <transition event="user.message" target="processing" />
+  </state>
 
-const document = createDocument({
-  namespace: 'myapp',
-  state: { initialized: true }
-})
-\`\`\`
+  <!-- State with entry/exit actions -->
+  <state id="processing">
+    <onentry>
+      <log expr="'Entered processing state'" />
+      <assign location="startTime" expr="Date.now()" />
+    </onentry>
 
-### 2. Active
+    <onexit>
+      <log expr="'Exiting processing, duration: ' + (Date.now() - startTime)" />
+    </onexit>
 
-\`\`\`typescript
-// Document is active and processing events
-document.on('llm:token', handleToken)
-document.emit('custom:event', { data: 'value' })
-\`\`\`
+    <transition event="complete" target="idle" />
+  </state>
 
-### 3. Cleanup
+</agent>
+```
 
-\`\`\`typescript
-// Remove listeners and clean up resources
-document.off('llm:token', handleToken)
-document.destroy()
-\`\`\`
+### 3. Transitions
 
-## Document Methods
+Transitions move between states based on events:
 
-### State Management
+```xml
+<state id="classify_intent">
+  <!-- Basic transition -->
+  <transition event="intent.greeting" target="handle_greeting" />
 
-\`\`\`typescript
-// Get current state
-const state = document.getState()
+  <!-- Conditional transition -->
+  <transition event="intent.flight"
+              cond="userInput.length > 0"
+              target="handle_flight">
+    <assign location="flightData" expr="_event.data" />
+  </transition>
 
-// Set state (partial update)
-document.setState({ key: 'value' })
+  <!-- Schema-validated transition (AgentML extension) -->
+  <transition event="intent.booking"
+              event:schema='{"type": "object", "properties": {"action": {"type": "string"}}}'
+              target="process_booking" />
 
-// Replace state (full update)
-document.replaceState({ newState: 'complete' })
+  <!-- Delayed transition -->
+  <transition target="timeout">
+    <after delay="30s" />
+  </transition>
+</state>
+```
 
-// Subscribe to state changes
-const unsubscribe = document.subscribe((state) => {
-  console.log('State updated:', state)
-})
-\`\`\`
+### 4. Actions
 
-### Event Management
+Actions execute when entering states or on transitions:
 
-\`\`\`typescript
-// Add event listener
-document.on('event:name', handler)
+```xml
+<state id="process">
+  <onentry>
+    <!-- Assign variables -->
+    <assign location="status" expr="'processing'" />
 
-// Add one-time listener
-document.once('event:name', handler)
+    <!-- Log messages -->
+    <log expr="'Processing started'" />
 
-// Remove listener
-document.off('event:name', handler)
+    <!-- Conditional logic -->
+    <if cond="userInput.length > 0">
+      <assign location="valid" expr="true" />
+    <else/>
+      <assign location="valid" expr="false" />
+    </if>
 
-// Emit event
-document.emit('event:name', { data: 'value' })
-\`\`\`
+    <!-- Raise internal events -->
+    <raise event="internal.ready" />
 
-### LLM Operations
+    <!-- Send external events -->
+    <send event="notification" target="https://api.example.com/notify">
+      <param name="message" expr="'Processing started'" />
+    </send>
 
-\`\`\`typescript
-// Send prompt to LLM
-await document.prompt('Generate a summary')
+    <!-- Namespace actions (AgentML extension) -->
+    <gemini:generate
+      model="gemini-2.0-flash-exp"
+      location="_event"
+      promptexpr="'Process this input: ' + userInput" />
+  </onentry>
+</state>
+```
 
-// Stream response
-document.stream('Write a story', {
-  onToken: (token) => console.log(token),
-  onComplete: (content) => console.log('Done:', content)
-})
-\`\`\`
+### 5. Final States
 
-## Document Composition
+Mark completion points:
 
-Combine multiple documents for complex applications:
+```xml
+<state id="workflow">
+  <state id="step1">
+    <transition event="step1.complete" target="step2" />
+  </state>
 
-\`\`\`typescript
-import: activedocs/core
+  <state id="step2">
+    <transition event="step2.complete" target="done" />
+  </state>
 
-// Parent document
-const app = createDocument({
-  namespace: 'app',
-  state: { mode: 'normal' }
-})
+  <!-- Final state -->
+  <final id="done">
+    <donedata>
+      <param name="result" expr="workflowResult" />
+      <param name="duration" expr="totalDuration" />
+    </donedata>
+  </final>
+</state>
 
-// Child documents
-const chat = createDocument({
-  namespace: 'app/chat',
-  state: { messages: [] }
-})
+<!-- Transition triggered when 'workflow' reaches final state -->
+<transition event="done.state.workflow" target="cleanup">
+  <assign location="workflowOutput" expr="_event.data" />
+</transition>
+```
 
-const sidebar = createDocument({
-  namespace: 'app/sidebar',
-  state: { isOpen: true }
-})
+### 6. Parallel States
 
-// Coordinate between documents
-app.on('mode:change', (event) => {
-  if (event.mode === 'focus') {
-    sidebar.setState({ isOpen: false })
-  }
-})
-\`\`\`
+Execute multiple state machines simultaneously:
+
+```xml
+<parallel id="multi_task">
+  <!-- First parallel region -->
+  <state id="monitor_health">
+    <state id="checking">
+      <transition event="health.ok" target="healthy" />
+    </state>
+    <state id="healthy">
+      <transition target="checking">
+        <after delay="60s" />
+      </transition>
+    </state>
+  </state>
+
+  <!-- Second parallel region -->
+  <state id="process_requests">
+    <state id="awaiting">
+      <transition event="request" target="handling" />
+    </state>
+    <state id="handling">
+      <transition event="complete" target="awaiting" />
+    </state>
+  </state>
+</parallel>
+```
+
+### 7. History States
+
+Remember and return to previous substates:
+
+```xml
+<state id="application">
+  <!-- History state remembers last active substate -->
+  <history id="app_history" type="shallow" />
+
+  <state id="editing">
+    <state id="text_mode" />
+    <state id="rich_mode" />
+  </state>
+
+  <state id="paused">
+    <!-- Return to last editing mode -->
+    <transition event="resume" target="app_history" />
+  </state>
+
+  <transition event="pause" target="paused" />
+</state>
+```
+
+## Complete Document Example
+
+Here's a complete AgentML document demonstrating all components:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       name="customer-support-agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:memory="github.com/agentflare-ai/agentml/memory">
+
+  <!-- Datamodel: Agent's variables -->
+  <datamodel>
+    <data id="user_input" expr="''" />
+    <data id="conversation_history" expr="[]" />
+    <data id="current_intent" expr="''" />
+    <data id="response" expr="''" />
+  </datamodel>
+
+  <!-- Initial state -->
+  <state id="awaiting_input">
+    <onentry>
+      <log expr="'Ready for user input'" />
+    </onentry>
+
+    <transition event="user.message" target="classify_intent">
+      <assign location="user_input" expr="_event.data.message" />
+      <assign location="conversation_history"
+              expr="conversation_history.concat([{role: 'user', content: user_input}])" />
+    </transition>
+  </state>
+
+  <!-- Classify user intent -->
+  <state id="classify_intent">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Classify this as greeting, question, or complaint: ' + user_input" />
+    </onentry>
+
+    <transition event="intent.greeting"
+                event:schema='{"type": "object", "properties": {"type": {"type": "string"}}}'
+                target="handle_greeting">
+      <assign location="current_intent" expr="'greeting'" />
+    </transition>
+
+    <transition event="intent.question" target="handle_question">
+      <assign location="current_intent" expr="'question'" />
+    </transition>
+
+    <transition event="intent.complaint" target="handle_complaint">
+      <assign location="current_intent" expr="'complaint'" />
+    </transition>
+
+    <transition target="handle_unknown" />
+  </state>
+
+  <!-- Handle greeting -->
+  <state id="handle_greeting">
+    <onentry>
+      <assign location="response" expr="'Hello! How can I help you today?'" />
+    </onentry>
+    <transition target="respond" />
+  </state>
+
+  <!-- Handle question -->
+  <state id="handle_question">
+    <onentry>
+      <!-- Search knowledge base -->
+      <memory:search location="results" expr="user_input" limit="3" />
+
+      <!-- Generate response with context -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Answer based on context: ' + JSON.stringify(results)" />
+    </onentry>
+
+    <transition event="action.response" target="respond">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <!-- Handle complaint -->
+  <state id="handle_complaint">
+    <onentry>
+      <log expr="'Escalating complaint'" />
+      <send event="escalate.complaint"
+            target="https://api.example.com/support"
+            type="github.com/agentflare-ai/agentml/ioprocessor/http">
+        <param name="message" expr="user_input" />
+      </send>
+      <assign location="response" expr="'I understand your concern. A specialist will contact you shortly.'" />
+    </onentry>
+    <transition target="respond" />
+  </state>
+
+  <!-- Handle unknown intent -->
+  <state id="handle_unknown">
+    <onentry>
+      <assign location="response" expr="'I\'m not sure I understand. Could you rephrase that?'" />
+    </onentry>
+    <transition target="respond" />
+  </state>
+
+  <!-- Send response -->
+  <state id="respond">
+    <onentry>
+      <log expr="'Bot: ' + response" />
+      <assign location="conversation_history"
+              expr="conversation_history.concat([{role: 'assistant', content: response}])" />
+
+      <!-- Store in memory -->
+      <memory:put key="last_response" expr="response" />
+    </onentry>
+
+    <transition target="awaiting_input" />
+  </state>
+
+</agent>
+```
+
+## File Organization
+
+Recommended structure for AgentML projects:
+
+```
+project/
+├── agents/
+│   ├── main.aml              # Main agent
+│   ├── customer-support.aml  # Support agent
+│   └── workflows/
+│       └── onboarding.aml    # Workflow sub-agent
+├── schemas/
+│   ├── events.json           # Event schemas
+│   └── api.yaml              # OpenAPI schemas
+├── scripts/
+│   └── utilities.js          # External scripts
+└── tests/
+    └── agent.test.js         # Agent tests
+```
+
+## Validation
+
+Validate your agent document structure:
+
+```bash
+agentmlx validate agent.aml
+```
+
+The validator checks:
+- XML syntax
+- SCXML conformance
+- State reachability
+- Event schema validity
+- Namespace declarations
+- Datamodel consistency
 
 ## Best Practices
 
-1. **Use descriptive namespaces** - Make document purposes clear
-2. **Define schemas** - Always validate state changes
-3. **Keep state minimal** - Only store what's necessary
-4. **Clean up listeners** - Prevent memory leaks
-5. **Document your structure** - Make the architecture clear to other developers
+1. **Use meaningful IDs**: `awaiting_user_input` not `state1`
+2. **Document your agent**: Add XML comments explaining complex logic
+3. **Keep states focused**: Each state should have one clear purpose
+4. **Define schemas for all events**: Use `event:schema` for type safety
+5. **Organize with hierarchy**: Use nested states for related functionality
+6. **External schemas**: Define schemas in separate files for reuse
+7. **Validate early**: Run `agentmlx validate` during development
+8. **Test state coverage**: Ensure all states are reachable
+9. **Use datamodel wisely**: Store only necessary data
+10. **Clean final states**: Always define clear completion points
 
 ## Next Steps
 
-- Learn about [Namespace System](/architecture/namespace-system)
-- Explore [Interpreter](/architecture/interpreter)
-- Understand [I/O Processors](/architecture/io-processors)
-\`\`\`
+- Learn about [Namespace System](/architecture/namespace-system) for extending functionality
+- Explore [Interpreter](/architecture/interpreter) to understand execution
+- Read [I/O Processors](/architecture/io-processors) for external communication
+- See [W3C SCXML Specification](https://www.w3.org/TR/scxml/) for full standard

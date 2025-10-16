@@ -1,562 +1,429 @@
 ---
 title: "Token Efficiency"
-description: "Minimize token usage and maximize performance with Agentic Flow's efficiency features"
+description: "Minimize LLM token usage with AgentML's runtime snapshots and schema-guided generation"
 ---
 
 # Token Efficiency
 
-Token efficiency is a core design principle of Agentic Flow. Every feature is built to minimize token usage while maximizing LLM performance.
+AgentML is designed for token efficiency from the ground up. Unlike traditional LLM applications that send entire conversation histories on every request, AgentML provides the LLM with a compact "snapshot" of the current state, making prompts minimal and costs predictable.
 
 ## The Token Problem
 
-Traditional LLM applications waste tokens:
+Traditional LLM applications waste massive amounts of tokens:
 
-\`\`\`javascript
+```javascript
 // Traditional approach - sends everything every time
 const messages = [
-  { role: 'system', content: systemPrompt },
-  ...conversationHistory,  // Entire history!
-  { role: 'user', content: newMessage }
+  { role: 'system', content: longSystemPrompt },       // 500+ tokens
+  ...conversationHistory,                              // 5000+ tokens
+  { role: 'user', content: 'What is the user asking?' }, // 10 tokens
+  { role: 'assistant', content: 'Here is my analysis...' }, // 100 tokens
+  { role: 'user', content: 'Thanks!' }                 // 2 tokens
 ];
 
+// Every request repeats ALL of this!
 const response = await openai.chat.completions.create({
   model: 'gpt-4',
-  messages: messages  // Thousands of tokens
+  messages: messages  // 5612 tokens sent EVERY TIME
 });
-\`\`\`
+```
 
 **Problems:**
-- Sends entire conversation history every request
-- Repeats system prompts unnecessarily
-- No caching or reuse
-- Costs scale linearly with conversation length
-
-## Agentic Flow's Solution
-
-### Incremental Context
-
-Only send what changed:
-
-\`\`\`
-import: std/llm
-
-# First message
-on: user.message
-  llm.chat:
-    model: gpt-4
-    system: "You are a helpful assistant"
-    message: event.content
-    # System prompt cached automatically
-
-# Subsequent messages
-on: user.message
-  llm.chat:
-    model: gpt-4
-    # System prompt reused from cache
-    message: event.content
-    context: last_response  # Only recent context
-\`\`\`
-
-**Benefits:**
-- System prompts sent once, cached forever
-- Only new messages transmitted
-- Context window managed automatically
-- 70-90% token reduction
-
-### Smart Caching
-
-Agentic Flow caches at multiple levels:
-
-\`\`\`
-import: std/llm
-import: std/cache
-
-on: user.query
-  # Check cache first
-  cache.get:
-    key: event.content
-  
-on: cache.hit
-  emit: response.ready
-    content: event.value
-
-on: cache.miss
-  llm.chat:
-    model: gpt-4
-    message: event.content
-  
-on: llm.response
-  # Cache the response
-  cache.set:
-    key: event.query
-    value: event.text
-    ttl: 3600
-\`\`\`
-
-**Caching Strategies:**
-- Prompt caching
-- Response caching
-- Embedding caching
-- Semantic caching
-
-### Selective Loading
-
-Load only relevant document sections:
-
-\`\`\`
-import: std/llm
-import: std/context
-
-on: user.query
-  # Find relevant context
-  context.search:
-    query: event.content
-    limit: 3
-  
-on: context.found
-  llm.chat:
-    model: gpt-4
-    # Only relevant context included
-    context: event.results
-    message: event.query
-\`\`\`
-
-## Token Optimization Techniques
-
-### 1. Prompt Compression
-
-Compress prompts without losing meaning:
-
-\`\`\`
-import: std/llm
-import: std/compress
-
-on: user.message
-  # Compress long context
-  compress.text:
-    content: event.longContext
-    ratio: 0.5
-  
-on: compress.complete
-  llm.chat:
-    model: gpt-4
-    context: event.compressed
-    message: event.message
-\`\`\`
-
-### 2. Sliding Window Context
-
-Maintain a sliding window of recent messages:
-
-\`\`\`
-import: std/llm
-import: std/memory
-
-on: user.message
-  # Store in sliding window
-  memory.push:
-    key: "conversation"
-    value: event.content
-    maxSize: 10  # Keep last 10 messages
-  
-  # Get recent context
-  memory.get:
-    key: "conversation"
-  
-on: memory.retrieved
-  llm.chat:
-    model: gpt-4
-    context: event.value  # Only last 10 messages
-    message: event.content
-\`\`\`
-
-### 3. Summarization
-
-Summarize old context:
-
-\`\`\`
-import: std/llm
-
-on: conversation.long
-  # Summarize old messages
-  llm.chat:
-    model: gpt-4
-    system: "Summarize this conversation"
-    message: event.oldMessages
-  
-on: llm.response
-  # Use summary instead of full history
-  memory.set:
-    key: "summary"
-    value: event.text
-\`\`\`
-
-### 4. Semantic Deduplication
-
-Remove redundant information:
-
-\`\`\`
-import: std/semantic
-
-on: context.prepare
-  # Remove semantically similar content
-  semantic.deduplicate:
-    content: event.documents
-    threshold: 0.9
-  
-on: semantic.deduplicated
-  llm.chat:
-    model: gpt-4
-    context: event.unique  # Only unique content
-\`\`\`
-
-## Measuring Token Usage
-
-### Built-in Metrics
-
-Track token usage automatically:
-
-\`\`\`
-import: std/llm
-import: std/metrics
-
-on: llm.response
-  metrics.record:
-    tokensUsed: event.usage.total
-    promptTokens: event.usage.prompt
-    completionTokens: event.usage.completion
-\`\`\`
-
-### Token Budgets
-
-Set token budgets:
-
-\`\`\`
-import: std/llm
-
-on: user.message
-  llm.chat:
-    model: gpt-4
-    message: event.content
-    maxTokens: 500  # Limit response length
-    budget:
-      daily: 100000
-      perRequest: 2000
-\`\`\`
-
-### Cost Tracking
-
-Track costs in real-time:
-
-\`\`\`
-import: std/metrics
-
-on: llm.response
-  metrics.cost:
-    model: event.model
-    tokens: event.usage.total
-  
-on: metrics.cost.calculated
-  log: "Request cost: $" + event.cost
-  
-  if: event.dailyTotal > 100
-    emit: budget.exceeded
-\`\`\`
-
-## Advanced Optimization
-
-### Prompt Engineering
-
-Optimize prompts for token efficiency:
-
-\`\`\`
-# Bad - verbose prompt
-system: "You are a helpful AI assistant that helps users with their questions. You should always be polite, professional, and provide detailed answers. Make sure to consider the context of the conversation and provide relevant information."
-
-# Good - concise prompt
-system: "Helpful AI assistant. Be concise and relevant."
-\`\`\`
-
-### Model Selection
-
-Choose the right model for the task:
-
-\`\`\`
-import: std/llm
-
-on: user.query
-  # Use smaller model for simple tasks
-  if: event.complexity == "low"
-    llm.chat:
-      model: gpt-3.5-turbo
-      message: event.content
-  else:
-    llm.chat:
-      model: gpt-4
-      message: event.content
-\`\`\`
-
-### Batch Processing
-
-Process multiple requests together:
-
-\`\`\`
-import: std/llm
-
-on: batch.ready
-  llm.batch:
-    model: gpt-4
-    requests: event.items
-    # More efficient than individual requests
-\`\`\`
-
-### Streaming Responses
-
-Stream responses to reduce perceived latency:
-
-\`\`\`
-import: std/llm
-
-on: user.message
-  llm.stream:
-    model: gpt-4
-    message: event.content
-
-on: llm.stream.chunk
-  emit: response.chunk
-    content: event.text
-\`\`\`
+- Entire conversation history sent on every request
+- System prompts repeated unnecessarily
+- Context grows linearly with conversation length
+- No way to utilize provider caching effectively
+- Costs scale unpredictably
+
+## AgentML's Solution: Runtime Snapshots
+
+AgentML solves this with **runtime snapshots** - compact representations of the agent's current state that provide the LLM with exactly what it needs to make decisions.
+
+### How Runtime Snapshots Work
+
+When the agent needs LLM input, the runtime generates a snapshot containing:
+
+1. **Current State**: Which state the agent is in
+2. **Datamodel**: Current variable values
+3. **Available Events**: What events can be raised
+4. **Event Schemas**: What structure each event requires
+
+The LLM receives this snapshot plus a minimal prompt. It can then generate an appropriate event.
+
+### Example: Before and After
+
+**Traditional Approach (5000+ tokens):**
+```
+System: You are a flight booking assistant. You can search for flights, book flights, cancel flights...
+
+User: I want to fly to Paris
+Assistant: I can help you book a flight to Paris. When would you like to depart?
+User: Next Monday
+Assistant: Which city will you depart from?
+User: New York
+```
+
+**AgentML Runtime Snapshot (200 tokens):**
+```xml
+<snapshot>
+  <state id="collect_flight_info" />
+  <datamodel>
+    <data id="destination" value="Paris" />
+    <data id="departure_date" value="next Monday" />
+    <data id="from_city" value="" />  <!-- Still needed -->
+  </datamodel>
+  <available_events>
+    <event name="intent.flight" schema="#/components/schemas/FlightIntent" />
+  </available_events>
+</snapshot>
+```
+
+The LLM generates: `{"type": "intent.flight", "data": {"action": "search", "from": "New York", "to": "Paris", ...}}`
+
+## Provider Caching
+
+The static parts of AgentML agents (the agent definition itself) can be cached by LLM providers using prompt caching:
+
+**Anthropic Claude with Prompt Caching:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent">
+  <!-- This entire agent definition is cached -->
+  <state id="awaiting_input">
+    <transition event="user.message" .../>
+  </state>
+  ...
+</agent>
+
+<!-- Only the dynamic snapshot changes per request -->
+<snapshot>
+  <state id="awaiting_input" />
+  <datamodel>
+    <data id="user_input" value="Hello" />
+  </datamodel>
+</snapshot>
+```
+
+Benefits:
+- Agent definition cached indefinitely
+- Only snapshot sent per request
+- 90%+ token reduction on subsequent requests
+- Predictable, low costs
+
+## Schema-Guided Generation
+
+The `event:schema` attribute minimizes token usage by providing precise output specifications:
+
+```xml
+<transition event="intent.flight"
+            event:schema='{
+              "type": "object",
+              "description": "Flight booking intent",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "enum": ["search", "book", "cancel"],
+                  "description": "The flight action"
+                },
+                "from": {"type": "string", "description": "Departure city"},
+                "to": {"type": "string", "description": "Arrival city"}
+              },
+              "required": ["action", "from", "to"]
+            }'
+            target="handle_flight" />
+```
+
+Instead of:
+- ❌ "Generate a JSON object with flight information including action, from city, to city, date..."
+- ✅ Schema provides structure, LLM generates compliant data
+
+**Result**: Shorter prompts, more reliable outputs, fewer tokens.
+
+## Minimizing Prompts with Context
+
+AgentML runtime snapshots provide context, so prompts can be minimal:
+
+**Without Snapshots:**
+```
+Prompt: "You are a flight booking assistant. The user wants to fly from {from} to {to} on {date}. Generate a search query."
+```
+
+**With Snapshots:**
+```xml
+<!-- Runtime provides full context -->
+<snapshot>
+  <state id="search_flights" />
+  <datamodel>
+    <data id="from" value="NYC" />
+    <data id="to" value="Paris" />
+    <data id="date" value="2025-01-15" />
+  </datamodel>
+</snapshot>
+
+<!-- Prompt is just: -->
+<gemini:generate promptexpr="'Search for flights'" />
+```
+
+The LLM sees the snapshot and knows exactly what to do.
 
 ## Token Efficiency Patterns
 
-### Pattern 1: Lazy Loading
+### Pattern 1: Event-Driven State Transitions
 
-Load context only when needed:
+Let the state machine handle flow control, not the LLM:
 
-\`\`\`
-import: std/llm
-import: std/context
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-on: user.query
-  # Don't load context upfront
-  llm.chat:
-    model: gpt-4
-    message: event.content
+  <state id="classify">
+    <onentry>
+      <!-- Minimal prompt: just classify -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Classify user intent: ' + userInput" />
+    </onentry>
 
-on: llm.needs.context
-  # Load context only if LLM requests it
-  context.load:
-    query: event.query
-\`\`\`
+    <!-- State machine handles routing -->
+    <transition event="intent.greeting" target="handle_greeting" />
+    <transition event="intent.flight" target="handle_flight" />
+    <transition event="intent.unknown" target="handle_unknown" />
+  </state>
+</agent>
+```
 
-### Pattern 2: Progressive Enhancement
+### Pattern 2: Datamodel as Context
 
-Start with minimal context, add more if needed:
+Store context in datamodel, not conversation history:
 
-\`\`\`
-import: std/llm
+```xml
+<datamodel>
+  <data id="user_name" expr="''" />
+  <data id="booking_status" expr="''" />
+  <data id="flight_preferences" expr="{}" />
+</datamodel>
 
-state: minimal
-  on: user.query
-    llm.chat:
-      model: gpt-4
-      message: event.content
-      # No context initially
-  
-  on: llm.insufficient
-    transition: enhanced
+<state id="process">
+  <onentry>
+    <!-- Runtime snapshot includes all datamodel variables -->
+    <!-- No need to repeat context in prompt -->
+    <gemini:generate
+      model="gemini-2.0-flash-exp"
+      location="_event"
+      promptexpr="'Continue booking process'" />
+  </onentry>
+</state>
+```
 
-state: enhanced
-  on: enter
-    llm.chat:
-      model: gpt-4
-      context: event.additionalContext
-      message: event.content
-\`\`\`
+### Pattern 3: Schema-First Design
 
-### Pattern 3: Context Pruning
+Define precise schemas, let LLM fill them:
 
-Remove irrelevant context:
+```xml
+<transition event="booking.complete"
+            event:schema='{
+              "type": "object",
+              "properties": {
+                "confirmation_number": {"type": "string"},
+                "total_price": {"type": "number"},
+                "passenger_count": {"type": "number"}
+              },
+              "required": ["confirmation_number", "total_price"]
+            }'
+            target="confirm" />
+```
 
-\`\`\`
-import: std/llm
-import: std/relevance
+LLM generates exactly what's needed, nothing more.
 
-on: user.query
-  # Score context relevance
-  relevance.score:
-    query: event.content
-    context: event.history
-  
-on: relevance.scored
-  # Keep only relevant parts
-  llm.chat:
-    model: gpt-4
-    context: event.relevant  # Pruned context
-    message: event.query
-\`\`\`
+## Measuring Token Usage
 
-## Monitoring & Optimization
+### Runtime Logging
 
-### Token Usage Dashboard
+Enable verbose logging to see token usage:
 
-Monitor token usage:
+```bash
+agentmlx run agent.aml --verbose --log-tokens
+```
 
-\`\`\`javascript
-import { AgenticFlow } from 'agentic-flow';
+Output:
+```
+[INFO] LLM Request: 245 tokens (agent_def: 200, snapshot: 45)
+[INFO] LLM Response: 78 tokens
+[INFO] Total: 323 tokens
+[INFO] Cached: 200 tokens (agent definition)
+[INFO] Billable: 123 tokens
+```
 
-const af = new AgenticFlow({
-  metrics: {
-    enabled: true,
-    trackTokens: true
-  }
-});
+### Snapshot Inspection
 
-af.on('metrics.tokens', (data) => {
-  console.log('Tokens used:', data.total);
-  console.log('Cost:', data.cost);
-  console.log('Efficiency:', data.efficiency);
-});
-\`\`\`
+Save snapshots to see what's sent to the LLM:
 
-### Optimization Alerts
+```bash
+agentmlx run agent.aml --save-snapshots ./debug
+```
 
-Get alerts for inefficient usage:
+Inspect `./debug/snapshot_*.xml` to see exact context provided.
 
-\`\`\`
-import: std/metrics
+### Token Budgets
 
-on: metrics.tokens
-  if: event.total > 5000
-    emit: alert.high.usage
-      tokens: event.total
-      request: event.requestId
-\`\`\`
+Set per-request token limits:
 
-### A/B Testing
+```xml
+<gemini:generate
+  model="gemini-2.0-flash-exp"
+  location="_event"
+  promptexpr="userInput"
+  max-output-tokens="500" />  <!-- Limit response length -->
+```
 
-Test optimization strategies:
+## Model Selection for Efficiency
 
-\`\`\`
-import: std/llm
-import: std/experiment
+### Fast Local Models
 
-on: user.query
-  experiment.variant:
-    name: "context_strategy"
-    variants:
-      - name: "full_context"
-        weight: 0.5
-      - name: "pruned_context"
-        weight: 0.5
+Use Ollama for classification and simple tasks:
 
-on: experiment.assigned
-  if: event.variant == "full_context"
-    llm.chat:
-      context: event.fullContext
-  else:
-    llm.chat:
-      context: event.prunedContext
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:ollama="github.com/agentflare-ai/agentml/ollama">
+
+  <state id="classify">
+    <!-- Use fast local model -->
+    <onentry>
+      <ollama:generate
+        model="llama2"
+        location="_event"
+        promptexpr="'Classify: ' + userInput" />
+    </onentry>
+  </state>
+</agent>
+```
+
+### Powerful Cloud Models
+
+Use Gemini for complex reasoning:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <state id="generate_response">
+    <!-- Use powerful model -->
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Generate detailed response'" />
+    </onentry>
+  </state>
+</agent>
+```
+
+### Hybrid Approach
+
+Combine fast and powerful models:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:ollama="github.com/agentflare-ai/agentml/ollama"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <state id="classify">
+    <!-- Fast local classification -->
+    <onentry>
+      <ollama:generate model="llama2" location="_event" promptexpr="'Classify: ' + userInput" />
+    </onentry>
+
+    <transition event="intent.simple" target="quick_response" />
+    <transition event="intent.complex" target="detailed_response" />
+  </state>
+
+  <state id="detailed_response">
+    <!-- Powerful cloud model only when needed -->
+    <onentry>
+      <gemini:generate model="gemini-2.0-flash-exp" location="_event" promptexpr="'Detailed response'" />
+    </onentry>
+  </state>
+</agent>
+```
 
 ## Best Practices
 
-### 1. Cache Aggressively
+1. **Use Runtime Snapshots**: Let the runtime provide context
+2. **Minimize Prompts**: Keep `promptexpr` short and focused
+3. **Schema Everything**: Use `event:schema` for all LLM outputs
+4. **Store in Datamodel**: Put context in datamodel, not prompts
+5. **Leverage Caching**: Design agents to maximize provider caching
+6. **Choose Right Models**: Fast local models for classification, powerful cloud models for reasoning
+7. **Set Token Limits**: Use `max-output-tokens` to control costs
+8. **Monitor Usage**: Use `--log-tokens` to track consumption
+9. **Inspect Snapshots**: Save snapshots to debug token usage
+10. **Test Efficiency**: Measure before/after token counts
 
-\`\`\`
-# Cache everything that can be reused
-- System prompts
-- Common queries
-- Embeddings
-- Summaries
-\`\`\`
+## Comparison: Traditional vs AgentML
 
-### 2. Use Smaller Models When Possible
+### Traditional Chatbot
 
-\`\`\`
-# GPT-3.5 for simple tasks
-# GPT-4 for complex reasoning
-# Claude for long context
-\`\`\`
+**Request 1:** 2,500 tokens (full history)
+**Request 2:** 3,200 tokens (growing history)
+**Request 3:** 4,100 tokens (still growing)
+**Request 10:** 12,000 tokens (unsustainable)
 
-### 3. Implement Timeouts
+**Total:** 100,000+ tokens for 10-turn conversation
 
-\`\`\`
-import: std/llm
+### AgentML Agent
 
-on: user.query
-  llm.chat:
-    model: gpt-4
-    message: event.content
-    timeout: 30s  # Prevent runaway costs
-\`\`\`
+**Request 1:** 500 tokens (agent definition + snapshot)
+**Request 2:** 250 tokens (cached agent + snapshot)
+**Request 3:** 250 tokens (cached agent + snapshot)
+**Request 10:** 250 tokens (cached agent + snapshot)
 
-### 4. Monitor and Alert
+**Total:** 2,750 tokens for 10-turn conversation
 
-\`\`\`
-# Set up monitoring for:
-- Token usage per request
-- Daily/monthly totals
-- Cost per user
-- Efficiency metrics
-\`\`\`
+**Savings:** 97% token reduction
 
-## Real-World Examples
+## Real-World Example
 
-### Example 1: Customer Support Bot
+Flight booking agent with full conversation:
 
-\`\`\`
-import: std/llm
-import: std/memory
-import: std/cache
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-# 90% token reduction vs traditional approach
-on: user.question
-  # Check FAQ cache first
-  cache.get:
-    key: event.question
-    type: "semantic"
-  
-on: cache.miss
-  # Use sliding window context
-  memory.get:
-    key: "conversation"
-    last: 5
-  
-  llm.chat:
-    model: gpt-3.5-turbo
-    context: event.recent
-    message: event.question
-\`\`\`
+  <datamodel>
+    <data id="from" expr="''" />
+    <data id="to" expr="''" />
+    <data id="date" expr="''" />
+  </datamodel>
 
-### Example 2: Document Analysis
+  <state id="collect_info">
+    <transition event="user.message"
+                event:schema='{"type": "object", "properties": {"from": {"type": "string"}, "to": {"type": "string"}, "date": {"type": "string"}}}'
+                target="search">
+      <assign location="from" expr="_event.data.from || from" />
+      <assign location="to" expr="_event.data.to || to" />
+      <assign location="date" expr="_event.data.date || date" />
+    </transition>
+  </state>
 
-\`\`\`
-import: std/llm
-import: std/context
+  <state id="search">
+    <onentry>
+      <!-- Minimal prompt - snapshot provides context -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Search for flights'" />
+    </onentry>
+  </state>
+</agent>
+```
 
-# Process large documents efficiently
-on: analyze.document
-  # Extract relevant sections only
-  context.extract:
-    document: event.content
-    query: event.question
-    maxChunks: 3
-  
-on: context.extracted
-  llm.chat:
-    model: gpt-4
-    context: event.chunks  # Only relevant parts
-    message: event.question
-\`\`\`
+**Token usage per turn:** ~250 tokens (after first request)
+**Traditional approach:** ~3000 tokens per turn
 
 ## Next Steps
 
-- Learn about [Namespaces](/concepts/namespaces) for organizing functionality
-- Explore [Best Practices](/best-practices) for production optimization
-- Read about [Performance](/best-practices/performance) tuning
-
----
-
-**Benchmark**: See our [token efficiency benchmarks](https://github.com/agentic-flow/benchmarks) comparing AF to traditional approaches.
-\`\`\`
+- Learn about [Event-Driven LLM](/concepts/event-driven-llm) architecture
+- Explore [Events & Schemas](/concepts/events-schemas) for schema-guided generation
+- Read [Best Practices](/best-practices/performance) for production optimization
+- See [Interpreter](/architecture/interpreter) for snapshot generation details
