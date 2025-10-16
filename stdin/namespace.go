@@ -29,26 +29,18 @@ func (n *Namespace) Handle(ctx context.Context, el xmldom.Element) (bool, error)
 	local := strings.ToLower(string(el.LocalName()))
 	switch local {
 	case "read":
-		exe := &readExec{Element: el}
-		return true, exe.Execute(ctx, n.itp)
+		return true, n.execRead(ctx, el)
 	default:
 		return false, nil
 	}
 }
 
-var _ agentml.Namespace = (*Namespace)(nil)
-
-// readExec implements the <stdin:read> executable element
-type readExec struct {
-	xmldom.Element
-}
-
-func (e *readExec) Execute(ctx context.Context, interp agentml.Interpreter) error {
+func (n *Namespace) execRead(ctx context.Context, el xmldom.Element) error {
 	tr := otel.Tracer("stdin")
 	ctx, span := tr.Start(ctx, "stdin.read")
 	defer span.End()
 
-	dm := interp.DataModel()
+	dm := n.itp.DataModel()
 	if dm == nil {
 		return &agentml.PlatformError{
 			EventName: "error.execution",
@@ -58,10 +50,9 @@ func (e *readExec) Execute(ctx context.Context, interp agentml.Interpreter) erro
 		}
 	}
 
-	// Get the location/dataid attribute where we should store the result
-	loc := string(e.Element.GetAttribute("location"))
+	loc := string(el.GetAttribute("location"))
 	if loc == "" {
-		loc = string(e.Element.GetAttribute("dataid"))
+		loc = string(el.GetAttribute("dataid"))
 	}
 	if strings.TrimSpace(loc) == "" {
 		return &agentml.PlatformError{
@@ -72,11 +63,9 @@ func (e *readExec) Execute(ctx context.Context, interp agentml.Interpreter) erro
 		}
 	}
 
-	// Get optional prompt attribute
-	prompt := string(e.Element.GetAttribute("prompt"))
+	prompt := string(el.GetAttribute("prompt"))
 	if prompt != "" {
-		// If promptexpr is specified, evaluate it
-		if promptExpr := string(e.Element.GetAttribute("promptexpr")); promptExpr != "" {
+		if promptExpr := string(el.GetAttribute("promptexpr")); promptExpr != "" {
 			val, err := dm.EvaluateValue(ctx, promptExpr)
 			if err != nil {
 				return &agentml.PlatformError{
@@ -90,11 +79,9 @@ func (e *readExec) Execute(ctx context.Context, interp agentml.Interpreter) erro
 				prompt = s
 			}
 		}
-		// Print the prompt to stderr so it doesn't interfere with stdin/stdout
 		fmt.Fprint(os.Stderr, prompt)
 	}
 
-	// Read from stdin
 	scanner := bufio.NewScanner(os.Stdin)
 	if !scanner.Scan() {
 		if err := scanner.Err(); err != nil {
@@ -105,21 +92,12 @@ func (e *readExec) Execute(ctx context.Context, interp agentml.Interpreter) erro
 				Cause:     err,
 			}
 		}
-		// EOF reached, store null to distinguish from empty input
 		return dm.SetVariable(ctx, loc, nil)
 	}
 
 	input := scanner.Text()
 
-	// Store the result in the data model
-	if err := dm.SetVariable(ctx, loc, input); err != nil {
-		return &agentml.PlatformError{
-			EventName: "error.execution",
-			Message:   "Failed to store stdin input",
-			Data:      map[string]any{"element": "read", "location": loc},
-			Cause:     err,
-		}
-	}
-
-	return nil
+	return dm.SetVariable(ctx, loc, input)
 }
+
+var _ agentml.Namespace = (*Namespace)(nil)

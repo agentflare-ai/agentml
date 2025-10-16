@@ -3,6 +3,8 @@
 > **🚧 Early Alpha - Building in Public**
 > 
 > AgentML is in early alpha and being built openly with the community. The vision is ambitious, the foundation is solid, but many features are still in development. Join us in shaping the future of agent standards.
+>
+> **⚠️ Repository Status:** Many packages in this repository are proof-of-concept (POC) or work-in-progress (WIP). Code quality, APIs, and implementation approaches are evolving rapidly. Use with caution in production environments.
 
 ---
 
@@ -54,29 +56,29 @@ AgentML uses SCXML state machines to define **deterministic behavior**, moving b
     The `event:schema` attribute on a transition provides JSON schema validation for an event. **It is critical to include `description` fields** at both the schema and property level, as these descriptions are the primary way to guide LLMs in generating correct event data.
 
     **With Descriptions (Good):**
-    ```json
-    {
-      "type": "object",
+```json
+{
+        "type": "object",
       "description": "User intent to perform a flight-related action (search, book, update, cancel)",
-      "properties": {
-        "action": {
+        "properties": {
+          "action": {
           "type": "string",
-          "enum": ["search", "book", "update", "cancel"],
+            "enum": ["search", "book", "update", "cancel"],
           "description": "The specific action: search for flights, book a new flight, etc."
-        },
-        "details": {
-          "type": "object",
+          },
+          "details": {
+            "type": "object",
           "description": "Flight-specific information extracted from user message",
-          "properties": {
-            "from": {
-              "type": "string",
+            "properties": {
+              "from": {
+                "type": "string",
               "description": "Departure location: city name or airport code (e.g., 'New York' or 'JFK')"
             }
           }
         }
-      }
-    }
-    ```
+  }
+}
+```
 
 3.  **Efficient Token Usage**: The runtime provides the LLM with a "snapshot" of the current state, datamodel, and available events. This context allows prompts to be minimal, and the static parts (the agent's SCXML definition) can be cached by the LLM provider, reducing token consumption.
 
@@ -110,14 +112,14 @@ This enables schema reuse via **JSON Pointer (RFC 6901)** references with namesp
   "components": {
     "schemas": {
       "FlightRequest": {
-        "type": "object",
+  "type": "object",
         "description": "Schema for a flight-related request.",
-        "properties": {
+  "properties": {
             "action": { "$ref": "#/components/schemas/FlightAction" }
         }
       },
       "FlightAction": {
-          "type": "string",
+      "type": "string",
           "enum": ["search", "book", "cancel"]
       }
     }
@@ -245,7 +247,7 @@ AgentML supports distributed agent communication using the W3C SCXML `IOProcesso
       <param name="task_id" expr="task.id" />
     </send>
   </onentry>
-
+  
   <!-- Wait for a response -->
   <transition event="task.acknowledged" target="confirmed" />
 </state>
@@ -415,23 +417,23 @@ The `agentml.wit` file defines standard interfaces for namespaces using WebAssem
 - **Use external schemas**: Define schemas in `.json`/`.yaml` files and load them with `import:` for reuse and maintainability.
 - **Prefer external scripts**: Use `<script src="./utils.js" />` for better linting, IDE support, and maintainability. Only use inline scripts for simple expressions. When you must write inline scripts with comparison operators (`<`, `>`) or other special XML characters, wrap your code in `<![CDATA[...]]>`:
 
-  ```xml
+```xml
   <!-- Best: External script with full linting support -->
   <script src="./validation.js" />
   
   <!-- Inline without CDATA: XML parser errors -->
-  <script>
+    <script>
     if (count < 10 && value > 5) {  <!-- This will break! -->
       return true;
     }
-  </script>
+    </script>
   
   <!-- Inline with CDATA: Works but no linting -->
-  <script>
-    <![CDATA[
+    <script>
+      <![CDATA[
     if (count < 10 && value > 5) {
       return true;
     }
-    ]]>
-  </script>
+      ]]>
+    </script>
   ```
