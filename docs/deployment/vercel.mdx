@@ -1,0 +1,93 @@
+---
+title: "Deploy to Vercel"
+description: "Deploy your ActiveFlow application to Vercel with zero configuration"
+---
+
+# Deploy to Vercel
+
+Deploy your ActiveFlow application to Vercel with automatic builds, previews, and production deployments.
+
+## Quick Deploy
+
+The fastest way to deploy your ActiveFlow app:
+
+\`\`\`bash
+npm install -g vercel
+vercel
+\`\`\`
+
+Follow the prompts to link your project and deploy.
+
+## Configuration
+
+Create a `vercel.json` file in your project root:
+
+\`\`\`json
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
+\`\`\`
+
+## Environment Variables
+
+Set your environment variables in the Vercel dashboard or via CLI:
+
+\`\`\`bash
+vercel env add GEMINI_API_KEY
+vercel env add DATABASE_URL
+\`\`\`
+
+## Automatic Deployments
+
+Connect your GitHub repository for automatic deployments:
+
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Import your repository
+3. Configure build settings
+4. Deploy
+
+Every push to `main` triggers a production deployment. Pull requests get preview deployments.
+
+## Edge Functions
+
+ActiveFlow works great with Vercel Edge Functions for low-latency responses:
+
+\`\`\`typescript
+// api/process.ts
+export const config = {
+  runtime: 'edge',
+}
+
+export default async function handler(req: Request) {
+  const { processDocument } = await import('activeflow')
+  
+  const doc = await req.json()
+  const result = await processDocument(doc)
+  
+  return new Response(JSON.stringify(result), {
+    headers: { 'content-type': 'application/json' },
+  })
+}
+\`\`\`
+
+## Monitoring
+
+Use Vercel Analytics and Logs to monitor your ActiveFlow application:
+
+- Real-time logs in the dashboard
+- Performance metrics
+- Error tracking
+- Custom analytics events
+
+## Best Practices
+
+- Use environment variables for API keys
+- Enable caching for static assets
+- Use Edge Functions for low-latency endpoints
+- Monitor token usage and costs
+- Set up alerts for errors
+\`\`\`

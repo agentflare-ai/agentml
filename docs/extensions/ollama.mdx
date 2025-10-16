@@ -1,0 +1,337 @@
+---
+title: "Ollama Extension"
+description: "Use local Ollama models with ActiveDocs"
+---
+
+# Ollama Extension
+
+The Ollama extension enables ActiveDocs to use locally-hosted Ollama models for LLM operations.
+
+## Installation
+
+\`\`\`bash
+npm install @activedocs/extension-ollama
+\`\`\`
+
+## Prerequisites
+
+Install and run Ollama locally:
+
+\`\`\`bash
+# Install Ollama
+curl https://ollama.ai/install.sh | sh
+
+# Pull a model
+ollama pull llama2
+
+# Start Ollama server
+ollama serve
+\`\`\`
+
+## Basic Usage
+
+\`\`\`typescript
+import: activedocs/core
+import: activedocs/extensions/ollama
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    ollamaExtension({
+      baseUrl: 'http://localhost:11434',
+      model: 'llama2'
+    })
+  ]
+})
+
+// Use Ollama for prompts
+const response = await document.prompt('Explain machine learning')
+\`\`\`
+
+## Configuration
+
+Configure the Ollama extension:
+
+\`\`\`typescript
+import: activedocs/extensions/ollama
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    ollamaExtension({
+      // Ollama server URL
+      baseUrl: 'http://localhost:11434',
+      
+      // Model to use
+      model: 'llama2',
+      
+      // Generation options
+      options: {
+        temperature: 0.7,
+        top_k: 40,
+        top_p: 0.9,
+        num_predict: 128
+      }
+    })
+  ]
+})
+\`\`\`
+
+## Available Models
+
+Use different Ollama models:
+
+### Llama 2
+
+\`\`\`typescript
+import: activedocs/extensions/ollama
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    ollamaExtension({
+      baseUrl: 'http://localhost:11434',
+      model: 'llama2' // or 'llama2:13b', 'llama2:70b'
+    })
+  ]
+})
+\`\`\`
+
+### Mistral
+
+\`\`\`typescript
+import: activedocs/extensions/ollama
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    ollamaExtension({
+      baseUrl: 'http://localhost:11434',
+      model: 'mistral'
+    })
+  ]
+})
+\`\`\`
+
+### Code Llama
+
+\`\`\`typescript
+import: activedocs/extensions/ollama
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    ollamaExtension({
+      baseUrl: 'http://localhost:11434',
+      model: 'codellama'
+    })
+  ]
+})
+\`\`\`
+
+### Custom Models
+
+\`\`\`typescript
+import: activedocs/extensions/ollama
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    ollamaExtension({
+      baseUrl: 'http://localhost:11434',
+      model: 'my-custom-model'
+    })
+  ]
+})
+\`\`\`
+
+## Streaming
+
+Stream responses from Ollama:
+
+\`\`\`typescript
+import: activedocs/extensions/ollama
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    ollamaExtension({
+      baseUrl: 'http://localhost:11434',
+      model: 'llama2'
+    })
+  ]
+})
+
+document.stream('Write a poem about nature', {
+  onToken: (token) => {
+    process.stdout.write(token)
+  },
+  onComplete: (content) => {
+    console.log('\n\nComplete!')
+  }
+})
+\`\`\`
+
+## Generation Options
+
+Control generation behavior:
+
+\`\`\`typescript
+import: activedocs/extensions/ollama
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    ollamaExtension({
+      baseUrl: 'http://localhost:11434',
+      model: 'llama2',
+      options: {
+        // Temperature: 0.0 to 1.0
+        temperature: 0.8,
+        
+        // Top-K sampling
+        top_k: 40,
+        
+        // Top-P sampling
+        top_p: 0.9,
+        
+        // Number of tokens to predict
+        num_predict: 256,
+        
+        // Stop sequences
+        stop: ['END', '\n\n'],
+        
+        // Repeat penalty
+        repeat_penalty: 1.1,
+        
+        // Context window size
+        num_ctx: 2048
+      }
+    })
+  ]
+})
+\`\`\`
+
+## Context Management
+
+Manage conversation context:
+
+\`\`\`typescript
+import: activedocs/extensions/ollama
+
+const document = createDocument({
+  namespace: 'myapp',
+  state: {
+    context: []
+  },
+  extensions: [
+    ollamaExtension({
+      baseUrl: 'http://localhost:11434',
+      model: 'llama2'
+    })
+  ]
+})
+
+// Add to context
+document.on('ollama:complete', (event) => {
+  const context = document.getState().context
+  document.setState({
+    context: [...context, event.context]
+  })
+})
+
+// Use context in next prompt
+const response = await document.prompt('Continue the conversation', {
+  context: document.getState().context
+})
+\`\`\`
+
+## Model Management
+
+Manage Ollama models:
+
+\`\`\`typescript
+import: activedocs/extensions/ollama
+
+// List available models
+const models = await ollama.listModels()
+console.log('Available models:', models)
+
+// Pull a new model
+await ollama.pullModel('mistral')
+
+// Delete a model
+await ollama.deleteModel('old-model')
+
+// Show model info
+const info = await ollama.showModel('llama2')
+console.log('Model info:', info)
+\`\`\`
+
+## Error Handling
+
+Handle Ollama-specific errors:
+
+\`\`\`typescript
+import: activedocs/extensions/ollama
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    ollamaExtension({
+      baseUrl: 'http://localhost:11434',
+      model: 'llama2'
+    })
+  ]
+})
+
+document.on('ollama:error', (event) => {
+  if (event.error.code === 'MODEL_NOT_FOUND') {
+    console.log('Model not found, pulling...')
+    ollama.pullModel(event.model)
+  } else if (event.error.code === 'CONNECTION_FAILED') {
+    console.log('Cannot connect to Ollama server')
+  } else {
+    console.error('Ollama error:', event.error)
+  }
+})
+\`\`\`
+
+## Performance Monitoring
+
+Monitor Ollama performance:
+
+\`\`\`typescript
+import: activedocs/extensions/ollama
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    ollamaExtension({
+      baseUrl: 'http://localhost:11434',
+      model: 'llama2'
+    })
+  ]
+})
+
+document.on('ollama:complete', (event) => {
+  console.log('Generation time:', event.duration, 'ms')
+  console.log('Tokens per second:', event.tokensPerSecond)
+  console.log('Total tokens:', event.totalTokens)
+})
+\`\`\`
+
+## Best Practices
+
+1. **Choose appropriate models** - Balance size and performance
+2. **Manage context** - Keep context windows reasonable
+3. **Monitor performance** - Track generation speed
+4. **Handle errors** - Implement fallbacks
+5. **Update models** - Keep Ollama and models up to date
+
+## Next Steps
+
+- Explore [Gemini Extension](/extensions/gemini)
+- Learn about [Memory Extension](/extensions/memory)
+- Build [Custom Extensions](/extensions/custom)
+\`\`\`

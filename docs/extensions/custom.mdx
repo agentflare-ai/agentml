@@ -1,0 +1,394 @@
+---
+title: "Custom Extensions"
+description: "Build your own ActiveDocs extensions"
+---
+
+# Custom Extensions
+
+Learn how to build custom extensions to add new functionality to ActiveDocs.
+
+## Extension Structure
+
+An extension is an object with specific properties:
+
+\`\`\`typescript
+import: activedocs/core
+
+interface Extension {
+  name: string
+  version: string
+  init: (document: Document) => void
+  destroy?: () => void
+}
+\`\`\`
+
+## Basic Extension
+
+Create a simple logging extension:
+
+\`\`\`typescript
+import: activedocs/core
+
+const loggerExtension = () => ({
+  name: 'logger',
+  version: '1.0.0',
+  
+  init: (document) => {
+    console.log(`Logger initialized for ${document.namespace}`)
+    
+    // Log all events
+    document.on('*', (event) => {
+      console.log(`[${document.namespace}]`, event.type, event.data)
+    })
+  },
+  
+  destroy: () => {
+    console.log('Logger destroyed')
+  }
+})
+
+// Use it
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [loggerExtension()]
+})
+\`\`\`
+
+## Extension with Configuration
+
+Add configuration options:
+
+\`\`\`typescript
+import: activedocs/core
+
+interface LoggerOptions {
+  level?: 'debug' | 'info' | 'warn' | 'error'
+  prefix?: string
+  timestamp?: boolean
+}
+
+const loggerExtension = (options: LoggerOptions = {}) => {
+  const config = {
+    level: 'info',
+    prefix: '',
+    timestamp: true,
+    ...options
+  }
+  
+  return {
+    name: 'logger',
+    version: '1.0.0',
+    
+    init: (document) => {
+      const log = (level: string, ...args: any[]) => {
+        if (shouldLog(level, config.level)) {
+          const prefix = config.prefix ? `[${config.prefix}]` : ''
+          const timestamp = config.timestamp ? new Date().toISOString() : ''
+          console.log(timestamp, prefix, ...args)
+        }
+      }
+      
+      document.on('*', (event) => {
+        log(config.level, event.type, event.data)
+      })
+    }
+  }
+}
+
+// Use with config
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    loggerExtension({
+      level: 'debug',
+      prefix: 'MyApp',
+      timestamp: true
+    })
+  ]
+})
+\`\`\`
+
+## Extension with State
+
+Maintain extension-specific state:
+
+\`\`\`typescript
+import: activedocs/core
+
+const analyticsExtension = (apiKey: string) => {
+  let eventCount = 0
+  let sessionId = generateSessionId()
+  
+  return {
+    name: 'analytics',
+    version: '1.0.0',
+    
+    init: (document) => {
+      // Track events
+      document.on('llm:complete', async (event) => {
+        eventCount++
+        
+        await fetch('https://analytics.example.com/track', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            sessionId,
+            eventCount,
+            namespace: document.namespace,
+            event: event.type,
+            data: event.data
+          })
+        })
+      })
+      
+      // Add methods to document
+      document.analytics = {
+        getEventCount: () => eventCount,
+        getSessionId: () => sessionId
+      }
+    },
+    
+    destroy: () => {
+      // Send final analytics
+      console.log(`Session ${sessionId} ended with ${eventCount} events`)
+    }
+  }
+}
+\`\`\`
+
+## Extension with Async Initialization
+
+Handle async setup:
+
+\`\`\`typescript
+import: activedocs/core
+
+const databaseExtension = (connectionString: string) => {
+  let db: Database | null = null
+  
+  return {
+    name: 'database',
+    version: '1.0.0',
+    
+    init: async (document) => {
+      // Async initialization
+      db = await connectToDatabase(connectionString)
+      
+      // Add database methods
+      document.db = {
+        query: async (sql: string) => {
+          return await db.query(sql)
+        },
+        
+        save: async (data: any) => {
+          return await db.insert('documents', {
+            namespace: document.namespace,
+            data: JSON.stringify(data),
+            timestamp: Date.now()
+          })
+        }
+      }
+      
+      // Auto-save on state change
+      document.on('state:change', async (event) => {
+        await document.db.save(event.newState)
+      })
+    },
+    
+    destroy: async () => {
+      if (db) {
+        await db.close()
+      }
+    }
+  }
+}
+\`\`\`
+
+## Extension Communication
+
+Extensions can communicate with each other:
+
+\`\`\`typescript
+import: activedocs/core
+
+const cacheExtension = () => ({
+  name: 'cache',
+  version: '1.0.0',
+  
+  init: (document) => {
+    const cache = new Map()
+    
+    document.cache = {
+      get: (key: string) => cache.get(key),
+      set: (key: string, value: any) => cache.set(key, value),
+      has: (key: string) => cache.has(key)
+    }
+    
+    // Emit ready event
+    document.emit('cache:ready')
+  }
+})
+
+const apiExtension = () => ({
+  name: 'api',
+  version: '1.0.0',
+  
+  init: (document) => {
+    // Wait for cache to be ready
+    document.once('cache:ready', () => {
+      document.api = {
+        fetch: async (url: string) => {
+          // Check cache first
+          if (document.cache.has(url)) {
+            return document.cache.get(url)
+          }
+          
+          // Fetch and cache
+          const response = await fetch(url)
+          const data = await response.json()
+          document.cache.set(url, data)
+          return data
+        }
+      }
+    })
+  }
+})
+
+// Use both extensions
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    cacheExtension(),
+    apiExtension()
+  ]
+})
+\`\`\`
+
+## Extension Hooks
+
+Provide hooks for customization:
+
+\`\`\`typescript
+import: activedocs/core
+
+interface HookOptions {
+  beforeSave?: (data: any) => any
+  afterSave?: (data: any) => void
+  onError?: (error: Error) => void
+}
+
+const storageExtension = (options: HookOptions = {}) => ({
+  name: 'storage',
+  version: '1.0.0',
+  
+  init: (document) => {
+    document.storage = {
+      save: async (data: any) => {
+        try {
+          // Before save hook
+          if (options.beforeSave) {
+            data = await options.beforeSave(data)
+          }
+          
+          // Save
+          await saveToStorage(data)
+          
+          // After save hook
+          if (options.afterSave) {
+            await options.afterSave(data)
+          }
+        } catch (error) {
+          // Error hook
+          if (options.onError) {
+            options.onError(error)
+          } else {
+            throw error
+          }
+        }
+      }
+    }
+  }
+})
+
+// Use with hooks
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    storageExtension({
+      beforeSave: (data) => {
+        console.log('Before save:', data)
+        return { ...data, timestamp: Date.now() }
+      },
+      afterSave: (data) => {
+        console.log('After save:', data)
+      },
+      onError: (error) => {
+        console.error('Save error:', error)
+      }
+    })
+  ]
+})
+\`\`\`
+
+## Testing Extensions
+
+Test your extensions:
+
+\`\`\`typescript
+import: activedocs/core
+
+describe('loggerExtension', () => {
+  it('should log events', () => {
+    const logs: any[] = []
+    const mockConsole = {
+      log: (...args: any[]) => logs.push(args)
+    }
+    
+    const document = createDocument({
+      namespace: 'test',
+      extensions: [loggerExtension()]
+    })
+    
+    document.emit('test:event', { data: 'value' })
+    
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).toContain('test:event')
+  })
+})
+\`\`\`
+
+## Publishing Extensions
+
+Publish your extension as an npm package:
+
+\`\`\`json
+{
+  "name": "@myorg/activedocs-extension-myextension",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "peerDependencies": {
+    "@activedocs/core": "^1.0.0"
+  }
+}
+\`\`\`
+
+## Best Practices
+
+1. **Follow naming conventions** - Use descriptive names
+2. **Version properly** - Use semantic versioning
+3. **Document thoroughly** - Provide clear documentation
+4. **Handle errors** - Don't crash the host document
+5. **Clean up resources** - Implement destroy method
+6. **Test extensively** - Write comprehensive tests
+7. **Type everything** - Use TypeScript for better DX
+
+## Next Steps
+
+- Explore [Gemini Extension](/extensions/gemini)
+- Learn about [Memory Extension](/extensions/memory)
+- Try [Ollama Extension](/extensions/ollama)
+\`\`\`

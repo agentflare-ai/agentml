@@ -1,0 +1,220 @@
+---
+title: "Testing"
+description: "Testing strategies for ActiveFlow applications"
+---
+
+# Testing
+
+Comprehensive testing ensures your ActiveFlow application works reliably.
+
+## Unit Testing
+
+Test individual functions and components:
+
+\`\`\`typescript
+import { describe, it, expect } from 'vitest'
+import { processDocument } from './processor'
+
+describe('processDocument', () => {
+  it('should process valid document', async () => {
+    const doc = `
+      import: gemini
+      
+      prompt: Summarize this text
+      ---
+      This is a test document.
+    `
+    
+    const result = await processDocument(doc)
+    expect(result).toBeDefined()
+    expect(result.output).toContain('summary')
+  })
+
+  it('should throw on invalid document', async () => {
+    const doc = 'invalid document'
+    await expect(processDocument(doc)).rejects.toThrow()
+  })
+})
+\`\`\`
+
+## Integration Testing
+
+Test component interactions:
+
+\`\`\`typescript
+import { describe, it, expect, beforeEach } from 'vitest'
+import { createTestContext } from './test-utils'
+
+describe('Document Processing Pipeline', () => {
+  let context
+
+  beforeEach(() => {
+    context = createTestContext()
+  })
+
+  it('should process document through full pipeline', async () => {
+    const doc = `
+      import: gemini
+      import: memory
+      
+      prompt: Process this
+      ---
+      Test content
+    `
+    
+    const result = await context.pipeline.process(doc)
+    
+    expect(result.status).toBe('success')
+    expect(context.memory.get('last_result')).toBeDefined()
+  })
+})
+\`\`\`
+
+## Mocking LLM Calls
+
+Mock external API calls for faster, deterministic tests:
+
+\`\`\`typescript
+import { vi } from 'vitest'
+import { GeminiExtension } from 'activeflow/extensions/gemini'
+
+vi.mock('activeflow/extensions/gemini', () => ({
+  GeminiExtension: vi.fn().mockImplementation(() => ({
+    process: vi.fn().mockResolvedValue({
+      output: 'Mocked response',
+      tokens: 100
+    })
+  }))
+}))
+
+describe('with mocked LLM', () => {
+  it('should use mocked response', async () => {
+    const result = await processDocument(doc)
+    expect(result.output).toBe('Mocked response')
+  })
+})
+\`\`\`
+
+## Snapshot Testing
+
+Test document output consistency:
+
+\`\`\`typescript
+import { describe, it, expect } from 'vitest'
+
+describe('Document Output', () => {
+  it('should match snapshot', async () => {
+    const doc = `
+      import: gemini
+      prompt: Say hello
+    `
+    
+    const result = await processDocument(doc)
+    expect(result).toMatchSnapshot()
+  })
+})
+\`\`\`
+
+## End-to-End Testing
+
+Test complete user workflows with Playwright:
+
+\`\`\`typescript
+import { test, expect } from '@playwright/test'
+
+test('process document via UI', async ({ page }) => {
+  await page.goto('http://localhost:3000')
+  
+  await page.fill('#document-input', `
+    import: gemini
+    prompt: Hello world
+  `)
+  
+  await page.click('#process-button')
+  
+  await expect(page.locator('#result')).toContainText('Hello')
+})
+\`\`\`
+
+## Performance Testing
+
+Measure processing performance:
+
+\`\`\`typescript
+import { describe, it, expect } from 'vitest'
+
+describe('Performance', () => {
+  it('should process document within time limit', async () => {
+    const start = Date.now()
+    await processDocument(doc)
+    const duration = Date.now() - start
+    
+    expect(duration).toBeLessThan(5000) // 5 seconds
+  })
+
+  it('should handle concurrent requests', async () => {
+    const docs = Array(10).fill(testDoc)
+    const start = Date.now()
+    
+    await Promise.all(docs.map(doc => processDocument(doc)))
+    
+    const duration = Date.now() - start
+    expect(duration).toBeLessThan(10000)
+  })
+})
+\`\`\`
+
+## Test Coverage
+
+Aim for high test coverage:
+
+\`\`\`bash
+npm run test:coverage
+\`\`\`
+
+Target coverage goals:
+- Statements: 80%+
+- Branches: 75%+
+- Functions: 80%+
+- Lines: 80%+
+
+## Continuous Integration
+
+Run tests in CI/CD:
+
+\`\`\`yaml
+# .github/workflows/test.yml
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:coverage
+\`\`\`
+
+## Test Organization
+
+Structure tests logically:
+
+\`\`\`
+tests/
+├── unit/
+│   ├── parser.test.ts
+│   ├── interpreter.test.ts
+│   └── extensions/
+├── integration/
+│   ├── pipeline.test.ts
+│   └── state-machine.test.ts
+└── e2e/
+    ├── user-flows.spec.ts
+    └── api.spec.ts
+\`\`\`

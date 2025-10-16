@@ -1,0 +1,138 @@
+---
+title: "Contributing Guidelines"
+description: "How to contribute to ActiveFlow"
+---
+
+# Contributing Guidelines
+
+We welcome contributions to ActiveFlow! This guide will help you get started.
+
+## Code of Conduct
+
+Be respectful, inclusive, and constructive. We're building a welcoming community.
+
+## Getting Started
+
+1. Fork the repository
+2. Clone your fork: `git clone https://github.com/yourusername/activeflow.git`
+3. Create a branch: `git checkout -b feature/your-feature`
+4. Make your changes
+5. Run tests: `npm test`
+6. Commit: `git commit -m "Add your feature"`
+7. Push: `git push origin feature/your-feature`
+8. Open a Pull Request
+
+## Development Setup
+
+Install dependencies:
+
+\`\`\`bash
+npm install
+\`\`\`
+
+Run tests:
+
+\`\`\`bash
+npm test
+npm run test:watch
+npm run test:coverage
+\`\`\`
+
+Build the project:
+
+\`\`\`bash
+npm run build
+\`\`\`
+
+## Code Style
+
+We use ESLint and Prettier for code formatting:
+
+\`\`\`bash
+npm run lint
+npm run format
+\`\`\`
+
+Follow these conventions:
+
+- Use TypeScript for all new code
+- Write tests for new features
+- Document public APIs with JSDoc
+- Use meaningful variable names
+- Keep functions small and focused
+
+## Commit Messages
+
+Follow conventional commits:
+
+\`\`\`
+feat: Add new extension system
+fix: Resolve parsing error in namespaces
+docs: Update installation guide
+test: Add tests for state machine
+refactor: Simplify interpreter logic
+\`\`\`
+
+## Pull Request Process
+
+1. Update documentation for new features
+2. Add tests for bug fixes and features
+3. Ensure all tests pass
+4. Update CHANGELOG.md
+5. Request review from maintainers
+
+## Testing Requirements
+
+All contributions must include tests:
+
+- Unit tests for new functions
+- Integration tests for features
+- E2E tests for user-facing changes
+
+Maintain test coverage above 80%.
+
+## Documentation
+
+Update documentation for:
+
+- New features
+- API changes
+- Breaking changes
+- Configuration options
+
+Documentation lives in `/docs` as MDX files.
+
+## Issue Reporting
+
+When reporting issues, include:
+
+- ActiveFlow version
+- Node.js version
+- Operating system
+- Minimal reproduction example
+- Expected vs actual behavior
+- Error messages and stack traces
+
+## Feature Requests
+
+For feature requests, describe:
+
+- Use case and motivation
+- Proposed API or interface
+- Alternative solutions considered
+- Willingness to implement
+
+## Review Process
+
+Maintainers will review your PR and may request changes. Be patient and responsive to feedback.
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the MIT License.
+
+## Questions?
+
+Join our Discord community or open a discussion on GitHub.
+
+Thank you for contributing to ActiveFlow!
+\`\`\`

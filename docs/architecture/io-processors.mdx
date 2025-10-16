@@ -1,0 +1,368 @@
+---
+title: "I/O Processors"
+description: "Understanding input/output processing in ActiveDocs"
+---
+
+# I/O Processors
+
+I/O processors handle the transformation and routing of data between your application, LLMs, and external systems.
+
+## Overview
+
+I/O processors are middleware components that intercept, transform, and route data flowing through ActiveDocs.
+
+\`\`\`typescript
+import: activedocs/core
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    input: [preprocessInput],
+    output: [postprocessOutput]
+  }
+})
+\`\`\`
+
+## Input Processors
+
+Input processors transform data before it reaches the LLM:
+
+### Basic Input Processing
+
+\`\`\`typescript
+import: activedocs/core
+
+const preprocessInput = (input: string) => {
+  // Clean and format input
+  return input
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+}
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    input: [preprocessInput]
+  }
+})
+
+// Input is processed before sending to LLM
+await document.prompt('  HELLO  WORLD  ')
+// Actually sends: "hello world"
+\`\`\`
+
+### Advanced Input Processing
+
+\`\`\`typescript
+import: activedocs/core
+
+const addContext = (input: string, context: any) => {
+  const userContext = context.getState().user
+  return `User: ${userContext.name}\nQuery: ${input}`
+}
+
+const validateInput = (input: string) => {
+  if (input.length > 1000) {
+    throw new Error('Input too long')
+  }
+  return input
+}
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    input: [
+      validateInput,
+      addContext
+    ]
+  }
+})
+\`\`\`
+
+## Output Processors
+
+Output processors transform LLM responses:
+
+### Basic Output Processing
+
+\`\`\`typescript
+import: activedocs/core
+
+const formatOutput = (output: string) => {
+  // Format markdown
+  return output
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+}
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    output: [formatOutput]
+  }
+})
+\`\`\`
+
+### Advanced Output Processing
+
+\`\`\`typescript
+import: activedocs/core
+
+const extractMetadata = (output: string) => {
+  const metadata = {
+    wordCount: output.split(/\s+/).length,
+    hasCode: output.includes('```'),
+    sentiment: analyzeSentiment(output)
+  }
+  
+  return {
+    content: output,
+    metadata
+  }
+}
+
+const cacheOutput = async (output: any) => {
+  await cache.set(output.content, output.metadata)
+  return output
+}
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    output: [
+      extractMetadata,
+      cacheOutput
+    ]
+  }
+})
+\`\`\`
+
+## Streaming Processors
+
+Handle streaming responses with processors:
+
+\`\`\`typescript
+import: activedocs/core
+
+const streamProcessor = {
+  onToken: (token: string) => {
+    // Process each token
+    return token.toUpperCase()
+  },
+  onComplete: (content: string) => {
+    // Process complete response
+    return content.trim()
+  }
+}
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    stream: streamProcessor
+  }
+})
+
+document.stream('Generate text', {
+  onToken: (token) => {
+    // Receives processed tokens
+    console.log(token) // UPPERCASE
+  }
+})
+\`\`\`
+
+## Error Processors
+
+Handle errors in the processing pipeline:
+
+\`\`\`typescript
+import: activedocs/core
+
+const errorProcessor = (error: Error, context: any) => {
+  console.error('Processing error:', error)
+  
+  // Transform error
+  if (error.message.includes('rate limit')) {
+    return {
+      type: 'rate_limit',
+      retryAfter: 60000,
+      message: 'Please try again in 1 minute'
+    }
+  }
+  
+  return error
+}
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    error: errorProcessor
+  }
+})
+\`\`\`
+
+## Processor Chains
+
+Combine multiple processors:
+
+\`\`\`typescript
+import: activedocs/core
+
+// Input chain
+const inputChain = [
+  validateInput,
+  sanitizeInput,
+  addContext,
+  formatForLLM
+]
+
+// Output chain
+const outputChain = [
+  parseResponse,
+  extractData,
+  formatForUI,
+  cacheResult
+]
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    input: inputChain,
+    output: outputChain
+  }
+})
+\`\`\`
+
+## Conditional Processing
+
+Apply processors conditionally:
+
+\`\`\`typescript
+import: activedocs/core
+
+const conditionalProcessor = (input: string, context: any) => {
+  const state = context.getState()
+  
+  if (state.mode === 'strict') {
+    return strictValidation(input)
+  } else if (state.mode === 'lenient') {
+    return lenientValidation(input)
+  }
+  
+  return input
+}
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    input: [conditionalProcessor]
+  }
+})
+\`\`\`
+
+## Async Processors
+
+Use async operations in processors:
+
+\`\`\`typescript
+import: activedocs/core
+
+const asyncInputProcessor = async (input: string) => {
+  // Fetch additional context
+  const context = await fetchContext(input)
+  
+  // Enhance input with context
+  return `${input}\n\nContext: ${context}`
+}
+
+const asyncOutputProcessor = async (output: string) => {
+  // Save to database
+  await saveToDatabase(output)
+  
+  // Send notification
+  await sendNotification(output)
+  
+  return output
+}
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    input: [asyncInputProcessor],
+    output: [asyncOutputProcessor]
+  }
+})
+\`\`\`
+
+## Built-in Processors
+
+ActiveDocs includes several built-in processors:
+
+### Token Counter
+
+\`\`\`typescript
+import: activedocs/core
+import: activedocs/processors
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    input: [tokenCounter],
+    output: [tokenCounter]
+  }
+})
+
+document.on('tokens:counted', (event) => {
+  console.log('Input tokens:', event.input)
+  console.log('Output tokens:', event.output)
+})
+\`\`\`
+
+### Content Filter
+
+\`\`\`typescript
+import: activedocs/core
+import: activedocs/processors
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    input: [contentFilter({
+      blockProfanity: true,
+      blockPII: true
+    })]
+  }
+})
+\`\`\`
+
+### Rate Limiter
+
+\`\`\`typescript
+import: activedocs/core
+import: activedocs/processors
+
+const document = createDocument({
+  namespace: 'myapp',
+  processors: {
+    input: [rateLimiter({
+      maxRequests: 10,
+      windowMs: 60000
+    })]
+  }
+})
+\`\`\`
+
+## Best Practices
+
+1. **Keep processors focused** - Each should do one thing
+2. **Handle errors gracefully** - Don't let processors crash
+3. **Use async when needed** - For I/O operations
+4. **Chain processors logically** - Order matters
+5. **Test processors independently** - Unit test each one
+
+## Next Steps
+
+- Learn about [Document Structure](/architecture/document-structure)
+- Explore [Namespace System](/architecture/namespace-system)
+- Understand [Interpreter](/architecture/interpreter)
+\`\`\`

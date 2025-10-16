@@ -1,0 +1,485 @@
+---
+title: "State Machines"
+description: "Build complex workflows with declarative state machines"
+---
+
+# State Machines
+
+State machines are the foundation of workflow control in Agentic Flow. They allow you to define complex, multi-step processes in a clear, declarative way.
+
+## Why State Machines?
+
+Traditional imperative code for workflows becomes messy quickly:
+
+\`\`\`javascript
+// Traditional approach - hard to maintain
+let currentState = 'idle';
+
+async function handleMessage(msg) {
+  if (currentState === 'idle') {
+    currentState = 'processing';
+    const response = await callLLM(msg);
+    currentState = 'responding';
+    return response;
+  } else if (currentState === 'processing') {
+    // Handle concurrent messages?
+    // What if LLM fails?
+    // How to add new states?
+  }
+}
+\`\`\`
+
+With Agentic Flow state machines:
+
+\`\`\`
+import: std/state
+import: std/llm
+
+state: idle
+  on: user.message
+    llm.chat: event.content
+    transition: processing
+
+state: processing
+  on: llm.response
+    emit: bot.message
+      content: event.text
+    transition: idle
+  
+  on: llm.error
+    transition: error
+\`\`\`
+
+## Basic State Machine
+
+### Defining States
+
+States are defined with the `state:` keyword:
+
+\`\`\`
+state: idle
+  # Event handlers go here
+
+state: processing
+  # Event handlers go here
+
+state: complete
+  # Event handlers go here
+\`\`\`
+
+### State Transitions
+
+Move between states with `transition:`:
+
+\`\`\`
+state: idle
+  on: start
+    transition: processing
+
+state: processing
+  on: complete
+    transition: done
+\`\`\`
+
+### Initial State
+
+The first state defined is the initial state:
+
+\`\`\`
+# This is the initial state
+state: waiting
+  on: begin
+    transition: active
+
+state: active
+  on: finish
+    transition: complete
+\`\`\`
+
+## Event Handlers
+
+### Basic Event Handling
+
+Handle events within states:
+
+\`\`\`
+state: idle
+  on: user.message
+    emit: processing.started
+    transition: processing
+\`\`\`
+
+### Multiple Event Handlers
+
+A state can handle multiple event types:
+
+\`\`\`
+state: active
+  on: user.message
+    # Handle user input
+    transition: processing
+  
+  on: system.shutdown
+    # Handle shutdown
+    transition: cleanup
+  
+  on: error
+    # Handle errors
+    transition: error
+\`\`\`
+
+### Event Data Access
+
+Access event data with `event.*`:
+
+\`\`\`
+state: processing
+  on: user.message
+    llm.chat:
+      message: event.content
+      userId: event.userId
+      timestamp: event.timestamp
+\`\`\`
+
+## Complex Workflows
+
+### Multi-Step Process
+
+\`\`\`
+import: std/llm
+import: std/state
+
+state: idle
+  on: user.query
+    transition: analyzing
+
+state: analyzing
+  on: enter
+    llm.chat:
+      system: "Analyze the user's intent"
+      message: event.content
+  on: llm.response
+    transition: processing
+
+state: processing
+  on: enter
+    llm.chat:
+      system: "Generate a detailed response"
+      context: event.analysis
+  on: llm.response
+    transition: formatting
+
+state: formatting
+  on: enter
+    emit: response.ready
+      content: event.text
+    transition: idle
+\`\`\`
+
+### Conditional Transitions
+
+Use guards for conditional transitions:
+
+\`\`\`
+state: validating
+  on: data.received
+    if: event.isValid
+      transition: processing
+    else:
+      transition: error
+\`\`\`
+
+### Parallel States
+
+Handle multiple concurrent workflows:
+
+\`\`\`
+state: main
+  parallel:
+    - workflow: user_interaction
+    - workflow: background_tasks
+
+workflow: user_interaction
+  state: idle
+    on: user.message
+      transition: responding
+
+workflow: background_tasks
+  state: monitoring
+    on: system.check
+      transition: analyzing
+\`\`\`
+
+## State Entry and Exit
+
+### Entry Actions
+
+Execute actions when entering a state:
+
+\`\`\`
+state: processing
+  on: enter
+    emit: processing.started
+    llm.chat: "Begin processing"
+  
+  on: llm.response
+    transition: complete
+\`\`\`
+
+### Exit Actions
+
+Execute actions when leaving a state:
+
+\`\`\`
+state: processing
+  on: exit
+    emit: processing.complete
+    cleanup: true
+  
+  on: complete
+    transition: done
+\`\`\`
+
+## Error Handling
+
+### Error States
+
+Define dedicated error states:
+
+\`\`\`
+state: processing
+  on: llm.error
+    transition: error
+
+state: error
+  on: enter
+    emit: error.occurred
+      message: event.error
+  
+  on: retry
+    transition: processing
+  
+  on: cancel
+    transition: idle
+\`\`\`
+
+### Timeout Handling
+
+Handle timeouts in long-running states:
+
+\`\`\`
+state: waiting
+  timeout: 30s
+  on: timeout
+    emit: timeout.occurred
+    transition: error
+  
+  on: response.received
+    transition: processing
+\`\`\`
+
+## State History
+
+### Tracking Previous States
+
+Access previous state information:
+
+\`\`\`
+state: processing
+  on: error
+    emit: error.context
+      previousState: state.previous
+      errorMessage: event.error
+    transition: error
+\`\`\`
+
+### State Stack
+
+Maintain a stack of states for complex navigation:
+
+\`\`\`
+state: main
+  on: open.modal
+    push: modal
+  
+state: modal
+  on: close
+    pop: previous
+\`\`\`
+
+## Best Practices
+
+### Keep States Focused
+
+Each state should have a single responsibility:
+
+\`\`\`
+# Good - focused states
+state: validating
+  on: data.received
+    validate: event.data
+    transition: processing
+
+state: processing
+  on: validation.passed
+    process: event.data
+    transition: complete
+
+# Bad - doing too much in one state
+state: handle_everything
+  on: data.received
+    validate: event.data
+    process: event.data
+    format: event.data
+    send: event.data
+\`\`\`
+
+### Use Meaningful State Names
+
+\`\`\`
+# Good - clear intent
+state: waiting_for_user_input
+state: processing_llm_request
+state: formatting_response
+
+# Bad - vague names
+state: state1
+state: doing_stuff
+state: temp
+\`\`\`
+
+### Handle All Possible Events
+
+\`\`\`
+state: processing
+  on: llm.response
+    transition: complete
+  
+  on: llm.error
+    transition: error
+  
+  on: user.cancel
+    transition: cancelled
+  
+  on: timeout
+    transition: error
+\`\`\`
+
+### Document Complex Transitions
+
+\`\`\`
+state: analyzing
+  # Transition to processing if confidence > 0.8
+  # Otherwise, ask for clarification
+  on: analysis.complete
+    if: event.confidence > 0.8
+      transition: processing
+    else:
+      transition: clarifying
+\`\`\`
+
+## Advanced Patterns
+
+### State Machine Composition
+
+Compose multiple state machines:
+
+\`\`\`
+import: workflows/authentication
+import: workflows/data_processing
+
+state: main
+  on: user.login
+    include: authentication
+  
+  on: auth.success
+    include: data_processing
+\`\`\`
+
+### Hierarchical States
+
+Create nested state machines:
+
+\`\`\`
+state: application
+  state: authenticated
+    state: browsing
+      on: select.item
+        transition: viewing
+    
+    state: viewing
+      on: back
+        transition: browsing
+  
+  state: unauthenticated
+    on: login
+      transition: authenticated
+\`\`\`
+
+## Testing State Machines
+
+### Unit Testing States
+
+\`\`\`javascript
+import { AgenticFlow } from 'agentic-flow';
+
+test('transitions from idle to processing', async () => {
+  const af = new AgenticFlow();
+  await af.loadDocument(document);
+  
+  expect(af.currentState).toBe('idle');
+  
+  await af.emit('user.message', { content: 'Hello' });
+  
+  expect(af.currentState).toBe('processing');
+});
+\`\`\`
+
+### Testing Transitions
+
+\`\`\`javascript
+test('handles error transition', async () => {
+  const af = new AgenticFlow();
+  await af.loadDocument(document);
+  
+  await af.emit('llm.error', { error: 'API failed' });
+  
+  expect(af.currentState).toBe('error');
+});
+\`\`\`
+
+## Debugging State Machines
+
+### State Logging
+
+\`\`\`
+state: processing
+  on: enter
+    log: "Entered processing state"
+  
+  on: llm.response
+    log: "Received LLM response"
+    transition: complete
+\`\`\`
+
+### State Visualization
+
+Use the AF debugger to visualize state transitions:
+
+\`\`\`javascript
+const af = new AgenticFlow({ debug: true });
+af.on('state.transition', (from, to) => {
+  console.log(`${from} -> ${to}`);
+});
+\`\`\`
+
+## Next Steps
+
+- Learn about [Events & Schemas](/concepts/events-schemas) for structured data
+- Explore [Namespaces](/concepts/namespaces) for organizing functionality
+- Read [Best Practices](/best-practices) for production patterns
+
+---
+
+**Need Help?** Check out [example state machines](https://github.com/agentic-flow/examples/state-machines) or ask in our [Discord](https://discord.gg/agentic-flow).
+\`\`\`

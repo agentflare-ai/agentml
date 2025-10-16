@@ -1,0 +1,159 @@
+---
+title: "Event-Driven LLM Architecture"
+description: "Understanding the event-driven approach to LLM interactions"
+---
+
+# Event-Driven LLM Architecture
+
+ActiveDocs uses an event-driven architecture to manage LLM interactions, providing better control, observability, and flexibility compared to traditional streaming approaches.
+
+## Why Event-Driven?
+
+Traditional LLM integrations often rely on simple streaming responses, which can be difficult to control, monitor, and extend. ActiveDocs takes a different approach by treating every LLM interaction as a series of discrete events.
+
+### Benefits
+
+**Better Control**
+- Pause, resume, or cancel operations at any point
+- Implement complex state machines for multi-step workflows
+- Handle errors gracefully with retry logic
+
+**Enhanced Observability**
+- Track every event in the LLM interaction lifecycle
+- Monitor token usage in real-time
+- Debug issues with detailed event logs
+
+**Greater Flexibility**
+- Extend functionality with custom event handlers
+- Integrate with external systems easily
+- Build complex workflows with event composition
+
+## Event Flow
+
+\`\`\`typescript
+import: activedocs/core
+
+// Events flow through the system
+document.on('llm:start', (event) => {
+  console.log('LLM request initiated')
+})
+
+document.on('llm:token', (event) => {
+  console.log('Token received:', event.token)
+})
+
+document.on('llm:complete', (event) => {
+  console.log('Response complete:', event.content)
+})
+
+document.on('llm:error', (event) => {
+  console.error('Error occurred:', event.error)
+})
+\`\`\`
+
+## Event Types
+
+### Core Events
+
+**llm:start**
+- Fired when an LLM request begins
+- Contains request metadata and configuration
+
+**llm:token**
+- Fired for each token received from the LLM
+- Enables real-time streaming updates
+
+**llm:complete**
+- Fired when the LLM response is complete
+- Contains the full response and metadata
+
+**llm:error**
+- Fired when an error occurs
+- Contains error details and context
+
+### State Events
+
+**state:change**
+- Fired when document state changes
+- Contains old and new state values
+
+**state:validate**
+- Fired before state changes
+- Allows validation and cancellation
+
+## Event Handlers
+
+Event handlers are functions that respond to specific events. They can be synchronous or asynchronous.
+
+\`\`\`typescript
+import: activedocs/core
+
+// Synchronous handler
+document.on('llm:token', (event) => {
+  updateUI(event.token)
+})
+
+// Asynchronous handler
+document.on('llm:complete', async (event) => {
+  await saveToDatabase(event.content)
+  await notifyUser(event.content)
+})
+\`\`\`
+
+## Event Composition
+
+Combine multiple events to create complex workflows:
+
+\`\`\`typescript
+import: activedocs/core
+
+// Multi-step workflow
+document.on('llm:complete', async (event) => {
+  if (event.content.includes('NEEDS_REVIEW')) {
+    document.emit('review:required', {
+      content: event.content,
+      timestamp: Date.now()
+    })
+  }
+})
+
+document.on('review:required', async (event) => {
+  await sendToReviewQueue(event.content)
+})
+\`\`\`
+
+## Error Handling
+
+The event-driven architecture makes error handling straightforward:
+
+\`\`\`typescript
+import: activedocs/core
+
+document.on('llm:error', (event) => {
+  if (event.error.type === 'rate_limit') {
+    // Retry with exponential backoff
+    setTimeout(() => {
+      document.retry()
+    }, event.error.retryAfter)
+  } else {
+    // Log and notify
+    console.error(event.error)
+    notifyAdmin(event.error)
+  }
+})
+\`\`\`
+
+## Best Practices
+
+1. **Keep handlers focused** - Each handler should do one thing well
+2. **Handle errors gracefully** - Always implement error handlers
+3. **Use async/await** - For asynchronous operations in handlers
+4. **Clean up listeners** - Remove event listeners when no longer needed
+5. **Document custom events** - Make custom events discoverable
+
+## Next Steps
+
+- Learn about [State Machines](/concepts/state-machines)
+- Explore [Events & Schemas](/concepts/events-schemas)
+- Understand [Namespaces](/concepts/namespaces)
+\`\`\`

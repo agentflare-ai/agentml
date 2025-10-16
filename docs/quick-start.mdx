@@ -1,0 +1,293 @@
+---
+title: "Quick Start"
+description: "Build your first Agentic Flow application in 5 minutes"
+---
+
+# Quick Start
+
+Build your first Agentic Flow application in just 5 minutes. This guide walks you through creating a simple chatbot that demonstrates the core concepts.
+
+## Your First AF Document
+
+Create a file called `chatbot.af`:
+
+\`\`\`
+import: std/llm
+import: std/state
+
+state: idle
+  on: user.message
+    llm.chat:
+      model: gpt-4
+      system: "You are a helpful assistant"
+      message: event.content
+    transition: responding
+
+state: responding
+  on: llm.response
+    emit: bot.message
+      content: event.text
+    transition: idle
+\`\`\`
+
+## Understanding the Code
+
+Let's break down what's happening:
+
+### Imports
+
+\`\`\`
+import: std/llm
+import: std/state
+\`\`\`
+
+We import two standard namespaces:
+- `std/llm`: Provides LLM integration
+- `std/state`: Enables state machine functionality
+
+### State Machine
+
+\`\`\`
+state: idle
+  on: user.message
+    ...
+\`\`\`
+
+We define states and event handlers. The chatbot starts in the `idle` state and responds to `user.message` events.
+
+### LLM Integration
+
+\`\`\`
+llm.chat:
+  model: gpt-4
+  system: "You are a helpful assistant"
+  message: event.content
+\`\`\`
+
+When a user message arrives, we call the LLM with the message content.
+
+### Event Emission
+
+\`\`\`
+emit: bot.message
+  content: event.text
+\`\`\`
+
+When the LLM responds, we emit a `bot.message` event with the response.
+
+## Running Your Application
+
+### Node.js
+
+Create `index.js`:
+
+\`\`\`javascript
+import { AgenticFlow } from 'agentic-flow';
+import fs from 'fs';
+
+// Load the document
+const document = fs.readFileSync('chatbot.af', 'utf-8');
+
+// Create AF instance
+const af = new AgenticFlow();
+await af.loadDocument(document);
+
+// Handle bot messages
+af.on('bot.message', (event) => {
+  console.log('Bot:', event.content);
+});
+
+// Send a user message
+await af.emit('user.message', {
+  content: 'Hello! How are you?'
+});
+\`\`\`
+
+Run it:
+
+\`\`\`bash
+node index.js
+\`\`\`
+
+### Python
+
+Create `main.py`:
+
+\`\`\`python
+from agentic_flow import AgenticFlow
+
+# Load the document
+with open('chatbot.af', 'r') as f:
+    document = f.read()
+
+# Create AF instance
+af = AgenticFlow()
+af.load_document(document)
+
+# Handle bot messages
+@af.on('bot.message')
+def handle_bot_message(event):
+    print(f"Bot: {event['content']}")
+
+# Send a user message
+af.emit('user.message', {
+    'content': 'Hello! How are you?'
+})
+\`\`\`
+
+Run it:
+
+\`\`\`bash
+python main.py
+\`\`\`
+
+## Adding Memory
+
+Let's enhance our chatbot with conversation memory:
+
+\`\`\`
+import: std/llm
+import: std/state
+import: std/memory
+
+state: idle
+  on: user.message
+    # Store the message
+    memory.store:
+      key: "conversation"
+      value: event.content
+    
+    # Get conversation history
+    memory.get:
+      key: "conversation"
+    
+    transition: processing
+
+state: processing
+  on: memory.retrieved
+    llm.chat:
+      model: gpt-4
+      system: "You are a helpful assistant"
+      context: event.value
+      message: event.content
+    transition: responding
+
+state: responding
+  on: llm.response
+    emit: bot.message
+      content: event.text
+    transition: idle
+\`\`\`
+
+## Adding Error Handling
+
+Make your chatbot more robust:
+
+\`\`\`
+import: std/llm
+import: std/state
+import: std/error
+
+state: idle
+  on: user.message
+    llm.chat:
+      model: gpt-4
+      system: "You are a helpful assistant"
+      message: event.content
+    transition: responding
+
+state: responding
+  on: llm.response
+    emit: bot.message
+      content: event.text
+    transition: idle
+  
+  on: llm.error
+    error.log:
+      message: "LLM request failed"
+      error: event.error
+    emit: bot.message
+      content: "Sorry, I encountered an error"
+    transition: idle
+\`\`\`
+
+## Interactive Example
+
+Let's create a more interactive chatbot with a CLI:
+
+\`\`\`javascript
+import { AgenticFlow } from 'agentic-flow';
+import readline from 'readline';
+import fs from 'fs';
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+// Load document
+const document = fs.readFileSync('chatbot.af', 'utf-8');
+const af = new AgenticFlow();
+await af.loadDocument(document);
+
+// Handle bot responses
+af.on('bot.message', (event) => {
+  console.log('\nBot:', event.content, '\n');
+  promptUser();
+});
+
+// Prompt for user input
+function promptUser() {
+  rl.question('You: ', async (input) => {
+    if (input.toLowerCase() === 'exit') {
+      rl.close();
+      return;
+    }
+    
+    await af.emit('user.message', {
+      content: input
+    });
+  });
+}
+
+console.log('Chatbot ready! Type "exit" to quit.\n');
+promptUser();
+\`\`\`
+
+## Next Steps
+
+Congratulations! You've built your first Agentic Flow application. Here's what to explore next:
+
+### Learn Core Concepts
+
+- [State Machines](/concepts/state-machines) - Build complex workflows
+- [Events & Schemas](/concepts/events-schemas) - Structure your data
+- [Namespaces](/concepts/namespaces) - Organize functionality
+
+### Explore Architecture
+
+- [Document Structure](/architecture/document-structure) - Deep dive into AF documents
+- [Interpreter](/architecture/interpreter) - How execution works
+- [I/O Processors](/architecture/io-processors) - External integrations
+
+### Build Real Applications
+
+- [Extensions](/extensions) - Add Gemini, Memory, Ollama
+- [Best Practices](/best-practices) - Production-ready patterns
+- [Deployment](/deployment/interoperability) - Ship to production
+
+## Example Projects
+
+Check out these complete examples:
+
+- **Customer Support Bot**: Multi-turn conversations with context
+- **Data Analysis Agent**: Process and analyze data with LLMs
+- **Workflow Automation**: Complex multi-step workflows
+- **RAG Application**: Retrieval-augmented generation
+
+Find them at [github.com/agentic-flow/examples](https://github.com/agentic-flow/examples)
+
+---
+
+**Questions?** Join our [Discord community](https://discord.gg/agentic-flow) for help and discussions.
+\`\`\`

@@ -1,0 +1,195 @@
+---
+title: "Error Handling"
+description: "Best practices for handling errors in ActiveFlow applications"
+---
+
+# Error Handling
+
+Robust error handling is essential for production ActiveFlow applications.
+
+## Error Types
+
+ActiveFlow distinguishes between different error types:
+
+\`\`\`typescript
+import { ProcessingError, ValidationError, TimeoutError } from 'activeflow'
+
+try {
+  await processDocument(doc)
+} catch (error) {
+  if (error instanceof ValidationError) {
+    console.error('Invalid document format:', error.message)
+  } else if (error instanceof TimeoutError) {
+    console.error('Processing timeout:', error.message)
+  } else if (error instanceof ProcessingError) {
+    console.error('Processing failed:', error.message)
+  } else {
+    console.error('Unknown error:', error)
+  }
+}
+\`\`\`
+
+## Graceful Degradation
+
+Handle errors gracefully without crashing:
+
+\`\`\`typescript
+async function processWithFallback(doc: string) {
+  try {
+    return await processDocument(doc)
+  } catch (error) {
+    console.error('Primary processing failed, using fallback')
+    return await processFallback(doc)
+  }
+}
+\`\`\`
+
+## Retry Logic
+
+Implement exponential backoff for transient failures:
+
+\`\`\`typescript
+async function processWithRetry(doc: string, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await processDocument(doc)
+    } catch (error) {
+      if (i === maxRetries - 1) throw error
+      
+      const delay = Math.pow(2, i) * 1000
+      console.log(`Retry ${i + 1}/${maxRetries} after ${delay}ms`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+}
+\`\`\`
+
+## Error Boundaries
+
+Use error boundaries in React applications:
+
+\`\`\`typescript
+import { ErrorBoundary } from 'react-error-boundary'
+
+function ErrorFallback({ error, resetErrorBoundary }) {
+  return (
+    <div role="alert">
+      <p>Something went wrong:</p>
+      <pre>{error.message}</pre>
+      <button onClick={resetErrorBoundary}>Try again</button>
+    </div>
+  )
+}
+
+function App() {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <ActiveFlowComponent />
+    </ErrorBoundary>
+  )
+}
+\`\`\`
+
+## Logging
+
+Implement comprehensive logging:
+
+\`\`\`typescript
+import { logger } from './logger'
+
+try {
+  logger.info('Starting document processing', { docId: doc.id })
+  const result = await processDocument(doc)
+  logger.info('Processing completed', { docId: doc.id, duration: result.duration })
+  return result
+} catch (error) {
+  logger.error('Processing failed', { 
+    docId: doc.id, 
+    error: error.message,
+    stack: error.stack 
+  })
+  throw error
+}
+\`\`\`
+
+## Validation
+
+Validate inputs early:
+
+\`\`\`typescript
+function validateDocument(doc: unknown): asserts doc is Document {
+  if (!doc || typeof doc !== 'object') {
+    throw new ValidationError('Document must be an object')
+  }
+  
+  if (!('content' in doc) || typeof doc.content !== 'string') {
+    throw new ValidationError('Document must have a content string')
+  }
+  
+  if (doc.content.length === 0) {
+    throw new ValidationError('Document content cannot be empty')
+  }
+}
+\`\`\`
+
+## Circuit Breaker
+
+Prevent cascading failures:
+
+\`\`\`typescript
+class CircuitBreaker {
+  private failures = 0
+  private lastFailure = 0
+  private readonly threshold = 5
+  private readonly timeout = 60000
+
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.isOpen()) {
+      throw new Error('Circuit breaker is open')
+    }
+
+    try {
+      const result = await fn()
+      this.onSuccess()
+      return result
+    } catch (error) {
+      this.onFailure()
+      throw error
+    }
+  }
+
+  private isOpen(): boolean {
+    return this.failures >= this.threshold && 
+           Date.now() - this.lastFailure < this.timeout
+  }
+
+  private onSuccess() {
+    this.failures = 0
+  }
+
+  private onFailure() {
+    this.failures++
+    this.lastFailure = Date.now()
+  }
+}
+\`\`\`
+
+## Monitoring
+
+Track errors in production:
+
+\`\`\`typescript
+import * as Sentry from '@sentry/node'
+
+Sentry.init({ dsn: process.env.SENTRY_DSN })
+
+try {
+  await processDocument(doc)
+} catch (error) {
+  Sentry.captureException(error, {
+    tags: { component: 'document-processor' },
+    extra: { docId: doc.id }
+  })
+  throw error
+}
+\`\`\`

@@ -1,0 +1,267 @@
+---
+title: "Gemini Extension"
+description: "Integrate Google's Gemini models with ActiveDocs"
+---
+
+# Gemini Extension
+
+The Gemini extension enables ActiveDocs to use Google's Gemini models for LLM operations.
+
+## Installation
+
+\`\`\`bash
+npm install @activedocs/extension-gemini
+\`\`\`
+
+## Basic Usage
+
+\`\`\`typescript
+import: activedocs/core
+import: activedocs/extensions/gemini
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    geminiExtension({
+      apiKey: process.env.GEMINI_API_KEY
+    })
+  ]
+})
+
+// Use Gemini for prompts
+const response = await document.prompt('Explain quantum computing')
+\`\`\`
+
+## Configuration
+
+Configure the Gemini extension with various options:
+
+\`\`\`typescript
+import: activedocs/extensions/gemini
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    geminiExtension({
+      // Required: Your Gemini API key
+      apiKey: process.env.GEMINI_API_KEY,
+      
+      // Optional: Model to use
+      model: 'gemini-pro', // or 'gemini-pro-vision'
+      
+      // Optional: Generation config
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 1024
+      },
+      
+      // Optional: Safety settings
+      safetySettings: [
+        {
+          category: 'HARM_CATEGORY_HARASSMENT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+        }
+      ]
+    })
+  ]
+})
+\`\`\`
+
+## Models
+
+### Gemini Pro
+
+Text-only model for general tasks:
+
+\`\`\`typescript
+import: activedocs/extensions/gemini
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    geminiExtension({
+      apiKey: process.env.GEMINI_API_KEY,
+      model: 'gemini-pro'
+    })
+  ]
+})
+
+const response = await document.prompt('Write a haiku about coding')
+\`\`\`
+
+### Gemini Pro Vision
+
+Multimodal model for text and images:
+
+\`\`\`typescript
+import: activedocs/extensions/gemini
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    geminiExtension({
+      apiKey: process.env.GEMINI_API_KEY,
+      model: 'gemini-pro-vision'
+    })
+  ]
+})
+
+const response = await document.prompt({
+  text: 'What is in this image?',
+  image: {
+    data: imageBuffer,
+    mimeType: 'image/jpeg'
+  }
+})
+\`\`\`
+
+## Streaming
+
+Stream responses from Gemini:
+
+\`\`\`typescript
+import: activedocs/extensions/gemini
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [geminiExtension({ apiKey: process.env.GEMINI_API_KEY })]
+})
+
+document.stream('Write a story about a robot', {
+  onToken: (token) => {
+    process.stdout.write(token)
+  },
+  onComplete: (content) => {
+    console.log('\n\nComplete:', content)
+  }
+})
+\`\`\`
+
+## Generation Parameters
+
+Control generation with parameters:
+
+\`\`\`typescript
+import: activedocs/extensions/gemini
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    geminiExtension({
+      apiKey: process.env.GEMINI_API_KEY,
+      generationConfig: {
+        // Temperature: 0.0 to 1.0
+        // Lower = more deterministic
+        temperature: 0.9,
+        
+        // Top-K: Number of tokens to consider
+        topK: 40,
+        
+        // Top-P: Cumulative probability threshold
+        topP: 0.95,
+        
+        // Maximum tokens to generate
+        maxOutputTokens: 2048,
+        
+        // Stop sequences
+        stopSequences: ['END', 'STOP']
+      }
+    })
+  ]
+})
+\`\`\`
+
+## Safety Settings
+
+Configure content safety:
+
+\`\`\`typescript
+import: activedocs/extensions/gemini
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    geminiExtension({
+      apiKey: process.env.GEMINI_API_KEY,
+      safetySettings: [
+        {
+          category: 'HARM_CATEGORY_HARASSMENT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+        },
+        {
+          category: 'HARM_CATEGORY_HATE_SPEECH',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+        },
+        {
+          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+        },
+        {
+          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+        }
+      ]
+    })
+  ]
+})
+\`\`\`
+
+## Error Handling
+
+Handle Gemini-specific errors:
+
+\`\`\`typescript
+import: activedocs/extensions/gemini
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [geminiExtension({ apiKey: process.env.GEMINI_API_KEY })]
+})
+
+document.on('gemini:error', (event) => {
+  if (event.error.code === 'RATE_LIMIT_EXCEEDED') {
+    console.log('Rate limit hit, retrying in 60s')
+    setTimeout(() => document.retry(), 60000)
+  } else if (event.error.code === 'SAFETY_BLOCKED') {
+    console.log('Content blocked by safety filters')
+  } else {
+    console.error('Gemini error:', event.error)
+  }
+})
+\`\`\`
+
+## Token Usage
+
+Track token usage:
+
+\`\`\`typescript
+import: activedocs/extensions/gemini
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [geminiExtension({ apiKey: process.env.GEMINI_API_KEY })]
+})
+
+document.on('gemini:complete', (event) => {
+  console.log('Prompt tokens:', event.usage.promptTokens)
+  console.log('Completion tokens:', event.usage.completionTokens)
+  console.log('Total tokens:', event.usage.totalTokens)
+})
+\`\`\`
+
+## Best Practices
+
+1. **Secure API keys** - Never commit keys to version control
+2. **Handle rate limits** - Implement retry logic
+3. **Monitor token usage** - Track costs
+4. **Use appropriate models** - Choose based on task
+5. **Configure safety** - Set appropriate safety thresholds
+
+## Next Steps
+
+- Explore [Memory Extension](/extensions/memory)
+- Try [Ollama Extension](/extensions/ollama)
+- Build [Custom Extensions](/extensions/custom)
+\`\`\`

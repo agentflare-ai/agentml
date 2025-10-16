@@ -1,0 +1,260 @@
+---
+title: "Performance Optimization"
+description: "Optimize your ActiveFlow application for speed and efficiency"
+---
+
+# Performance Optimization
+
+Optimize your ActiveFlow application for maximum performance and minimal costs.
+
+## Token Efficiency
+
+Minimize token usage to reduce costs and latency:
+
+\`\`\`typescript
+// Bad: Verbose prompt
+const doc = `
+import: gemini
+
+prompt: Please analyze the following text and provide a comprehensive summary including all the main points, key details, and important information contained within.
+---
+${longText}
+`
+
+// Good: Concise prompt
+const doc = `
+import: gemini
+
+prompt: Summarize key points
+---
+${longText}
+`
+\`\`\`
+
+## Caching
+
+Cache LLM responses for repeated queries:
+
+\`\`\`typescript
+import { LRUCache } from 'lru-cache'
+
+const cache = new LRUCache<string, any>({
+  max: 500,
+  ttl: 1000 * 60 * 60 // 1 hour
+})
+
+async function processWithCache(doc: string) {
+  const key = hashDocument(doc)
+  
+  const cached = cache.get(key)
+  if (cached) return cached
+  
+  const result = await processDocument(doc)
+  cache.set(key, result)
+  
+  return result
+}
+\`\`\`
+
+## Streaming
+
+Stream responses for better perceived performance:
+
+\`\`\`typescript
+import { streamDocument } from 'activeflow'
+
+async function* processStream(doc: string) {
+  for await (const chunk of streamDocument(doc)) {
+    yield chunk
+  }
+}
+
+// Usage
+for await (const chunk of processStream(doc)) {
+  console.log(chunk)
+}
+\`\`\`
+
+## Batch Processing
+
+Process multiple documents efficiently:
+
+\`\`\`typescript
+async function processBatch(docs: string[]) {
+  // Process in parallel with concurrency limit
+  const concurrency = 5
+  const results = []
+  
+  for (let i = 0; i < docs.length; i += concurrency) {
+    const batch = docs.slice(i, i + concurrency)
+    const batchResults = await Promise.all(
+      batch.map(doc => processDocument(doc))
+    )
+    results.push(...batchResults)
+  }
+  
+  return results
+}
+\`\`\`
+
+## Lazy Loading
+
+Load extensions only when needed:
+
+\`\`\`typescript
+// Bad: Load all extensions upfront
+import { GeminiExtension, MemoryExtension, OllamaExtension } from 'activeflow'
+
+// Good: Dynamic imports
+async function getExtension(name: string) {
+  switch (name) {
+    case 'gemini':
+      return (await import('activeflow/extensions/gemini')).GeminiExtension
+    case 'memory':
+      return (await import('activeflow/extensions/memory')).MemoryExtension
+    default:
+      throw new Error(`Unknown extension: ${name}`)
+  }
+}
+\`\`\`
+
+## Connection Pooling
+
+Reuse database connections:
+
+\`\`\`typescript
+import { Pool } from 'pg'
+
+const pool = new Pool({
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+})
+
+async function query(sql: string, params: any[]) {
+  const client = await pool.connect()
+  try {
+    return await client.query(sql, params)
+  } finally {
+    client.release()
+  }
+}
+\`\`\`
+
+## Compression
+
+Compress large documents:
+
+\`\`\`typescript
+import { gzip, gunzip } from 'zlib'
+import { promisify } from 'util'
+
+const gzipAsync = promisify(gzip)
+const gunzipAsync = promisify(gunzip)
+
+async function compressDocument(doc: string) {
+  const buffer = Buffer.from(doc, 'utf-8')
+  return await gzipAsync(buffer)
+}
+
+async function decompressDocument(compressed: Buffer) {
+  const buffer = await gunzipAsync(compressed)
+  return buffer.toString('utf-8')
+}
+\`\`\`
+
+## Monitoring
+
+Track performance metrics:
+
+\`\`\`typescript
+import { performance } from 'perf_hooks'
+
+async function processWithMetrics(doc: string) {
+  const start = performance.now()
+  
+  try {
+    const result = await processDocument(doc)
+    const duration = performance.now() - start
+    
+    console.log('Processing metrics:', {
+      duration,
+      tokens: result.tokens,
+      tokensPerSecond: result.tokens / (duration / 1000)
+    })
+    
+    return result
+  } catch (error) {
+    const duration = performance.now() - start
+    console.error('Processing failed:', { duration, error })
+    throw error
+  }
+}
+\`\`\`
+
+## Memory Management
+
+Prevent memory leaks:
+
+\`\`\`typescript
+// Bad: Memory leak
+const cache = new Map()
+function process(doc: string) {
+  cache.set(doc, result) // Never cleared
+}
+
+// Good: Bounded cache
+import { LRUCache } from 'lru-cache'
+const cache = new LRUCache({ max: 1000 })
+\`\`\`
+
+## Database Indexing
+
+Index frequently queried fields:
+
+\`\`\`sql
+CREATE INDEX idx_documents_created_at ON documents(created_at);
+CREATE INDEX idx_documents_user_id ON documents(user_id);
+CREATE INDEX idx_documents_status ON documents(status);
+\`\`\`
+
+## CDN for Static Assets
+
+Serve static assets from a CDN:
+
+\`\`\`typescript
+// next.config.js
+module.exports = {
+  assetPrefix: process.env.CDN_URL || '',
+}
+\`\`\`
+
+## Profiling
+
+Profile your application to find bottlenecks:
+
+\`\`\`bash
+node --prof app.js
+node --prof-process isolate-*.log > profile.txt
+\`\`\`
+
+Use Chrome DevTools for browser profiling.
+
+## Load Testing
+
+Test performance under load:
+
+\`\`\`typescript
+import autocannon from 'autocannon'
+
+autocannon({
+  url: 'http://localhost:3000/api/process',
+  connections: 10,
+  duration: 30,
+  method: 'POST',
+  body: JSON.stringify({ document: testDoc }),
+  headers: {
+    'content-type': 'application/json'
+  }
+}, console.log)
+\`\`\`

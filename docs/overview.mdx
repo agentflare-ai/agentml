@@ -1,0 +1,148 @@
+---
+title: "Overview"
+description: "Introduction to Agentic Flow Documents - A revolutionary approach to LLM orchestration"
+---
+
+# Agentic Flow Documents
+
+**Agentic Flow Documents** is a revolutionary framework for building LLM-powered applications using a document-centric, event-driven architecture. Instead of writing imperative code, you define your application's behavior in structured documents that the system interprets and executes.
+
+## Why Agentic Flow?
+
+Traditional LLM applications suffer from several critical problems:
+
+- **Token Waste**: Sending entire conversation histories on every request
+- **Tight Coupling**: Hard-coded prompts mixed with business logic
+- **Poor Scalability**: Monolithic architectures that don't scale
+- **Limited Reusability**: Can't share components across projects
+
+Agentic Flow solves these problems with a fundamentally different approach.
+
+## Core Philosophy
+
+### Document-Centric Architecture
+
+Everything in Agentic Flow is a document. Your application logic, state machines, prompts, and configurations all live in structured documents that can be:
+
+- Version controlled
+- Shared across projects
+- Composed and extended
+- Validated and tested
+
+### Event-Driven Execution
+
+Instead of imperative function calls, your application responds to events:
+
+\`\`\`
+import: std/llm
+
+on: user.message
+  llm.chat:
+    model: gpt-4
+    prompt: "You are a helpful assistant"
+    input: event.content
+\`\`\`
+
+### Token Efficiency First
+
+Agentic Flow is designed from the ground up to minimize token usage:
+
+- **Incremental Context**: Only send what changed
+- **Smart Caching**: Reuse previous responses
+- **Selective Loading**: Load only relevant document sections
+
+## Key Features
+
+### State Machines
+
+Define complex workflows as declarative state machines:
+
+\`\`\`
+import: std/state
+
+state: greeting
+  on: user.message
+    transition: processing
+
+state: processing
+  on: llm.response
+    transition: complete
+\`\`\`
+
+### Namespace System
+
+Organize functionality into reusable namespaces:
+
+\`\`\`
+import: std/llm as ai
+import: custom/memory as mem
+
+on: user.query
+  mem.store: event.content
+  ai.chat: "Answer based on context"
+\`\`\`
+
+### Schema Validation
+
+Ensure data integrity with built-in schemas:
+
+\`\`\`
+schema: UserMessage
+  content: string
+  timestamp: number
+  userId: string
+
+on: user.message
+  validate: UserMessage
+\`\`\`
+
+## Quick Example
+
+Here's a complete chatbot in Agentic Flow:
+
+\`\`\`
+import: std/llm
+import: std/state
+
+state: idle
+  on: user.message
+    llm.chat:
+      model: gpt-4
+      system: "You are a helpful assistant"
+      message: event.content
+    transition: responding
+
+state: responding
+  on: llm.response
+    emit: bot.message
+      content: event.text
+    transition: idle
+\`\`\`
+
+## Architecture Overview
+
+Agentic Flow consists of four main components:
+
+1. **Document Parser**: Parses and validates AF documents
+2. **Interpreter**: Executes document logic in response to events
+3. **Namespace System**: Provides built-in and custom functionality
+4. **I/O Processors**: Handles external integrations
+
+## Getting Started
+
+Ready to build your first Agentic Flow application?
+
+1. [Install Agentic Flow](/installation)
+2. Follow the [Quick Start Guide](/quick-start)
+3. Learn about [Core Concepts](/concepts/state-machines)
+
+## Community & Support
+
+- **GitHub**: [github.com/agentic-flow/core](https://github.com/agentic-flow/core)
+- **Discord**: Join our community
+- **Documentation**: You're reading it!
+
+---
+
+**Next Steps**: Start with [Installation](/installation) to set up your development environment.
+\`\`\`

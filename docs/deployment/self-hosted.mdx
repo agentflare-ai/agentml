@@ -1,0 +1,155 @@
+---
+title: "Self-Hosted Deployment"
+description: "Deploy ActiveFlow on your own infrastructure"
+---
+
+# Self-Hosted Deployment
+
+Run ActiveFlow on your own servers for complete control over your infrastructure.
+
+## System Requirements
+
+- Node.js 18+ or 20+
+- 2GB RAM minimum (4GB recommended)
+- 10GB disk space
+- Linux, macOS, or Windows Server
+
+## Installation
+
+Clone and build your application:
+
+\`\`\`bash
+git clone https://github.com/yourusername/your-activeflow-app.git
+cd your-activeflow-app
+npm install
+npm run build
+\`\`\`
+
+## Process Manager
+
+Use PM2 to keep your application running:
+
+\`\`\`bash
+npm install -g pm2
+pm2 start dist/index.js --name activeflow-app
+pm2 save
+pm2 startup
+\`\`\`
+
+## Nginx Reverse Proxy
+
+Configure Nginx as a reverse proxy:
+
+\`\`\`nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+\`\`\`
+
+Enable SSL with Let's Encrypt:
+
+\`\`\`bash
+sudo certbot --nginx -d yourdomain.com
+\`\`\`
+
+## Systemd Service
+
+Create a systemd service for automatic startup:
+
+\`\`\`ini
+[Unit]
+Description=ActiveFlow Application
+After=network.target
+
+[Service]
+Type=simple
+User=nodeuser
+WorkingDirectory=/home/nodeuser/activeflow-app
+ExecStart=/usr/bin/node dist/index.js
+Restart=on-failure
+Environment=NODE_ENV=production
+Environment=GEMINI_API_KEY=your_key
+
+[Install]
+WantedBy=multi-user.target
+\`\`\`
+
+Enable and start:
+
+\`\`\`bash
+sudo systemctl enable activeflow
+sudo systemctl start activeflow
+\`\`\`
+
+## Database Setup
+
+Install and configure PostgreSQL:
+
+\`\`\`bash
+sudo apt install postgresql
+sudo -u postgres createdb activeflow
+sudo -u postgres psql -c "CREATE USER activeflow WITH PASSWORD 'secure_password';"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE activeflow TO activeflow;"
+\`\`\`
+
+## Monitoring
+
+Set up monitoring with Prometheus and Grafana:
+
+\`\`\`yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'activeflow'
+    static_configs:
+      - targets: ['localhost:3000']
+\`\`\`
+
+## Backup Strategy
+
+Automate database backups:
+
+\`\`\`bash
+#!/bin/bash
+# backup.sh
+DATE=$(date +%Y%m%d_%H%M%S)
+pg_dump activeflow > /backups/activeflow_$DATE.sql
+find /backups -name "activeflow_*.sql" -mtime +7 -delete
+\`\`\`
+
+Add to crontab:
+
+\`\`\`bash
+0 2 * * * /path/to/backup.sh
+\`\`\`
+
+## Security Hardening
+
+- Use firewall to restrict access
+- Keep system and dependencies updated
+- Use strong passwords and SSH keys
+- Enable fail2ban for brute force protection
+- Regular security audits
+- Monitor logs for suspicious activity
+
+## Scaling
+
+For horizontal scaling:
+
+1. Use a load balancer (HAProxy, Nginx)
+2. Deploy multiple application instances
+3. Use Redis for session storage
+4. Implement database replication
+5. Use CDN for static assets
+\`\`\`

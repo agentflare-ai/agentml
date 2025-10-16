@@ -1,0 +1,584 @@
+---
+title: "Namespaces"
+description: "Organize and reuse functionality with Agentic Flow's namespace system"
+---
+
+# Namespaces
+
+Namespaces are the primary way to organize and reuse functionality in Agentic Flow. They provide a clean, modular way to structure your applications.
+
+## What Are Namespaces?
+
+Namespaces are collections of related functionality that can be imported and used in your documents:
+
+\`\`\`
+import: std/llm
+import: std/state
+import: custom/analytics
+
+on: user.message
+  llm.chat: event.content
+  analytics.track: "message_received"
+\`\`\`
+
+Think of namespaces as libraries or modules in traditional programming.
+
+## Built-in Namespaces
+
+Agentic Flow includes several standard namespaces:
+
+### std/llm
+
+LLM integration and chat functionality:
+
+\`\`\`
+import: std/llm
+
+on: user.message
+  llm.chat:
+    model: gpt-4
+    system: "You are helpful"
+    message: event.content
+  
+  llm.stream:
+    model: gpt-4
+    message: event.content
+  
+  llm.embed:
+    text: event.content
+\`\`\`
+
+### std/state
+
+State machine functionality:
+
+\`\`\`
+import: std/state
+
+state: idle
+  on: start
+    transition: active
+
+state: active
+  on: complete
+    transition: done
+\`\`\`
+
+### std/memory
+
+Memory and storage:
+
+\`\`\`
+import: std/memory
+
+on: user.message
+  memory.store:
+    key: "conversation"
+    value: event.content
+  
+  memory.get:
+    key: "conversation"
+  
+  memory.delete:
+    key: "conversation"
+\`\`\`
+
+### std/cache
+
+Caching functionality:
+
+\`\`\`
+import: std/cache
+
+on: user.query
+  cache.get:
+    key: event.content
+  
+on: cache.miss
+  # Process and cache result
+  cache.set:
+    key: event.query
+    value: event.result
+    ttl: 3600
+\`\`\`
+
+### std/http
+
+HTTP requests:
+
+\`\`\`
+import: std/http
+
+on: fetch.data
+  http.get:
+    url: "https://api.example.com/data"
+    headers:
+      Authorization: "Bearer token"
+  
+on: http.response
+  emit: data.received
+    data: event.body
+\`\`\`
+
+### std/error
+
+Error handling:
+
+\`\`\`
+import: std/error
+
+on: llm.error
+  error.log:
+    message: "LLM request failed"
+    error: event.error
+  
+  error.retry:
+    maxAttempts: 3
+    backoff: exponential
+\`\`\`
+
+## Importing Namespaces
+
+### Basic Import
+
+\`\`\`
+import: std/llm
+\`\`\`
+
+### Aliased Import
+
+\`\`\`
+import: std/llm as ai
+import: std/memory as mem
+
+on: user.message
+  ai.chat: event.content
+  mem.store: event.content
+\`\`\`
+
+### Selective Import
+
+\`\`\`
+import: std/llm { chat, stream }
+
+on: user.message
+  chat: event.content  # Direct access
+\`\`\`
+
+### Multiple Imports
+
+\`\`\`
+import: std/llm
+import: std/state
+import: std/memory
+import: custom/analytics
+\`\`\`
+
+## Creating Custom Namespaces
+
+### Basic Custom Namespace
+
+Create `namespaces/analytics.af`:
+
+\`\`\`
+namespace: analytics
+
+function: track
+  params:
+    event: string
+    data: object
+  
+  emit: analytics.tracked
+    event: params.event
+    data: params.data
+    timestamp: now()
+
+function: identify
+  params:
+    userId: string
+    traits: object
+  
+  emit: analytics.identified
+    userId: params.userId
+    traits: params.traits
+\`\`\`
+
+Use it:
+
+\`\`\`
+import: custom/analytics
+
+on: user.signup
+  analytics.track:
+    event: "user_signed_up"
+    data: event.userData
+\`\`\`
+
+### Namespace with State
+
+\`\`\`
+namespace: session
+
+state: active
+  on: session.start
+    memory.store:
+      key: "session_" + event.userId
+      value: event.sessionData
+  
+  on: session.end
+    memory.delete:
+      key: "session_" + event.userId
+
+function: get
+  params:
+    userId: string
+  
+  memory.get:
+    key: "session_" + params.userId
+\`\`\`
+
+### Namespace with Configuration
+
+\`\`\`
+namespace: email
+
+config:
+  provider: "sendgrid"
+  apiKey: env.SENDGRID_API_KEY
+  from: "noreply@example.com"
+
+function: send
+  params:
+    to: string
+    subject: string
+    body: string
+  
+  http.post:
+    url: "https://api.sendgrid.com/v3/mail/send"
+    headers:
+      Authorization: "Bearer " + config.apiKey
+    body:
+      from: config.from
+      to: params.to
+      subject: params.subject
+      html: params.body
+\`\`\`
+
+## Namespace Composition
+
+### Extending Namespaces
+
+\`\`\`
+namespace: enhanced_llm
+extends: std/llm
+
+function: chat_with_retry
+  params:
+    message: string
+    maxRetries: number
+  
+  llm.chat:
+    message: params.message
+  
+  on: llm.error
+    if: event.retries < params.maxRetries
+      retry: llm.chat
+\`\`\`
+
+### Combining Namespaces
+
+\`\`\`
+namespace: smart_chat
+uses:
+  - std/llm
+  - std/memory
+  - std/cache
+
+function: chat
+  params:
+    message: string
+  
+  # Check cache
+  cache.get:
+    key: params.message
+  
+  on: cache.miss
+    # Get conversation history
+    memory.get:
+      key: "conversation"
+    
+    # Call LLM with context
+    llm.chat:
+      context: event.history
+      message: params.message
+    
+    # Cache response
+    cache.set:
+      key: params.message
+      value: event.response
+\`\`\`
+
+## Namespace Best Practices
+
+### 1. Single Responsibility
+
+Each namespace should have one clear purpose:
+
+\`\`\`
+# Good - focused namespace
+namespace: authentication
+  function: login
+  function: logout
+  function: verify
+
+# Bad - too broad
+namespace: everything
+  function: login
+  function: sendEmail
+  function: processPayment
+\`\`\`
+
+### 2. Clear Naming
+
+Use descriptive names:
+
+\`\`\`
+# Good
+import: custom/user-authentication
+import: custom/payment-processing
+import: custom/email-notifications
+
+# Bad
+import: custom/utils
+import: custom/helpers
+import: custom/stuff
+\`\`\`
+
+### 3. Document Your Namespaces
+
+\`\`\`
+namespace: analytics
+description: "Track user events and analytics"
+version: "1.0.0"
+author: "Your Team"
+
+function: track
+  description: "Track a user event"
+  params:
+    event: string  # Event name
+    data: object   # Event data
+\`\`\`
+
+### 4. Version Your Namespaces
+
+\`\`\`
+namespace: analytics/v1
+# Version 1 implementation
+
+namespace: analytics/v2
+# Version 2 with breaking changes
+\`\`\`
+
+## Advanced Patterns
+
+### Dependency Injection
+
+\`\`\`
+namespace: database
+config:
+  connection: env.DATABASE_URL
+
+function: query
+  params:
+    sql: string
+  
+  # Use injected connection
+  execute:
+    connection: config.connection
+    query: params.sql
+\`\`\`
+
+### Middleware Pattern
+
+\`\`\`
+namespace: middleware
+
+function: authenticate
+  params:
+    handler: function
+  
+  # Check authentication
+  if: event.user.authenticated
+    call: params.handler
+  else:
+    emit: error.unauthorized
+\`\`\`
+
+### Factory Pattern
+
+\`\`\`
+namespace: llm_factory
+
+function: create
+  params:
+    provider: string
+  
+  if: params.provider == "openai"
+    return: openai_client
+  else if: params.provider == "anthropic"
+    return: anthropic_client
+\`\`\`
+
+## Testing Namespaces
+
+### Unit Testing
+
+\`\`\`javascript
+import { AgenticFlow } from 'agentic-flow';
+
+test('analytics namespace tracks events', async () => {
+  const af = new AgenticFlow();
+  await af.loadNamespace('custom/analytics');
+  
+  const events = [];
+  af.on('analytics.tracked', (event) => {
+    events.push(event);
+  });
+  
+  await af.call('analytics.track', {
+    event: 'test_event',
+    data: { foo: 'bar' }
+  });
+  
+  expect(events).toHaveLength(1);
+  expect(events[0].event).toBe('test_event');
+});
+\`\`\`
+
+### Integration Testing
+
+\`\`\`javascript
+test('namespaces work together', async () => {
+  const af = new AgenticFlow();
+  await af.loadDocument(`
+    import: std/llm
+    import: custom/analytics
+    
+    on: user.message
+      llm.chat: event.content
+      analytics.track: "message_sent"
+  `);
+  
+  await af.emit('user.message', { content: 'Hello' });
+  
+  // Verify both namespaces executed
+});
+\`\`\`
+
+## Namespace Registry
+
+### Publishing Namespaces
+
+Share your namespaces with the community:
+
+\`\`\`bash
+# Package your namespace
+af namespace pack custom/analytics
+
+# Publish to registry
+af namespace publish custom/analytics
+\`\`\`
+
+### Installing Namespaces
+
+\`\`\`bash
+# Install from registry
+af namespace install community/stripe-payments
+
+# Install specific version
+af namespace install community/stripe-payments@1.2.0
+\`\`\`
+
+### Using Registry Namespaces
+
+\`\`\`
+import: community/stripe-payments
+
+on: checkout.complete
+  stripe.charge:
+    amount: event.amount
+    customer: event.customerId
+\`\`\`
+
+## Built-in Namespace Reference
+
+### Complete std/llm API
+
+\`\`\`
+import: std/llm
+
+# Chat completion
+llm.chat:
+  model: string
+  system?: string
+  message: string
+  context?: string
+  temperature?: number
+  maxTokens?: number
+
+# Streaming
+llm.stream:
+  model: string
+  message: string
+
+# Embeddings
+llm.embed:
+  text: string
+  model?: string
+
+# Batch processing
+llm.batch:
+  requests: array
+\`\`\`
+
+### Complete std/memory API
+
+\`\`\`
+import: std/memory
+
+# Store value
+memory.store:
+  key: string
+  value: any
+  ttl?: number
+
+# Get value
+memory.get:
+  key: string
+
+# Delete value
+memory.delete:
+  key: string
+
+# List keys
+memory.keys:
+  pattern?: string
+
+# Clear all
+memory.clear:
+\`\`\`
+
+## Next Steps
+
+- Learn about [Document Structure](/architecture/document-structure)
+- Explore [Custom Namespaces](/extensions/custom) in depth
+- See [Example Namespaces](https://github.com/agentic-flow/namespaces)
+
+---
+
+**Community Namespaces**: Browse available namespaces at [namespaces.agentic-flow.dev](https://namespaces.agentic-flow.dev)
+\`\`\`
+
+I've created comprehensive MDX files for all the core concepts. Each file includes detailed explanations, code examples, best practices, and links to related topics. The files are now in the `/docs` folder as requested.
+
+Would you like me to continue creating the remaining MDX files for Architecture, Extensions, Deployment, Best Practices, and Contributing sections?

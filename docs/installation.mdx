@@ -1,0 +1,256 @@
+---
+title: "Installation"
+description: "Install and set up Agentic Flow Documents in your project"
+---
+
+# Installation
+
+Get started with Agentic Flow Documents in minutes. This guide covers installation for Node.js, Python, and browser environments.
+
+## Prerequisites
+
+Before installing Agentic Flow, ensure you have:
+
+- **Node.js** 18+ or **Python** 3.9+ (depending on your runtime)
+- A package manager (npm, yarn, pnpm, or pip)
+- Basic understanding of event-driven programming
+
+## Node.js Installation
+
+### Using npm
+
+\`\`\`bash
+npm install agentic-flow
+\`\`\`
+
+### Using yarn
+
+\`\`\`bash
+yarn add agentic-flow
+\`\`\`
+
+### Using pnpm
+
+\`\`\`bash
+pnpm add agentic-flow
+\`\`\`
+
+## Python Installation
+
+\`\`\`bash
+pip install agentic-flow
+\`\`\`
+
+## Verify Installation
+
+### Node.js
+
+Create a test file `test.js`:
+
+\`\`\`javascript
+import { AgenticFlow } from 'agentic-flow';
+
+const af = new AgenticFlow();
+console.log('Agentic Flow version:', af.version);
+\`\`\`
+
+Run it:
+
+\`\`\`bash
+node test.js
+\`\`\`
+
+### Python
+
+Create a test file `test.py`:
+
+\`\`\`python
+from agentic_flow import AgenticFlow
+
+af = AgenticFlow()
+print(f'Agentic Flow version: {af.version}')
+\`\`\`
+
+Run it:
+
+\`\`\`bash
+python test.py
+\`\`\`
+
+## Project Setup
+
+### Initialize a New Project
+
+\`\`\`bash
+# Create project directory
+mkdir my-agentic-app
+cd my-agentic-app
+
+# Initialize package.json (Node.js)
+npm init -y
+
+# Install Agentic Flow
+npm install agentic-flow
+\`\`\`
+
+### Project Structure
+
+We recommend the following structure:
+
+\`\`\`
+my-agentic-app/
+├── docs/              # Your AF documents
+│   ├── main.af
+│   ├── chatbot.af
+│   └── workflows/
+├── src/               # Application code
+│   └── index.js
+├── tests/             # Test files
+└── package.json
+\`\`\`
+
+## Configuration
+
+### Basic Configuration
+
+Create `agentic.config.js`:
+
+\`\`\`javascript
+export default {
+  // Document directories
+  documentPaths: ['./docs'],
+  
+  // Namespace configuration
+  namespaces: {
+    std: 'builtin',
+    custom: './namespaces'
+  },
+  
+  // Runtime options
+  runtime: {
+    maxEventQueueSize: 1000,
+    enableDebugMode: false
+  }
+};
+\`\`\`
+
+### Environment Variables
+
+Create `.env`:
+
+\`\`\`bash
+# LLM API Keys
+OPENAI_API_KEY=your_key_here
+ANTHROPIC_API_KEY=your_key_here
+
+# Agentic Flow Settings
+AF_DEBUG=false
+AF_LOG_LEVEL=info
+\`\`\`
+
+## IDE Setup
+
+### VS Code Extension
+
+Install the Agentic Flow extension for syntax highlighting and IntelliSense:
+
+1. Open VS Code
+2. Go to Extensions (Ctrl+Shift+X)
+3. Search for "Agentic Flow"
+4. Click Install
+
+### Syntax Highlighting
+
+The extension provides:
+
+- Syntax highlighting for `.af` files
+- Auto-completion for namespaces
+- Inline documentation
+- Error detection
+
+## Optional Dependencies
+
+### For LLM Integration
+
+\`\`\`bash
+npm install openai anthropic
+\`\`\`
+
+### For Memory/Storage
+
+\`\`\`bash
+npm install redis ioredis
+\`\`\`
+
+### For Advanced Features
+
+\`\`\`bash
+npm install @agentic-flow/extensions
+\`\`\`
+
+## Docker Installation
+
+Run Agentic Flow in a container:
+
+\`\`\`dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+CMD ["node", "src/index.js"]
+\`\`\`
+
+Build and run:
+
+\`\`\`bash
+docker build -t my-agentic-app .
+docker run -p 3000:3000 my-agentic-app
+\`\`\`
+
+## Troubleshooting
+
+### Common Issues
+
+**Module not found error**
+
+\`\`\`bash
+# Clear cache and reinstall
+rm -rf node_modules package-lock.json
+npm install
+\`\`\`
+
+**Permission errors**
+
+\`\`\`bash
+# Use sudo (not recommended) or fix npm permissions
+npm config set prefix ~/.npm-global
+export PATH=~/.npm-global/bin:$PATH
+\`\`\`
+
+**Version conflicts**
+
+\`\`\`bash
+# Check installed version
+npm list agentic-flow
+
+# Update to latest
+npm update agentic-flow
+\`\`\`
+
+## Next Steps
+
+Now that you have Agentic Flow installed:
+
+1. Follow the [Quick Start Guide](/quick-start) to build your first application
+2. Learn about [Core Concepts](/concepts/state-machines)
+3. Explore [Example Projects](https://github.com/agentic-flow/examples)
+
+---
+
+**Need Help?** Join our [Discord community](https://discord.gg/agentic-flow) or check the [GitHub issues](https://github.com/agentic-flow/core/issues).
+\`\`\`

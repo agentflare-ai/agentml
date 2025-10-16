@@ -1,0 +1,313 @@
+---
+title: "Extensions Overview"
+description: "Extending ActiveDocs with custom functionality"
+---
+
+# Extensions Overview
+
+ActiveDocs is designed to be extensible. Add custom functionality through extensions that integrate seamlessly with the core framework.
+
+## What are Extensions?
+
+Extensions are modular packages that add new capabilities to ActiveDocs without modifying the core framework.
+
+\`\`\`typescript
+import: activedocs/core
+import: activedocs/extensions/gemini
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [geminiExtension()]
+})
+\`\`\`
+
+## Official Extensions
+
+ActiveDocs provides several official extensions:
+
+### Gemini Extension
+
+Integrate Google's Gemini models:
+
+\`\`\`typescript
+import: activedocs/extensions/gemini
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    geminiExtension({
+      apiKey: process.env.GEMINI_API_KEY,
+      model: 'gemini-pro'
+    })
+  ]
+})
+\`\`\`
+
+[Learn more about Gemini Extension →](/extensions/gemini)
+
+### Memory Extension
+
+Add persistent memory to your documents:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    memoryExtension({
+      storage: 'localStorage',
+      ttl: 3600000 // 1 hour
+    })
+  ]
+})
+\`\`\`
+
+[Learn more about Memory Extension →](/extensions/memory)
+
+### Ollama Extension
+
+Use local Ollama models:
+
+\`\`\`typescript
+import: activedocs/extensions/ollama
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    ollamaExtension({
+      baseUrl: 'http://localhost:11434',
+      model: 'llama2'
+    })
+  ]
+})
+\`\`\`
+
+[Learn more about Ollama Extension →](/extensions/ollama)
+
+## Extension Architecture
+
+Extensions follow a standard architecture:
+
+\`\`\`typescript
+import: activedocs/core
+
+interface Extension {
+  name: string
+  version: string
+  init: (document: Document) => void
+  destroy?: () => void
+}
+
+const myExtension = (): Extension => ({
+  name: 'my-extension',
+  version: '1.0.0',
+  
+  init: (document) => {
+    // Add functionality to document
+    document.on('custom:event', handleEvent)
+  },
+  
+  destroy: () => {
+    // Clean up resources
+  }
+})
+\`\`\`
+
+## Creating Custom Extensions
+
+Build your own extensions:
+
+### Basic Extension
+
+\`\`\`typescript
+import: activedocs/core
+
+const loggerExtension = (options = {}) => ({
+  name: 'logger',
+  version: '1.0.0',
+  
+  init: (document) => {
+    document.on('*', (event) => {
+      console.log(`[${document.namespace}]`, event.type, event.data)
+    })
+  }
+})
+
+// Use it
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [loggerExtension()]
+})
+\`\`\`
+
+### Advanced Extension
+
+\`\`\`typescript
+import: activedocs/core
+
+const analyticsExtension = (options) => {
+  let analytics = null
+  
+  return {
+    name: 'analytics',
+    version: '1.0.0',
+    
+    init: (document) => {
+      // Initialize analytics
+      analytics = initAnalytics(options.apiKey)
+      
+      // Track events
+      document.on('llm:complete', (event) => {
+        analytics.track('llm_completion', {
+          namespace: document.namespace,
+          tokens: event.usage.total,
+          duration: event.duration
+        })
+      })
+      
+      // Add custom methods
+      document.trackEvent = (name, data) => {
+        analytics.track(name, data)
+      }
+    },
+    
+    destroy: () => {
+      analytics?.close()
+    }
+  }
+}
+\`\`\`
+
+## Extension Lifecycle
+
+Extensions go through several lifecycle stages:
+
+### 1. Registration
+
+\`\`\`typescript
+import: activedocs/core
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    extension1(),
+    extension2(),
+    extension3()
+  ]
+})
+\`\`\`
+
+### 2. Initialization
+
+\`\`\`typescript
+// Extensions are initialized in order
+extension1.init(document)
+extension2.init(document)
+extension3.init(document)
+\`\`\`
+
+### 3. Active
+
+\`\`\`typescript
+// Extensions are active and responding to events
+document.emit('custom:event', { data: 'value' })
+\`\`\`
+
+### 4. Cleanup
+
+\`\`\`typescript
+// Extensions are destroyed when document is destroyed
+document.destroy()
+// Calls extension1.destroy(), extension2.destroy(), etc.
+\`\`\`
+
+## Extension Communication
+
+Extensions can communicate with each other:
+
+\`\`\`typescript
+import: activedocs/core
+
+const extension1 = () => ({
+  name: 'extension1',
+  version: '1.0.0',
+  
+  init: (document) => {
+    document.on('ext1:ready', () => {
+      document.emit('ext1:initialized', { ready: true })
+    })
+  }
+})
+
+const extension2 = () => ({
+  name: 'extension2',
+  version: '1.0.0',
+  
+  init: (document) => {
+    document.on('ext1:initialized', (event) => {
+      console.log('Extension 1 is ready:', event.ready)
+    })
+  }
+})
+\`\`\`
+
+## Extension Configuration
+
+Configure extensions with options:
+
+\`\`\`typescript
+import: activedocs/core
+
+const configurableExtension = (options = {}) => {
+  const config = {
+    enabled: true,
+    debug: false,
+    ...options
+  }
+  
+  return {
+    name: 'configurable',
+    version: '1.0.0',
+    
+    init: (document) => {
+      if (!config.enabled) return
+      
+      if (config.debug) {
+        console.log('Extension initialized with config:', config)
+      }
+      
+      // Use configuration
+    }
+  }
+}
+
+// Use with custom config
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    configurableExtension({
+      enabled: true,
+      debug: true,
+      customOption: 'value'
+    })
+  ]
+})
+\`\`\`
+
+## Best Practices
+
+1. **Follow naming conventions** - Use descriptive extension names
+2. **Version your extensions** - Use semantic versioning
+3. **Document your API** - Make extension usage clear
+4. **Handle errors gracefully** - Don't crash the host document
+5. **Clean up resources** - Implement destroy method
+6. **Test thoroughly** - Unit test extension functionality
+
+## Next Steps
+
+- Explore [Gemini Extension](/extensions/gemini)
+- Learn about [Memory Extension](/extensions/memory)
+- Try [Ollama Extension](/extensions/ollama)
+- Build [Custom Extensions](/extensions/custom)
+\`\`\`

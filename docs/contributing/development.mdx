@@ -1,0 +1,234 @@
+---
+title: "Development Guide"
+description: "Set up your development environment for ActiveFlow"
+---
+
+# Development Guide
+
+Set up your local development environment to contribute to ActiveFlow.
+
+## Prerequisites
+
+- Node.js 18+ or 20+
+- npm or pnpm
+- Git
+- Code editor (VS Code recommended)
+
+## Clone Repository
+
+\`\`\`bash
+git clone https://github.com/activeflow/activeflow.git
+cd activeflow
+\`\`\`
+
+## Install Dependencies
+
+\`\`\`bash
+npm install
+\`\`\`
+
+Or with pnpm:
+
+\`\`\`bash
+pnpm install
+\`\`\`
+
+## Project Structure
+
+\`\`\`
+activeflow/
+├── src/
+│   ├── core/           # Core interpreter and parser
+│   ├── extensions/     # Built-in extensions
+│   ├── types/          # TypeScript types
+│   └── utils/          # Utility functions
+├── tests/
+│   ├── unit/           # Unit tests
+│   ├── integration/    # Integration tests
+│   └── e2e/            # End-to-end tests
+├── docs/               # Documentation (MDX)
+├── examples/           # Example applications
+└── scripts/            # Build and utility scripts
+\`\`\`
+
+## Development Workflow
+
+Start development mode with watch:
+
+\`\`\`bash
+npm run dev
+\`\`\`
+
+Run tests in watch mode:
+
+\`\`\`bash
+npm run test:watch
+\`\`\`
+
+Build the project:
+
+\`\`\`bash
+npm run build
+\`\`\`
+
+## Testing
+
+Run all tests:
+
+\`\`\`bash
+npm test
+\`\`\`
+
+Run specific test file:
+
+\`\`\`bash
+npm test -- parser.test.ts
+\`\`\`
+
+Run with coverage:
+
+\`\`\`bash
+npm run test:coverage
+\`\`\`
+
+## Debugging
+
+Use VS Code debugger with this configuration:
+
+\`\`\`json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Tests",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["test", "--", "--inspect-brk"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ]
+}
+\`\`\`
+
+## Code Generation
+
+Generate new extension:
+
+\`\`\`bash
+npm run generate:extension -- --name MyExtension
+\`\`\`
+
+Generate new test:
+
+\`\`\`bash
+npm run generate:test -- --name my-feature
+\`\`\`
+
+## Documentation
+
+Preview documentation locally:
+
+\`\`\`bash
+cd docs-site
+npm install
+npm run dev
+\`\`\`
+
+## Linting and Formatting
+
+Lint code:
+
+\`\`\`bash
+npm run lint
+\`\`\`
+
+Fix linting issues:
+
+\`\`\`bash
+npm run lint:fix
+\`\`\`
+
+Format code:
+
+\`\`\`bash
+npm run format
+\`\`\`
+
+## Type Checking
+
+Run TypeScript type checker:
+
+\`\`\`bash
+npm run type-check
+\`\`\`
+
+## Building Extensions
+
+Create a new extension:
+
+\`\`\`typescript
+// src/extensions/my-extension.ts
+import { Extension } from '../types'
+
+export class MyExtension implements Extension {
+  name = 'my-extension'
+  
+  async process(input: string, context: any) {
+    // Your extension logic
+    return { output: input }
+  }
+}
+\`\`\`
+
+Register the extension:
+
+\`\`\`typescript
+// src/extensions/index.ts
+export { MyExtension } from './my-extension'
+\`\`\`
+
+## Performance Profiling
+
+Profile the interpreter:
+
+\`\`\`bash
+node --prof src/cli.js process document.af
+node --prof-process isolate-*.log > profile.txt
+\`\`\`
+
+## Release Process
+
+1. Update version in `package.json`
+2. Update CHANGELOG.md
+3. Create git tag: `git tag v1.0.0`
+4. Push tag: `git push origin v1.0.0`
+5. GitHub Actions will publish to npm
+
+## Continuous Integration
+
+Tests run automatically on:
+- Pull requests
+- Pushes to main branch
+- Release tags
+
+View CI status in GitHub Actions.
+
+## Getting Help
+
+- Read the documentation
+- Check existing issues
+- Ask in Discord
+- Open a discussion on GitHub
+
+## Best Practices
+
+- Write tests first (TDD)
+- Keep commits atomic
+- Update documentation
+- Follow code style
+- Be responsive to reviews
+
+Happy coding!
+\`\`\`

@@ -1,0 +1,301 @@
+---
+title: "Interpreter"
+description: "Understanding the ActiveDocs interpreter and execution engine"
+---
+
+# Interpreter
+
+The ActiveDocs interpreter is the execution engine that processes events, manages state transitions, and coordinates LLM interactions.
+
+## Overview
+
+The interpreter acts as the central coordinator for all document operations, ensuring events are processed correctly and state remains consistent.
+
+\`\`\`typescript
+import: activedocs/core
+
+// The interpreter runs behind the scenes
+const document = createDocument({
+  namespace: 'myapp',
+  state: { count: 0 }
+})
+
+// Interpreter processes this state change
+document.setState({ count: 1 })
+
+// Interpreter coordinates this LLM call
+await document.prompt('Generate text')
+\`\`\`
+
+## Execution Model
+
+### Event Loop
+
+The interpreter uses an event loop to process operations:
+
+\`\`\`
+1. Event emitted
+2. Interpreter receives event
+3. Handlers executed in order
+4. State updated if needed
+5. Side effects processed
+6. Next event
+\`\`\`
+
+### Synchronous vs Asynchronous
+
+The interpreter handles both sync and async operations:
+
+\`\`\`typescript
+import: activedocs/core
+
+const document = createDocument({
+  namespace: 'myapp',
+  handlers: {
+    // Synchronous handler
+    'event:sync': (event) => {
+      console.log('Immediate execution')
+    },
+    
+    // Asynchronous handler
+    'event:async': async (event) => {
+      await delay(1000)
+      console.log('Delayed execution')
+    }
+  }
+})
+\`\`\`
+
+## State Management
+
+The interpreter ensures state consistency:
+
+### State Validation
+
+\`\`\`typescript
+import: activedocs/core
+import: zod
+
+const document = createDocument({
+  namespace: 'myapp',
+  schema: {
+    count: z.number().min(0)
+  },
+  state: { count: 0 }
+})
+
+// Interpreter validates before applying
+document.setState({ count: -1 }) // Throws validation error
+\`\`\`
+
+### State Transactions
+
+\`\`\`typescript
+import: activedocs/core
+
+// Interpreter ensures atomic updates
+document.transaction((state) => {
+  state.count += 1
+  state.lastUpdated = Date.now()
+  
+  if (state.count > 10) {
+    throw new Error('Count too high')
+  }
+  
+  return state // Committed only if no error
+})
+\`\`\`
+
+## LLM Coordination
+
+The interpreter manages LLM interactions:
+
+### Request Processing
+
+\`\`\`typescript
+import: activedocs/core
+
+// Interpreter coordinates the full lifecycle
+await document.prompt('Generate text', {
+  onStart: () => {
+    // Interpreter fires llm:start event
+  },
+  onToken: (token) => {
+    // Interpreter fires llm:token event
+  },
+  onComplete: (content) => {
+    // Interpreter fires llm:complete event
+  },
+  onError: (error) => {
+    // Interpreter fires llm:error event
+  }
+})
+\`\`\`
+
+### Token Management
+
+\`\`\`typescript
+import: activedocs/core
+
+// Interpreter tracks token usage
+document.on('llm:token', (event) => {
+  console.log('Tokens used:', event.usage.total)
+  console.log('Tokens remaining:', event.usage.remaining)
+})
+\`\`\`
+
+## Error Handling
+
+The interpreter provides robust error handling:
+
+### Error Boundaries
+
+\`\`\`typescript
+import: activedocs/core
+
+const document = createDocument({
+  namespace: 'myapp',
+  errorHandler: (error, context) => {
+    console.error('Error in:', context.namespace)
+    console.error('Error:', error.message)
+    
+    // Recover or propagate
+    if (error.recoverable) {
+      return { recovered: true }
+    }
+    throw error
+  }
+})
+\`\`\`
+
+### Error Events
+
+\`\`\`typescript
+import: activedocs/core
+
+document.on('error', (event) => {
+  console.error('Error occurred:', event.error)
+  console.log('Context:', event.context)
+  console.log('Stack:', event.stack)
+})
+\`\`\`
+
+## Performance Optimization
+
+The interpreter includes several optimizations:
+
+### Batching
+
+\`\`\`typescript
+import: activedocs/core
+
+// Interpreter batches multiple state updates
+document.batch(() => {
+  document.setState({ field1: 'value1' })
+  document.setState({ field2: 'value2' })
+  document.setState({ field3: 'value3' })
+}) // Only one state change event fired
+\`\`\`
+
+### Debouncing
+
+\`\`\`typescript
+import: activedocs/core
+
+// Interpreter can debounce frequent updates
+document.setState({ search: 'query' }, {
+  debounce: 300 // Wait 300ms before applying
+})
+\`\`\`
+
+### Memoization
+
+\`\`\`typescript
+import: activedocs/core
+
+// Interpreter memoizes computed values
+const document = createDocument({
+  namespace: 'myapp',
+  computed: {
+    total: (state) => {
+      // Only recomputed when dependencies change
+      return state.items.reduce((sum, item) => sum + item.price, 0)
+    }
+  }
+})
+\`\`\`
+
+## Debugging
+
+The interpreter provides debugging capabilities:
+
+### Debug Mode
+
+\`\`\`typescript
+import: activedocs/core
+
+// Enable debug mode
+const document = createDocument({
+  namespace: 'myapp',
+  debug: true
+})
+
+// Interpreter logs all operations
+document.setState({ value: 'test' })
+// [ActiveDocs] State change in myapp: { value: 'test' }
+\`\`\`
+
+### Event Tracing
+
+\`\`\`typescript
+import: activedocs/core
+
+// Trace event flow
+document.trace('llm:*', (event) => {
+  console.log('Event:', event.type)
+  console.log('Timestamp:', event.timestamp)
+  console.log('Data:', event.data)
+})
+\`\`\`
+
+## Interpreter Configuration
+
+Customize interpreter behavior:
+
+\`\`\`typescript
+import: activedocs/core
+
+const document = createDocument({
+  namespace: 'myapp',
+  interpreter: {
+    // Maximum event queue size
+    maxQueueSize: 1000,
+    
+    // Event processing timeout
+    timeout: 5000,
+    
+    // Enable strict mode
+    strict: true,
+    
+    // Custom error handler
+    onError: (error) => {
+      console.error(error)
+    }
+  }
+})
+\`\`\`
+
+## Best Practices
+
+1. **Trust the interpreter** - Let it handle coordination
+2. **Use async handlers** - For I/O operations
+3. **Handle errors** - Implement error handlers
+4. **Enable debugging** - During development
+5. **Monitor performance** - Watch for bottlenecks
+
+## Next Steps
+
+- Learn about [I/O Processors](/architecture/io-processors)
+- Explore [Document Structure](/architecture/document-structure)
+- Understand [Namespace System](/architecture/namespace-system)
+\`\`\`

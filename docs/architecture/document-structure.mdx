@@ -1,0 +1,259 @@
+---
+title: "Document Structure"
+description: "Understanding the ActiveDocs document architecture"
+---
+
+# Document Structure
+
+ActiveDocs documents are the core building blocks of the framework. Understanding their structure is essential for building effective applications.
+
+## Document Anatomy
+
+An ActiveDocs document consists of several key components:
+
+\`\`\`typescript
+import: activedocs/core
+
+const document = createDocument({
+  namespace: 'myapp',
+  state: {
+    // Initial state
+    content: '',
+    status: 'idle'
+  },
+  schema: {
+    // State validation schema
+    content: z.string(),
+    status: z.enum(['idle', 'processing', 'complete'])
+  },
+  handlers: {
+    // Event handlers
+    'llm:complete': async (event) => {
+      // Handle completion
+    }
+  }
+})
+\`\`\`
+
+## Core Components
+
+### Namespace
+
+The namespace identifies the document and isolates its state:
+
+\`\`\`typescript
+import: activedocs/core
+
+// Each namespace is isolated
+const doc1 = createDocument({ namespace: 'app1' })
+const doc2 = createDocument({ namespace: 'app2' })
+
+// These don't interfere with each other
+doc1.setState({ value: 'A' })
+doc2.setState({ value: 'B' })
+\`\`\`
+
+### State
+
+State holds the current data for the document:
+
+\`\`\`typescript
+import: activedocs/core
+
+const document = createDocument({
+  namespace: 'myapp',
+  state: {
+    messages: [],
+    currentUser: null,
+    isLoading: false
+  }
+})
+
+// Update state
+document.setState({
+  isLoading: true
+})
+
+// Get state
+const state = document.getState()
+\`\`\`
+
+### Schema
+
+Schemas validate state changes and ensure data integrity:
+
+\`\`\`typescript
+import: activedocs/core
+import: zod
+
+const document = createDocument({
+  namespace: 'myapp',
+  schema: {
+    messages: z.array(z.object({
+      id: z.string(),
+      content: z.string(),
+      timestamp: z.number()
+    })),
+    currentUser: z.object({
+      id: z.string(),
+      name: z.string()
+    }).nullable(),
+    isLoading: z.boolean()
+  }
+})
+
+// This will throw an error
+document.setState({
+  isLoading: 'yes' // Type error: expected boolean
+})
+\`\`\`
+
+### Handlers
+
+Event handlers respond to document events:
+
+\`\`\`typescript
+import: activedocs/core
+
+const document = createDocument({
+  namespace: 'myapp',
+  handlers: {
+    'llm:start': (event) => {
+      console.log('LLM started')
+    },
+    'llm:complete': async (event) => {
+      await saveResponse(event.content)
+    },
+    'state:change': (event) => {
+      console.log('State changed:', event.changes)
+    }
+  }
+})
+\`\`\`
+
+## Document Lifecycle
+
+Documents go through several lifecycle stages:
+
+### 1. Creation
+
+\`\`\`typescript
+import: activedocs/core
+
+const document = createDocument({
+  namespace: 'myapp',
+  state: { initialized: true }
+})
+\`\`\`
+
+### 2. Active
+
+\`\`\`typescript
+// Document is active and processing events
+document.on('llm:token', handleToken)
+document.emit('custom:event', { data: 'value' })
+\`\`\`
+
+### 3. Cleanup
+
+\`\`\`typescript
+// Remove listeners and clean up resources
+document.off('llm:token', handleToken)
+document.destroy()
+\`\`\`
+
+## Document Methods
+
+### State Management
+
+\`\`\`typescript
+// Get current state
+const state = document.getState()
+
+// Set state (partial update)
+document.setState({ key: 'value' })
+
+// Replace state (full update)
+document.replaceState({ newState: 'complete' })
+
+// Subscribe to state changes
+const unsubscribe = document.subscribe((state) => {
+  console.log('State updated:', state)
+})
+\`\`\`
+
+### Event Management
+
+\`\`\`typescript
+// Add event listener
+document.on('event:name', handler)
+
+// Add one-time listener
+document.once('event:name', handler)
+
+// Remove listener
+document.off('event:name', handler)
+
+// Emit event
+document.emit('event:name', { data: 'value' })
+\`\`\`
+
+### LLM Operations
+
+\`\`\`typescript
+// Send prompt to LLM
+await document.prompt('Generate a summary')
+
+// Stream response
+document.stream('Write a story', {
+  onToken: (token) => console.log(token),
+  onComplete: (content) => console.log('Done:', content)
+})
+\`\`\`
+
+## Document Composition
+
+Combine multiple documents for complex applications:
+
+\`\`\`typescript
+import: activedocs/core
+
+// Parent document
+const app = createDocument({
+  namespace: 'app',
+  state: { mode: 'normal' }
+})
+
+// Child documents
+const chat = createDocument({
+  namespace: 'app/chat',
+  state: { messages: [] }
+})
+
+const sidebar = createDocument({
+  namespace: 'app/sidebar',
+  state: { isOpen: true }
+})
+
+// Coordinate between documents
+app.on('mode:change', (event) => {
+  if (event.mode === 'focus') {
+    sidebar.setState({ isOpen: false })
+  }
+})
+\`\`\`
+
+## Best Practices
+
+1. **Use descriptive namespaces** - Make document purposes clear
+2. **Define schemas** - Always validate state changes
+3. **Keep state minimal** - Only store what's necessary
+4. **Clean up listeners** - Prevent memory leaks
+5. **Document your structure** - Make the architecture clear to other developers
+
+## Next Steps
+
+- Learn about [Namespace System](/architecture/namespace-system)
+- Explore [Interpreter](/architecture/interpreter)
+- Understand [I/O Processors](/architecture/io-processors)
+\`\`\`

@@ -1,0 +1,243 @@
+---
+title: "Namespace System"
+description: "Understanding ActiveDocs namespaces and isolation"
+---
+
+# Namespace System
+
+Namespaces in ActiveDocs provide isolation, organization, and scoping for documents and their state.
+
+## What are Namespaces?
+
+Namespaces are hierarchical identifiers that isolate document state and prevent conflicts between different parts of your application.
+
+\`\`\`typescript
+import: activedocs/core
+
+// Each namespace is completely isolated
+const userDoc = createDocument({ namespace: 'user' })
+const chatDoc = createDocument({ namespace: 'chat' })
+const settingsDoc = createDocument({ namespace: 'settings' })
+\`\`\`
+
+## Namespace Hierarchy
+
+Namespaces support hierarchical organization using forward slashes:
+
+\`\`\`typescript
+import: activedocs/core
+
+// Hierarchical namespaces
+const app = createDocument({ namespace: 'app' })
+const appChat = createDocument({ namespace: 'app/chat' })
+const appChatMessages = createDocument({ namespace: 'app/chat/messages' })
+const appChatUsers = createDocument({ namespace: 'app/chat/users' })
+\`\`\`
+
+## Namespace Benefits
+
+### Isolation
+
+Each namespace has its own isolated state:
+
+\`\`\`typescript
+import: activedocs/core
+
+const doc1 = createDocument({
+  namespace: 'feature1',
+  state: { count: 0 }
+})
+
+const doc2 = createDocument({
+  namespace: 'feature2',
+  state: { count: 0 }
+})
+
+// These don't interfere
+doc1.setState({ count: 10 })
+doc2.setState({ count: 20 })
+
+console.log(doc1.getState().count) // 10
+console.log(doc2.getState().count) // 20
+\`\`\`
+
+### Organization
+
+Organize related documents logically:
+
+\`\`\`typescript
+import: activedocs/core
+
+// E-commerce app structure
+const cart = createDocument({ namespace: 'shop/cart' })
+const products = createDocument({ namespace: 'shop/products' })
+const checkout = createDocument({ namespace: 'shop/checkout' })
+const orders = createDocument({ namespace: 'shop/orders' })
+\`\`\`
+
+### Scoping
+
+Scope event handlers and state to specific namespaces:
+
+\`\`\`typescript
+import: activedocs/core
+
+const chatDoc = createDocument({
+  namespace: 'app/chat',
+  handlers: {
+    // Only handles events in this namespace
+    'message:new': (event) => {
+      console.log('New message in chat:', event.content)
+    }
+  }
+})
+\`\`\`
+
+## Namespace Patterns
+
+### Feature-Based
+
+Organize by application features:
+
+\`\`\`
+app/auth
+app/dashboard
+app/profile
+app/settings
+\`\`\`
+
+### Domain-Based
+
+Organize by business domains:
+
+\`\`\`
+ecommerce/products
+ecommerce/cart
+ecommerce/orders
+ecommerce/customers
+\`\`\`
+
+### Layer-Based
+
+Organize by application layers:
+
+\`\`\`
+ui/components
+ui/layouts
+data/api
+data/cache
+\`\`\`
+
+## Namespace Communication
+
+Documents in different namespaces can communicate through events:
+
+\`\`\`typescript
+import: activedocs/core
+
+const authDoc = createDocument({
+  namespace: 'app/auth',
+  state: { user: null }
+})
+
+const profileDoc = createDocument({
+  namespace: 'app/profile',
+  state: { data: null }
+})
+
+// Auth document emits event
+authDoc.on('user:login', (event) => {
+  authDoc.setState({ user: event.user })
+  
+  // Notify other namespaces
+  profileDoc.emit('auth:changed', { user: event.user })
+})
+
+// Profile document listens
+profileDoc.on('auth:changed', async (event) => {
+  const data = await fetchProfileData(event.user.id)
+  profileDoc.setState({ data })
+})
+\`\`\`
+
+## Global Events
+
+Use a global event bus for cross-namespace communication:
+
+\`\`\`typescript
+import: activedocs/core
+
+// Create global event bus
+const eventBus = createDocument({ namespace: 'global' })
+
+// Any document can emit to global
+const doc1 = createDocument({ namespace: 'feature1' })
+doc1.on('action:complete', () => {
+  eventBus.emit('global:notification', {
+    message: 'Action completed'
+  })
+})
+
+// Any document can listen to global
+const doc2 = createDocument({ namespace: 'feature2' })
+doc2.on('global:notification', (event) => {
+  showNotification(event.message)
+})
+\`\`\`
+
+## Namespace Resolution
+
+ActiveDocs resolves namespaces hierarchically:
+
+\`\`\`typescript
+import: activedocs/core
+
+// Parent namespace
+const parent = createDocument({
+  namespace: 'app',
+  state: { theme: 'light' }
+})
+
+// Child can access parent state
+const child = createDocument({
+  namespace: 'app/feature',
+  state: { data: [] }
+})
+
+// Access parent state
+const parentState = getDocument('app').getState()
+console.log(parentState.theme) // 'light'
+\`\`\`
+
+## Best Practices
+
+1. **Use clear naming** - Make namespace purposes obvious
+2. **Keep hierarchy shallow** - Avoid deeply nested namespaces (max 3-4 levels)
+3. **Group related features** - Organize by logical boundaries
+4. **Document your structure** - Maintain a namespace map
+5. **Avoid global state** - Use namespaces to scope state appropriately
+
+## Namespace Utilities
+
+\`\`\`typescript
+import: activedocs/core
+
+// Get document by namespace
+const doc = getDocument('app/chat')
+
+// Check if namespace exists
+const exists = hasDocument('app/chat')
+
+// List all namespaces
+const namespaces = listNamespaces()
+
+// Remove document and namespace
+removeDocument('app/chat')
+\`\`\`
+
+## Next Steps
+
+- Learn about [Interpreter](/architecture/interpreter)
+- Explore [I/O Processors](/architecture/io-processors)
+- Understand [Document Structure](/architecture/document-structure)
+\`\`\`

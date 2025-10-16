@@ -1,0 +1,358 @@
+---
+title: "Memory Extension"
+description: "Add persistent memory to ActiveDocs"
+---
+
+# Memory Extension
+
+The Memory extension adds persistent storage capabilities to ActiveDocs, allowing documents to remember state across sessions.
+
+## Installation
+
+\`\`\`bash
+npm install @activedocs/extension-memory
+\`\`\`
+
+## Basic Usage
+
+\`\`\`typescript
+import: activedocs/core
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    memoryExtension({
+      storage: 'localStorage'
+    })
+  ]
+})
+
+// State is automatically persisted
+document.setState({ user: 'John' })
+
+// State is restored on next load
+const state = document.getState()
+console.log(state.user) // 'John'
+\`\`\`
+
+## Storage Options
+
+### Local Storage
+
+Store data in browser localStorage:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    memoryExtension({
+      storage: 'localStorage',
+      key: 'myapp-state' // Custom storage key
+    })
+  ]
+})
+\`\`\`
+
+### Session Storage
+
+Store data in browser sessionStorage:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    memoryExtension({
+      storage: 'sessionStorage'
+    })
+  ]
+})
+\`\`\`
+
+### IndexedDB
+
+Store large amounts of data:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    memoryExtension({
+      storage: 'indexedDB',
+      dbName: 'myapp',
+      storeName: 'documents'
+    })
+  ]
+})
+\`\`\`
+
+### Custom Storage
+
+Implement custom storage backend:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const customStorage = {
+  async get(key: string) {
+    return await fetch(`/api/storage/${key}`).then(r => r.json())
+  },
+  
+  async set(key: string, value: any) {
+    await fetch(`/api/storage/${key}`, {
+      method: 'POST',
+      body: JSON.stringify(value)
+    })
+  },
+  
+  async remove(key: string) {
+    await fetch(`/api/storage/${key}`, { method: 'DELETE' })
+  }
+}
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    memoryExtension({
+      storage: customStorage
+    })
+  ]
+})
+\`\`\`
+
+## Configuration
+
+Configure memory behavior:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    memoryExtension({
+      // Storage backend
+      storage: 'localStorage',
+      
+      // Time to live (ms)
+      ttl: 3600000, // 1 hour
+      
+      // Auto-save on state change
+      autoSave: true,
+      
+      // Debounce auto-save (ms)
+      debounce: 1000,
+      
+      // Compress data
+      compress: true,
+      
+      // Encrypt data
+      encrypt: {
+        enabled: true,
+        key: process.env.ENCRYPTION_KEY
+      }
+    })
+  ]
+})
+\`\`\`
+
+## Manual Control
+
+Control persistence manually:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    memoryExtension({
+      storage: 'localStorage',
+      autoSave: false // Disable auto-save
+    })
+  ]
+})
+
+// Save manually
+await document.memory.save()
+
+// Load manually
+await document.memory.load()
+
+// Clear memory
+await document.memory.clear()
+\`\`\`
+
+## Selective Persistence
+
+Choose what to persist:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  state: {
+    user: null,
+    sessionId: null,
+    preferences: {}
+  },
+  extensions: [
+    memoryExtension({
+      storage: 'localStorage',
+      // Only persist specific fields
+      include: ['user', 'preferences'],
+      // Or exclude specific fields
+      exclude: ['sessionId']
+    })
+  ]
+})
+\`\`\`
+
+## Versioning
+
+Handle state schema changes:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    memoryExtension({
+      storage: 'localStorage',
+      version: 2,
+      migrations: {
+        1: (state) => {
+          // Migrate from v1 to v2
+          return {
+            ...state,
+            newField: 'default'
+          }
+        },
+        2: (state) => {
+          // Migrate from v2 to v3
+          return {
+            ...state,
+            renamedField: state.oldField
+          }
+        }
+      }
+    })
+  ]
+})
+\`\`\`
+
+## Events
+
+Listen to memory events:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [memoryExtension({ storage: 'localStorage' })]
+})
+
+document.on('memory:save', (event) => {
+  console.log('State saved:', event.state)
+})
+
+document.on('memory:load', (event) => {
+  console.log('State loaded:', event.state)
+})
+
+document.on('memory:clear', () => {
+  console.log('Memory cleared')
+})
+
+document.on('memory:error', (event) => {
+  console.error('Memory error:', event.error)
+})
+\`\`\`
+
+## Synchronization
+
+Sync state across tabs/windows:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    memoryExtension({
+      storage: 'localStorage',
+      sync: true // Enable cross-tab sync
+    })
+  ]
+})
+
+// State changes in one tab are reflected in others
+document.on('memory:sync', (event) => {
+  console.log('State synced from another tab:', event.state)
+})
+\`\`\`
+
+## Compression
+
+Reduce storage size:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    memoryExtension({
+      storage: 'localStorage',
+      compress: true,
+      compressionLevel: 6 // 1-9, higher = more compression
+    })
+  ]
+})
+\`\`\`
+
+## Encryption
+
+Secure sensitive data:
+
+\`\`\`typescript
+import: activedocs/extensions/memory
+
+const document = createDocument({
+  namespace: 'myapp',
+  extensions: [
+    memoryExtension({
+      storage: 'localStorage',
+      encrypt: {
+        enabled: true,
+        algorithm: 'AES-GCM',
+        key: process.env.ENCRYPTION_KEY
+      }
+    })
+  ]
+})
+\`\`\`
+
+## Best Practices
+
+1. **Choose appropriate storage** - Consider data size and persistence needs
+2. **Set reasonable TTLs** - Don't store data forever
+3. **Handle migrations** - Plan for schema changes
+4. **Encrypt sensitive data** - Protect user information
+5. **Monitor storage usage** - Avoid quota limits
+
+## Next Steps
+
+- Explore [Gemini Extension](/extensions/gemini)
+- Try [Ollama Extension](/extensions/ollama)
+- Build [Custom Extensions](/extensions/custom)
+\`\`\`

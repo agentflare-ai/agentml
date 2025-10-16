@@ -1,0 +1,159 @@
+---
+title: "Docker Deployment"
+description: "Containerize and deploy your ActiveFlow application with Docker"
+---
+
+# Docker Deployment
+
+Run ActiveFlow in Docker containers for consistent, portable deployments.
+
+## Dockerfile
+
+Create a `Dockerfile` in your project root:
+
+\`\`\`dockerfile
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+EXPOSE 3000
+
+CMD ["node", "dist/index.js"]
+\`\`\`
+
+## Build and Run
+
+Build your Docker image:
+
+\`\`\`bash
+docker build -t activeflow-app .
+\`\`\`
+
+Run the container:
+
+\`\`\`bash
+docker run -p 3000:3000 \
+  -e GEMINI_API_KEY=your_key \
+  -e DATABASE_URL=your_db_url \
+  activeflow-app
+\`\`\`
+
+## Docker Compose
+
+For multi-container setups, use `docker-compose.yml`:
+
+\`\`\`yaml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DATABASE_URL=postgresql://postgres:password@db:5432/activeflow
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=activeflow
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+\`\`\`
+
+Run with:
+
+\`\`\`bash
+docker-compose up -d
+\`\`\`
+
+## Environment Variables
+
+Use a `.env` file for local development:
+
+\`\`\`env
+GEMINI_API_KEY=your_key_here
+DATABASE_URL=postgresql://postgres:password@localhost:5432/activeflow
+NODE_ENV=production
+\`\`\`
+
+Load it with Docker Compose:
+
+\`\`\`bash
+docker-compose --env-file .env up
+\`\`\`
+
+## Health Checks
+
+Add health checks to your Dockerfile:
+
+\`\`\`dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+\`\`\`
+
+## Production Optimization
+
+- Use multi-stage builds to reduce image size
+- Run as non-root user for security
+- Use `.dockerignore` to exclude unnecessary files
+- Enable BuildKit for faster builds
+- Use specific version tags, not `latest`
+
+## Kubernetes
+
+Deploy to Kubernetes with a deployment manifest:
+
+\`\`\`yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: activeflow-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: activeflow
+  template:
+    metadata:
+      labels:
+        app: activeflow
+    spec:
+      containers:
+      - name: app
+        image: activeflow-app:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: activeflow-secrets
+              key: gemini-api-key
+\`\`\`

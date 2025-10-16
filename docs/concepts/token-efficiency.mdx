@@ -1,0 +1,562 @@
+---
+title: "Token Efficiency"
+description: "Minimize token usage and maximize performance with Agentic Flow's efficiency features"
+---
+
+# Token Efficiency
+
+Token efficiency is a core design principle of Agentic Flow. Every feature is built to minimize token usage while maximizing LLM performance.
+
+## The Token Problem
+
+Traditional LLM applications waste tokens:
+
+\`\`\`javascript
+// Traditional approach - sends everything every time
+const messages = [
+  { role: 'system', content: systemPrompt },
+  ...conversationHistory,  // Entire history!
+  { role: 'user', content: newMessage }
+];
+
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: messages  // Thousands of tokens
+});
+\`\`\`
+
+**Problems:**
+- Sends entire conversation history every request
+- Repeats system prompts unnecessarily
+- No caching or reuse
+- Costs scale linearly with conversation length
+
+## Agentic Flow's Solution
+
+### Incremental Context
+
+Only send what changed:
+
+\`\`\`
+import: std/llm
+
+# First message
+on: user.message
+  llm.chat:
+    model: gpt-4
+    system: "You are a helpful assistant"
+    message: event.content
+    # System prompt cached automatically
+
+# Subsequent messages
+on: user.message
+  llm.chat:
+    model: gpt-4
+    # System prompt reused from cache
+    message: event.content
+    context: last_response  # Only recent context
+\`\`\`
+
+**Benefits:**
+- System prompts sent once, cached forever
+- Only new messages transmitted
+- Context window managed automatically
+- 70-90% token reduction
+
+### Smart Caching
+
+Agentic Flow caches at multiple levels:
+
+\`\`\`
+import: std/llm
+import: std/cache
+
+on: user.query
+  # Check cache first
+  cache.get:
+    key: event.content
+  
+on: cache.hit
+  emit: response.ready
+    content: event.value
+
+on: cache.miss
+  llm.chat:
+    model: gpt-4
+    message: event.content
+  
+on: llm.response
+  # Cache the response
+  cache.set:
+    key: event.query
+    value: event.text
+    ttl: 3600
+\`\`\`
+
+**Caching Strategies:**
+- Prompt caching
+- Response caching
+- Embedding caching
+- Semantic caching
+
+### Selective Loading
+
+Load only relevant document sections:
+
+\`\`\`
+import: std/llm
+import: std/context
+
+on: user.query
+  # Find relevant context
+  context.search:
+    query: event.content
+    limit: 3
+  
+on: context.found
+  llm.chat:
+    model: gpt-4
+    # Only relevant context included
+    context: event.results
+    message: event.query
+\`\`\`
+
+## Token Optimization Techniques
+
+### 1. Prompt Compression
+
+Compress prompts without losing meaning:
+
+\`\`\`
+import: std/llm
+import: std/compress
+
+on: user.message
+  # Compress long context
+  compress.text:
+    content: event.longContext
+    ratio: 0.5
+  
+on: compress.complete
+  llm.chat:
+    model: gpt-4
+    context: event.compressed
+    message: event.message
+\`\`\`
+
+### 2. Sliding Window Context
+
+Maintain a sliding window of recent messages:
+
+\`\`\`
+import: std/llm
+import: std/memory
+
+on: user.message
+  # Store in sliding window
+  memory.push:
+    key: "conversation"
+    value: event.content
+    maxSize: 10  # Keep last 10 messages
+  
+  # Get recent context
+  memory.get:
+    key: "conversation"
+  
+on: memory.retrieved
+  llm.chat:
+    model: gpt-4
+    context: event.value  # Only last 10 messages
+    message: event.content
+\`\`\`
+
+### 3. Summarization
+
+Summarize old context:
+
+\`\`\`
+import: std/llm
+
+on: conversation.long
+  # Summarize old messages
+  llm.chat:
+    model: gpt-4
+    system: "Summarize this conversation"
+    message: event.oldMessages
+  
+on: llm.response
+  # Use summary instead of full history
+  memory.set:
+    key: "summary"
+    value: event.text
+\`\`\`
+
+### 4. Semantic Deduplication
+
+Remove redundant information:
+
+\`\`\`
+import: std/semantic
+
+on: context.prepare
+  # Remove semantically similar content
+  semantic.deduplicate:
+    content: event.documents
+    threshold: 0.9
+  
+on: semantic.deduplicated
+  llm.chat:
+    model: gpt-4
+    context: event.unique  # Only unique content
+\`\`\`
+
+## Measuring Token Usage
+
+### Built-in Metrics
+
+Track token usage automatically:
+
+\`\`\`
+import: std/llm
+import: std/metrics
+
+on: llm.response
+  metrics.record:
+    tokensUsed: event.usage.total
+    promptTokens: event.usage.prompt
+    completionTokens: event.usage.completion
+\`\`\`
+
+### Token Budgets
+
+Set token budgets:
+
+\`\`\`
+import: std/llm
+
+on: user.message
+  llm.chat:
+    model: gpt-4
+    message: event.content
+    maxTokens: 500  # Limit response length
+    budget:
+      daily: 100000
+      perRequest: 2000
+\`\`\`
+
+### Cost Tracking
+
+Track costs in real-time:
+
+\`\`\`
+import: std/metrics
+
+on: llm.response
+  metrics.cost:
+    model: event.model
+    tokens: event.usage.total
+  
+on: metrics.cost.calculated
+  log: "Request cost: $" + event.cost
+  
+  if: event.dailyTotal > 100
+    emit: budget.exceeded
+\`\`\`
+
+## Advanced Optimization
+
+### Prompt Engineering
+
+Optimize prompts for token efficiency:
+
+\`\`\`
+# Bad - verbose prompt
+system: "You are a helpful AI assistant that helps users with their questions. You should always be polite, professional, and provide detailed answers. Make sure to consider the context of the conversation and provide relevant information."
+
+# Good - concise prompt
+system: "Helpful AI assistant. Be concise and relevant."
+\`\`\`
+
+### Model Selection
+
+Choose the right model for the task:
+
+\`\`\`
+import: std/llm
+
+on: user.query
+  # Use smaller model for simple tasks
+  if: event.complexity == "low"
+    llm.chat:
+      model: gpt-3.5-turbo
+      message: event.content
+  else:
+    llm.chat:
+      model: gpt-4
+      message: event.content
+\`\`\`
+
+### Batch Processing
+
+Process multiple requests together:
+
+\`\`\`
+import: std/llm
+
+on: batch.ready
+  llm.batch:
+    model: gpt-4
+    requests: event.items
+    # More efficient than individual requests
+\`\`\`
+
+### Streaming Responses
+
+Stream responses to reduce perceived latency:
+
+\`\`\`
+import: std/llm
+
+on: user.message
+  llm.stream:
+    model: gpt-4
+    message: event.content
+
+on: llm.stream.chunk
+  emit: response.chunk
+    content: event.text
+\`\`\`
+
+## Token Efficiency Patterns
+
+### Pattern 1: Lazy Loading
+
+Load context only when needed:
+
+\`\`\`
+import: std/llm
+import: std/context
+
+on: user.query
+  # Don't load context upfront
+  llm.chat:
+    model: gpt-4
+    message: event.content
+
+on: llm.needs.context
+  # Load context only if LLM requests it
+  context.load:
+    query: event.query
+\`\`\`
+
+### Pattern 2: Progressive Enhancement
+
+Start with minimal context, add more if needed:
+
+\`\`\`
+import: std/llm
+
+state: minimal
+  on: user.query
+    llm.chat:
+      model: gpt-4
+      message: event.content
+      # No context initially
+  
+  on: llm.insufficient
+    transition: enhanced
+
+state: enhanced
+  on: enter
+    llm.chat:
+      model: gpt-4
+      context: event.additionalContext
+      message: event.content
+\`\`\`
+
+### Pattern 3: Context Pruning
+
+Remove irrelevant context:
+
+\`\`\`
+import: std/llm
+import: std/relevance
+
+on: user.query
+  # Score context relevance
+  relevance.score:
+    query: event.content
+    context: event.history
+  
+on: relevance.scored
+  # Keep only relevant parts
+  llm.chat:
+    model: gpt-4
+    context: event.relevant  # Pruned context
+    message: event.query
+\`\`\`
+
+## Monitoring & Optimization
+
+### Token Usage Dashboard
+
+Monitor token usage:
+
+\`\`\`javascript
+import { AgenticFlow } from 'agentic-flow';
+
+const af = new AgenticFlow({
+  metrics: {
+    enabled: true,
+    trackTokens: true
+  }
+});
+
+af.on('metrics.tokens', (data) => {
+  console.log('Tokens used:', data.total);
+  console.log('Cost:', data.cost);
+  console.log('Efficiency:', data.efficiency);
+});
+\`\`\`
+
+### Optimization Alerts
+
+Get alerts for inefficient usage:
+
+\`\`\`
+import: std/metrics
+
+on: metrics.tokens
+  if: event.total > 5000
+    emit: alert.high.usage
+      tokens: event.total
+      request: event.requestId
+\`\`\`
+
+### A/B Testing
+
+Test optimization strategies:
+
+\`\`\`
+import: std/llm
+import: std/experiment
+
+on: user.query
+  experiment.variant:
+    name: "context_strategy"
+    variants:
+      - name: "full_context"
+        weight: 0.5
+      - name: "pruned_context"
+        weight: 0.5
+
+on: experiment.assigned
+  if: event.variant == "full_context"
+    llm.chat:
+      context: event.fullContext
+  else:
+    llm.chat:
+      context: event.prunedContext
+\`\`\`
+
+## Best Practices
+
+### 1. Cache Aggressively
+
+\`\`\`
+# Cache everything that can be reused
+- System prompts
+- Common queries
+- Embeddings
+- Summaries
+\`\`\`
+
+### 2. Use Smaller Models When Possible
+
+\`\`\`
+# GPT-3.5 for simple tasks
+# GPT-4 for complex reasoning
+# Claude for long context
+\`\`\`
+
+### 3. Implement Timeouts
+
+\`\`\`
+import: std/llm
+
+on: user.query
+  llm.chat:
+    model: gpt-4
+    message: event.content
+    timeout: 30s  # Prevent runaway costs
+\`\`\`
+
+### 4. Monitor and Alert
+
+\`\`\`
+# Set up monitoring for:
+- Token usage per request
+- Daily/monthly totals
+- Cost per user
+- Efficiency metrics
+\`\`\`
+
+## Real-World Examples
+
+### Example 1: Customer Support Bot
+
+\`\`\`
+import: std/llm
+import: std/memory
+import: std/cache
+
+# 90% token reduction vs traditional approach
+on: user.question
+  # Check FAQ cache first
+  cache.get:
+    key: event.question
+    type: "semantic"
+  
+on: cache.miss
+  # Use sliding window context
+  memory.get:
+    key: "conversation"
+    last: 5
+  
+  llm.chat:
+    model: gpt-3.5-turbo
+    context: event.recent
+    message: event.question
+\`\`\`
+
+### Example 2: Document Analysis
+
+\`\`\`
+import: std/llm
+import: std/context
+
+# Process large documents efficiently
+on: analyze.document
+  # Extract relevant sections only
+  context.extract:
+    document: event.content
+    query: event.question
+    maxChunks: 3
+  
+on: context.extracted
+  llm.chat:
+    model: gpt-4
+    context: event.chunks  # Only relevant parts
+    message: event.question
+\`\`\`
+
+## Next Steps
+
+- Learn about [Namespaces](/concepts/namespaces) for organizing functionality
+- Explore [Best Practices](/best-practices) for production optimization
+- Read about [Performance](/best-practices/performance) tuning
+
+---
+
+**Benchmark**: See our [token efficiency benchmarks](https://github.com/agentic-flow/benchmarks) comparing AF to traditional approaches.
+\`\`\`
