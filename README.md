@@ -4,11 +4,75 @@
 > 
 > AgentML is in early alpha and being built openly with the community. The vision is ambitious, the foundation is solid, but many features are still in development. Join us in shaping the future of agent standards.
 
+---
+
+**TL;DR:** A new agent framework is released every week. Pick the wrong one and you're stuck. AgentML is the universal language for agents—like HTML for web browsers. Write your agent once in AgentML, deploy to any framework (LangGraph, CrewAI, n8n, or our Go/WASM runtime). When frameworks change or die, transform instead of rewriting. Built on W3C SCXML, not a proprietary format.
+
+---
+
+## The Problem
+
+**A new agent library, framework, or builder is released every week.** The landscape is fragmented and getting worse. Many of these tools work well, but choosing the right one isn't straightforward—just like choosing a programming language.
+
+**Then reality hits:**
+- You choose a framework and discover it's missing functionality you need
+- You hit limitations you didn't expect  
+- The project becomes unmaintained or development slows
+- **You're left reimplementing your entire agent in a new framework**
+
+This cycle wastes time, creates vendor lock-in, and makes it risky to build production agents.
+
+**The problem is accelerating:**
+- 2023: A few major frameworks
+- 2024: New framework every month
+- 2025: **New framework every week**
+- Each one fragments the ecosystem further
+- No interoperability, no standards, no portability
+
+**We need a universal language before this gets worse.**
+
+## Our Solution
+
+**AgentML is the universal language for agents.** Think of it like HTML:
+
+```
+AgentML : Agent Frameworks  =  HTML : Web Browsers
+```
+
+Just as HTML lets you write once and render anywhere (Chrome, Firefox, Safari), **AgentML lets you define your agent once and deploy anywhere**:
+
+- Transform to **LangGraph** (Python)
+- Transform to **CrewAI** (Python)
+- Transform to **n8n** (visual workflows)
+- Transform to **OpenAI Agent Builder**
+- Run natively with **agentmlx** (Go/WASM runtime)
+- Or build transformers for **your favorite framework**
+
+**When a new framework emerges or your current one becomes limiting**, you don't rewrite your agent—you just transform it.
+
+### The HTML Analogy
+
+The web succeeded because **HTML separated content from rendering**:
+
+| Web Browsers | Agent Frameworks |
+|--------------|------------------|
+| HTML defines the structure | AgentML defines the behavior |
+| Chrome, Firefox, Safari render it | LangGraph, CrewAI, n8n execute it |
+| Write once, works everywhere | Write once, deploy anywhere |
+| Browsers compete on performance | Frameworks compete on runtime efficiency |
+| HTML is the standard | AgentML aims to be the standard |
+
+**You wouldn't write separate HTML for Chrome, Firefox, and Safari.** Why write separate agents for LangGraph, CrewAI, and n8n?
+
 ## What We're Building
 
-**AgentML** is an agentic workflow framework built on [W3C SCXML](https://www.w3.org/TR/scxml/) that aims to provide deterministic, event-driven state machines for building LLM-powered agents. By combining SCXML's formal state machine semantics with modern LLM capabilities, AgentML will enable highly composable, maintainable, and predictable agent behaviors.
+**AgentML** is an agentic workflow language built on [W3C SCXML](https://www.w3.org/TR/scxml/) that provides deterministic, event-driven state machines for building LLM-powered agents. By combining SCXML's battle-tested formal semantics with modern LLM capabilities, AgentML enables highly composable, maintainable, and predictable agent behaviors.
 
-**Our Vision - The Universal Agent Standard**: Define your agent once in AgentML and deploy anywhere. Transform to LangGraph, CrewAI, n8n, OpenAI Agent Builder, or run natively with the agentmlx WASM runtime. AgentML aims to unify the fractured agentic ecosystem by establishing W3C SCXML as the standard language for agents.
+**Technical Foundation:**
+- Built on W3C SCXML (not a proprietary format)
+- Extends with agent-specific capabilities (LLM integration, event schemas)
+- Maintains full W3C compatibility
+- Transform to framework-specific implementations or run natively
 
 ---
 
@@ -57,15 +121,39 @@
 
 ### Our Goals
 
-**Just as HTML became the universal language of the web**, enabling any browser to render any website, **we're working to make AgentML the universal language for agents**—enabling any runtime to execute any agent, and any agent to communicate with any other agent, regardless of the framework.
+**Just as HTML became the universal language of the web**, enabling any browser to render any website, **we're working to make AgentML the universal language for agents**.
 
-**Why this matters:**
-- **For developers**: Learn one standard instead of multiple frameworks
-- **For organizations**: Avoid vendor lock-in, standardize on one language
-- **For the ecosystem**: Enable true interoperability between frameworks
-- **For the future**: Build on W3C standards that will outlive current trends
+#### Why This Matters
 
-**The foundation is W3C SCXML** - a mature, battle-tested specification with 20+ years of research behind it. We're extending it with agent-specific capabilities while maintaining full compatibility.
+**For Developers:**
+- **Learn once, use everywhere**: Master AgentML, not 10+ different frameworks
+- **Framework freedom**: Switch between LangGraph, CrewAI, n8n without rewriting
+- **Future-proof**: Your agents outlive framework trends
+- **Choose the best tool**: Pick frameworks based on deployment needs, not sunk costs
+
+**For Organizations:**
+- **No vendor lock-in**: Never be trapped by a framework's limitations again
+- **Standardize across teams**: One language for all agent development
+- **Reduce risk**: If a framework dies, transform to another—don't rebuild
+- **Faster iteration**: Try different runtimes without reimplementation
+
+**For the Ecosystem:**
+- **True interoperability**: Agents built in AgentML can communicate across frameworks
+- **Accelerate innovation**: Framework authors focus on runtime optimization, not language design
+- **Lower barriers**: New frameworks can support AgentML instead of building from scratch
+- **Community momentum**: Shared language creates shared tooling, examples, and knowledge
+
+#### The Foundation
+
+**We're building on W3C SCXML** - not reinventing the wheel:
+
+- ✅ **20+ years** of formal state machine research
+- ✅ **Battle-tested** in telephony, automotive, IoT, and industrial systems  
+- ✅ **Formal semantics** enabling verification and tooling
+- ✅ **Vendor-neutral** W3C standard, not controlled by any company
+- ✅ **Future-proof** foundation that transcends current frameworks
+
+We're extending SCXML with agent-specific capabilities (LLM integration, event schemas, runtime snapshots) while maintaining full W3C compatibility. This means standard SCXML tools work with AgentML, and AgentML agents are valid SCXML documents.
 
 ---
 
@@ -633,11 +721,21 @@ This snapshot, combined with the SCXML document, gives the LLM complete context.
 
 > **🚧 Vision Statement**: This section describes our goal for AgentML. Framework transformers are in active development and not yet available. This is where we're heading, and we're building it in public.
 
-AgentML aims to address a critical problem in the agentic ecosystem: **framework fragmentation**. Today, agents built for LangGraph won't run on CrewAI, n8n workflows can't be used in OpenAI's Agent Builder, and each framework has its own learning curve and limitations.
+### The Framework Fragmentation Problem
+
+**The agent landscape is a mess:**
+
+- New frameworks every week (LangGraph, CrewAI, Autogen, n8n, Haystack, Semantic Kernel, Flowise, Langflow...)
+- Each has unique APIs, patterns, and limitations
+- Agents built in LangGraph don't run in CrewAI
+- n8n workflows can't transform to OpenAI Agent Builder
+- Choose wrong? Start over from scratch.
+
+**This is exactly where web browsers were before HTML standardization.** Every browser had its own markup. Content worked on one but not others. HTML solved this.
 
 ### The AgentML Solution (In Development)
 
-**Our goal - Define once, deploy everywhere:**
+**Define once in AgentML, deploy to any framework or runtime:**
 
 ```
         AgentML (.aml)
@@ -696,23 +794,43 @@ agentmlx build customer-support.aml --target wasm --output agent.wasm
 
 ### Why This Matters
 
+**Stop the Rewrite Cycle:**
+
+Instead of this painful cycle:
+```
+1. Build agent in Framework A
+2. Hit limitation or Framework A loses momentum
+3. Rewrite entire agent in Framework B
+4. Repeat when B has problems...
+```
+
+You get this:
+```
+1. Build agent in AgentML once
+2. Transform to Framework A
+3. Framework A has issues? Transform to Framework B
+4. New better framework? Transform again
+```
+
+**Real Benefits:**
+
 **For Developers:**
-- Learn one standard instead of multiple frameworks
-- Reuse agents across projects and platforms
-- Avoid vendor lock-in
-- Leverage best tool for each deployment target
+- **Learn once**: Master AgentML, not 10 frameworks
+- **Avoid rewrites**: Transform instead of reimplementing
+- **Framework insurance**: Never trapped by your initial choice
+- **Pick the best**: Choose runtime based on deployment needs, not sunk costs
 
 **For Organizations:**
-- Standardize on one agent definition language
-- Migrate between frameworks without rewriting
-- Deploy agents to optimal runtime for each use case
-- Future-proof agent investments
+- **Eliminate vendor lock-in**: Framework limitations don't trap you
+- **Reduce risk**: Bet on a W3C standard, not a startup's framework
+- **Standardize**: All agents in one language, run on many runtimes
+- **Faster innovation**: Try new frameworks without migration projects
 
 **For the Ecosystem:**
-- Establishes W3C SCXML as the agent standard
-- Enables framework interoperability
-- Accelerates agent development and sharing
-- Creates a universal agent marketplace
+- **Interoperability**: AgentML agents communicate across frameworks
+- **Shared tooling**: One language = one set of tools, editors, validators
+- **Lower barriers**: New frameworks support AgentML instead of starting from scratch
+- **Universal marketplace**: Share and discover agents that work everywhere
 
 ### Framework Compatibility
 
@@ -750,23 +868,36 @@ Additional transformations in development:
 
 ### The W3C Standard for Agents
 
-**AgentML to agents is what HTML is to the web.** Just as HTML became the universal markup language that enabled the web to flourish—allowing any browser to render any page—AgentML establishes a universal language for agents built on the solid foundation of W3C standards.
+**Why build on a W3C standard instead of creating a new format?**
 
-By building on **W3C SCXML**, AgentML leverages:
+Because **standards outlive frameworks.** 
 
-- **20+ years** of formal state machine research
-- **Battle-tested** specification used in telephony, automotive, and more
-- **Formal semantics** enabling verification and tooling
-- **Vendor-neutral** W3C standard, not controlled by any company
-- **Future-proof** foundation that will outlive current frameworks
+**Think about it:**
+- HTML (1993) → still the web standard
+- JavaScript frameworks (Angular 2010, React 2013, Vue 2014, Svelte 2016...) → constantly changing
+- But HTML persists. Frameworks come and go.
 
-AgentML extends SCXML with agent-specific capabilities while maintaining full compatibility with the W3C specification. This means:
+**The same pattern is happening in agents:**
+- Frameworks (LangGraph, CrewAI, Autogen, n8n...) → constantly evolving, new ones weekly
+- W3C SCXML (2005-2015) → mature, stable, battle-tested
 
+**By building on W3C SCXML**, AgentML inherits:
+
+- ✅ **20+ years** of formal state machine research and refinement
+- ✅ **Battle-tested** in production (telephony, automotive, IoT, industrial systems)
+- ✅ **Formal semantics** enabling verification, testing, and static analysis
+- ✅ **Vendor-neutral** - W3C standard, not controlled by any company
+- ✅ **Existing tooling** - SCXML parsers, validators, visualizers already exist
+- ✅ **Cross-industry adoption** - proven outside just agents
+- ✅ **Future-proof** - will outlive today's agent frameworks
+
+**We're not reinventing state machines.** We're extending a proven standard with agent-specific capabilities (LLM integration, event schemas, runtime snapshots) while maintaining full W3C compatibility.
+
+**This means:**
 - Any SCXML tool can read AgentML documents
-- AgentML can leverage SCXML verification tools
-- Standard SCXML transformations (XSLT, validation) work with AgentML
-- Cross-industry standardization enables broad ecosystem
-- **True interoperability**: Just as HTML enabled the web, AgentML enables the agentic ecosystem
+- Standard SCXML transformations (XSLT, validation) work
+- AgentML agents are valid SCXML documents
+- **True interoperability** - just as HTML enabled the web, AgentML aims to enable the agentic ecosystem
 
 ## Remote Agent Communication 🚧
 
