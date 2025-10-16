@@ -362,6 +362,10 @@ main() {
     mv "$tmp_dir/agentmlx" "$BIN_DIR/agentmlx"
     chmod +x "$BIN_DIR/agentmlx"
 
+    # Create amlx symlink
+    info "Creating amlx alias..."
+    ln -sf "$BIN_DIR/agentmlx" "$BIN_DIR/amlx"
+
     # Setup PATH
     if [ $no_modify_path -eq 0 ]; then
         setup_path
@@ -371,6 +375,7 @@ main() {
     echo ""
     echo "To get started, run:"
     echo "  ${BOLD}agentmlx --help${RESET}"
+    echo "  ${BOLD}amlx --help${RESET}"
     echo ""
 
     if [ $no_modify_path -eq 0 ] && ! echo "$PATH" | grep -q "$BIN_DIR"; then
