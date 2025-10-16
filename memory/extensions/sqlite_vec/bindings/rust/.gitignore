@@ -1,4 +1,0 @@
-target/
-sqlite-vec.c
-sqlite-vec.h
-Cargo.toml
