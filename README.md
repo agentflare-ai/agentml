@@ -1609,6 +1609,48 @@ func (n *customNamespace) Unload(ctx context.Context) error { return nil }
 3. **Initialize properly**: Set default values in `<datamodel>` section
 4. **Type consistency**: ECMAScript datamodel allows flexible types
 
+### Script Handling
+
+1. **Prefer external scripts**: Use `<script src="./scripts/utils.js" />` instead of inline scripts
+2. **Use CDATA for inline scripts**: Wrap inline scripts in `<![CDATA[...]]>` to avoid XML escaping issues
+3. **Keep scripts minimal**: Complex logic should be in external files or custom namespaces
+4. **Avoid special characters**: If not using CDATA, escape `<`, `>`, `&` characters
+
+**External Script (Recommended):**
+```xml
+<state id="process">
+  <onentry>
+    <script src="./scripts/data-processor.js" />
+  </onentry>
+</state>
+```
+
+**Inline Script with CDATA:**
+```xml
+<state id="process">
+  <onentry>
+    <script>
+      <![CDATA[
+        // Use CDATA to avoid escaping < > & characters
+        if (data.value < 10 && data.status !== 'complete') {
+          result = processData(data);
+        }
+      ]]>
+    </script>
+  </onentry>
+</state>
+```
+
+**Without CDATA (Requires Escaping):**
+```xml
+<script>
+  // Must escape special characters
+  if (data.value &lt; 10 &amp;&amp; data.status !== 'complete') {
+    result = processData(data);
+  }
+</script>
+```
+
 ### Schema Organization
 
 1. **Separate schema files**: Keep event schemas in `schemas/` directory
@@ -1632,6 +1674,10 @@ project/
 │   └── common/
 │       ├── base-event.json   # Base event schema
 │       └── error-response.json
+├── scripts/
+│   ├── utils.js              # Reusable utility functions
+│   ├── data-processor.js     # Data processing logic
+│   └── validators.js         # Custom validation functions
 └── specs/
     └── openapi.yaml          # External API specifications
 ```
@@ -1656,6 +1702,15 @@ project/
 2. **Integration tests**: Test composed agents end-to-end
 3. **Mock LLMs**: Use deterministic responses for testing
 4. **Event validation**: Verify event schemas match expectations
+5. **Test external scripts**: Separately test JavaScript/script files used in agents
+
+### Common Pitfalls
+
+1. **XML Special Characters**: Always use CDATA for inline scripts with `<`, `>`, `&` characters
+2. **Missing Schema Descriptions**: LLMs need descriptions to generate correct events
+3. **Service Lifecycle**: Remember invoked services only live while their parent state is active
+4. **Event Name Matching**: Use specific event names, wildcards (`*`) only for fallback
+5. **Datamodel Initialization**: Initialize all data elements with default values
 
 ## Examples
 
@@ -1791,6 +1846,31 @@ When using LLMs to generate events:
 </state>
 ```
 
+**Processing with External Script**
+
+```xml
+<state id="process_data">
+  <onentry>
+    <!-- Load external script for complex processing -->
+    <script src="./scripts/data-processor.js" />
+    
+    <!-- Or use inline script with CDATA -->
+    <script>
+      <![CDATA[
+        // Complex logic without XML escaping concerns
+        var result = {
+          valid: data.value < threshold && data.status === 'pending',
+          processed: processComplexData(data)
+        };
+      ]]>
+    </script>
+  </onentry>
+  
+  <transition cond="result.valid" target="success" />
+  <transition target="failure" />
+</state>
+```
+
 **Confirmation Flow**
 
 ```xml
@@ -1860,12 +1940,13 @@ When using LLMs to generate events:
 1. **Always use `event:schema` with descriptions** ⭐ — Both schema-level and property-level descriptions are crucial for LLM success
 2. **Use namespace-prefixed JSON pointers** ⭐ — Load schemas with `use:events="./events.json"` and reference with `event:schema="events:#/path/to/schema"`
 3. **Unified `use:*` pattern** ⭐ — Use the same pattern for both namespaces (`use:gemini="github.com/..."`) and specs (`use:api="./api.json"`)
-4. **Describe every property** — Even simple properties benefit from clear descriptions
-5. **Keep prompts minimal** — context comes from runtime snapshot
-6. **Use hierarchical states** for agent-lifetime services
-7. **Handle errors** — include fallback transitions for unexpected events
-8. **Document event flows** — use XML comments to explain complex transitions
-9. **Test event schemas** — ensure LLM can generate valid events
+4. **External scripts preferred** ⭐ — Use `<script src="..." />` for reusability; if inline, wrap in `<![CDATA[...]]>` to avoid escaping
+5. **Describe every property** — Even simple properties benefit from clear descriptions
+6. **Keep prompts minimal** — context comes from runtime snapshot
+7. **Use hierarchical states** for agent-lifetime services
+8. **Handle errors** — include fallback transitions for unexpected events
+9. **Document event flows** — use XML comments to explain complex transitions
+10. **Test event schemas** — ensure LLM can generate valid events
 
 ### Token Optimization
 

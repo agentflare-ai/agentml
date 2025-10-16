@@ -3,6 +3,7 @@ package agentml
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/agentflare-ai/go-xmldom"
@@ -127,26 +128,13 @@ type Variable struct {
 	Name string
 }
 
-func (v *Variable) IsSystemVariable() bool {
-	switch v.Name {
-	case EventSystemVariable,
-		SessionIDSystemVariable,
-		NameSystemVariable,
-		IOProcessorsSystemVariable,
-		XSystemVariable:
-		return true
-	default:
-		return false
-	}
-}
-
 // EventType represents the type of SCXML event
-type EventType int
+type EventType string
 
 const (
-	EventTypeInternal EventType = iota
-	EventTypeExternal
-	EventTypePlatform
+	EventTypeInternal EventType = "internal"
+	EventTypeExternal EventType = "external"
+	EventTypePlatform EventType = "platform"
 )
 
 // Event represents an SCXML event as defined in the W3C specification
@@ -275,29 +263,15 @@ type DataModel interface {
 }
 
 // ExpressionType defines the type of expression being evaluated.
-type ExpressionType int
+type ExpressionType string
 
 const (
-	ValueExpression ExpressionType = iota
-	ConditionExpression
-	LocationExpression
+	ValueExpression     ExpressionType = "value"
+	ConditionExpression ExpressionType = "condition"
+	LocationExpression  ExpressionType = "location"
 )
 
-// String returns the string representation of the expression type.
-func (et ExpressionType) String() string {
-	switch et {
-	case ValueExpression:
-		return "value"
-	case ConditionExpression:
-		return "condition"
-	case LocationExpression:
-		return "location"
-	default:
-		return "unknown"
-	}
-}
-
-// ExecutionError represents an error that occurred during SCXML execution
+// ExecutionError represents an error that occurred during agentml execution
 type ExecutionError struct {
 	Message string
 	Element xmldom.Element
@@ -306,13 +280,6 @@ type ExecutionError struct {
 func (e *ExecutionError) Error() string {
 	line, column, _ := e.Element.Position()
 	return fmt.Sprintf("Execution error: %s in %s at %d:%d", e.Message, e.Element.TagName(), line, column)
-}
-
-func NewExecutionError(message string, element xmldom.Element) *ExecutionError {
-	return &ExecutionError{
-		Message: message,
-		Element: element,
-	}
 }
 
 var _ error = (*ExecutionError)(nil)
@@ -391,6 +358,25 @@ type Ticker interface {
 	Reset(d time.Duration)
 }
 
+type IOProcessorLoader func(ctx context.Context, interpreter Interpreter) (IOProcessor, error)
+
+type DataModelLoader func(ctx context.Context, interpreter Interpreter) (DataModel, error)
+
+// SnapshotConfig controls what the snapshot excludes when embedding into the document.
+// By default, all sections are included. Use Exclude fields to opt-out of specific sections.
+type SnapshotConfig struct {
+	// ExcludeAll acts as a master switch: when true, disables all sections
+	ExcludeAll bool
+	// Specific sections to exclude (opt-out pattern)
+	ExcludeConfiguration bool // exclude state configuration
+	ExcludeData          bool // exclude datamodel values
+	ExcludeQueue         bool // exclude internal/external queues
+	ExcludeServices      bool // exclude invoked child services recursively
+	ExcludeRaise         bool // exclude available raise (internal) transitions
+	ExcludeSend          bool // exclude available send (external) transitions
+	ExcludeCancel        bool // exclude cancelable delayed events
+}
+
 // Interpreter interface for SCXML interpretation
 type Interpreter interface {
 	IOProcessor
@@ -408,4 +394,40 @@ type Interpreter interface {
 	SendMessage(ctx context.Context, data SendData) error
 	ScheduleMessage(ctx context.Context, data SendData) (string, error)
 	InvokedSessions() map[string]Interpreter
+	Tracer() Tracer
+	Snapshot(ctx context.Context, maybeConfig ...SnapshotConfig) (xmldom.Document, error)
+}
+
+// Position contains source position information for a diagnostic
+type Position struct {
+	File   string `json:"file"`
+	Line   int    `json:"line"`
+	Column int    `json:"column"`
+	Offset int64  `json:"offset"`
+}
+
+// Trace describes an issue found during validation or runtime execution
+type Trace struct {
+	Level     slog.Level `json:"level"`
+	Code      string     `json:"code"`
+	Message   string     `json:"message"`
+	Position  Position   `json:"position"`
+	Tag       string     `json:"tag,omitempty"`
+	Attribute string     `json:"attribute,omitempty"`
+	Hints     []string   `json:"hints,omitempty"`
+}
+
+// Option for adding extra context to diagnostics
+
+type Option func(*Trace)
+
+// Tracer interface for collecting diagnostics
+type Tracer interface {
+	Error(code, message string, element xmldom.Element, opts ...Option)
+	Warn(code, message string, element xmldom.Element, opts ...Option)
+	Info(code, message string, element xmldom.Element, opts ...Option)
+
+	Diagnostics() []Trace
+	HasErrors() bool
+	Clear()
 }

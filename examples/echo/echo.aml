@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+  datamodel="ecmascript"
+  use:stdin="github.com/agentflare-ai/agentml/stdin">
+
+  <datamodel>
+    <data id="user_input" expr="''" />
+  </datamodel>
+
+  <state id="main">
+    <onentry>
+      <log label="echo" expr="Hello, world!" />
+    </onentry>
+    <state id="read_input">
+      <onentry>
+        <!-- Read from stdin without a prompt -->
+        <stdin:read location="user_input" prompt="" />
+      </onentry>
+      <transition target="log_output" />
+    </state>
+
+    <state id="log_output">
+      <onentry>
+        <!-- Log the input just like echo -->
+        <log expr="user_input" />
+      </onentry>
+      <transition target="end" />
+    </state>
+  </state>
+
+  <final id="end" />
+
+</agent>

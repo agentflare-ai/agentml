@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+  datamodel="ecmascript">
+
+  <state id="main">
+    <onentry>
+      <log expr="'hello-world'" />
+    </onentry>
+    <transition target="end" />
+  </state>
+
+  <final id="end" />
+
+</agent>

@@ -11,7 +11,6 @@ import (
 
 	"github.com/agentflare-ai/agentml"
 	"github.com/agentflare-ai/agentml/prompt"
-	"github.com/agentflare-ai/agentmlx/errors"
 	"github.com/agentflare-ai/go-xmldom"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -98,20 +97,22 @@ func (g *Generate) Execute(ctx context.Context, interpreter agentml.Interpreter)
 	// Validate required attributes
 
 	if g.Location == "" {
-		return errors.NewPlatformError("error.execution",
-			"Generate element missing required 'location' attribute",
-			map[string]any{"element": "gemini:generate", "line": 0},
-			fmt.Errorf("generate element missing required 'location' attribute"))
+		return &agentml.PlatformError{
+			EventName: "error.execution",
+			Message:   "Generate element missing required 'location' attribute",
+			Data:      map[string]any{"element": "gemini:generate", "line": 0},
+			Cause:     fmt.Errorf("generate element missing required 'location' attribute"),
+		}
 	}
-
 	dataModel := interpreter.DataModel()
 	if dataModel == nil {
-		return errors.NewPlatformError("error.execution",
-			"No data model available for Gemini generation",
-			map[string]any{"element": "gemini:generate", "line": 0},
-			fmt.Errorf("no data model available for gemini generation"))
+		return &agentml.PlatformError{
+			EventName: "error.execution",
+			Message:   "No data model available for Gemini generation",
+			Data:      map[string]any{"element": "gemini:generate", "line": 0},
+			Cause:     fmt.Errorf("no data model available for gemini generation"),
+		}
 	}
-
 	// Support dynamic modelexpr (evaluated via data model)
 	modelName := g.Model
 	if me := string(g.Element.GetAttribute("modelexpr")); strings.TrimSpace(me) != "" {
@@ -137,10 +138,12 @@ func (g *Generate) Execute(ctx context.Context, interpreter agentml.Interpreter)
 	promptText, err := g.evaluatePrompt(ctx, interpreter)
 	if err != nil {
 		span.RecordError(err)
-		return errors.NewPlatformError("error.execution",
-			fmt.Sprintf("Failed to evaluate prompt expression: %v", err),
-			map[string]any{"element": "gemini:generate", "line": 0},
-			err)
+		return &agentml.PlatformError{
+			EventName: "error.execution",
+			Message:   fmt.Sprintf("Failed to evaluate prompt expression: %v", err),
+			Data:      map[string]any{"element": "gemini:generate", "line": 0},
+			Cause:     err,
+		}
 	}
 
 	// Also support dynamic promptexpr (evaluated via data model)
@@ -160,10 +163,12 @@ func (g *Generate) Execute(ctx context.Context, interpreter agentml.Interpreter)
 	childPrompts, err := g.processChildPrompts(ctx, interpreter)
 	if err != nil {
 		span.RecordError(err)
-		return errors.NewPlatformError("error.execution",
-			fmt.Sprintf("Failed to process child prompt elements: %v", err),
-			map[string]any{"element": "gemini:generate", "line": 0},
-			err)
+		return &agentml.PlatformError{
+			EventName: "error.execution",
+			Message:   fmt.Sprintf("Failed to process child prompt elements: %v", err),
+			Data:      map[string]any{"element": "gemini:generate", "line": 0},
+			Cause:     err,
+		}
 	}
 
 	// Combine prompts - attribute prompt first, then child prompts
@@ -252,19 +257,7 @@ func (g *Generate) Execute(ctx context.Context, interpreter agentml.Interpreter)
 	// Log token usage if available
 	if response != nil && response.UsageMetadata != nil {
 		usage := response.UsageMetadata
-		slog.Info("gemini.token_usage",
-			"prompt_tokens", usage.PromptTokenCount,
-			"response_tokens", usage.CandidatesTokenCount,
-			"total_tokens", usage.TotalTokenCount,
-			"model", modelName,
-			"location", g.Location,
-		)
-
-		// Also print to stdout for visibility
-		fmt.Printf("[Token Usage] Prompt: %d, Response: %d, Total: %d\n",
-			usage.PromptTokenCount,
-			usage.CandidatesTokenCount,
-			usage.TotalTokenCount)
+		fmt.Printf("[Token Usage] Prompt: %d, Response: %d, Total: %d\n", usage.PromptTokenCount, usage.CandidatesTokenCount, usage.TotalTokenCount)
 	}
 
 	// Process send_* function calls only; reject free text
