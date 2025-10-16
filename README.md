@@ -389,7 +389,21 @@ Features:
 See [memory/README.md](./memory/README.md) for details.
 - **Stdin (`.../agentml/stdin`)**: Simple stdin/stdout I/O for console agents.
 
-Custom namespaces can be implemented in Go, or in the future, any language that compiles to WASM.
+### Creating Custom Namespaces
+
+Custom namespaces can be implemented in Go (currently), or any language that compiles to WASM (future).
+
+**Current:** Go implementations define types and interfaces in code.
+
+**Future:** WebAssembly Component Model via [`agentml.wit`](./agentml.wit) 🔮
+
+The `agentml.wit` file defines standard interfaces for namespaces using WebAssembly Interface Types (WIT). This enables:
+- **Language freedom**: Implement namespaces in Rust, Go, Python, C++, or any WASM-capable language
+- **Portable**: Same `.wasm` module works across all runtimes
+- **Standard contract**: Defined interfaces ensure interoperability
+- **Secure**: WASM sandboxing isolates namespace code
+
+> **🚧 Migration Note:** Current Go-based type definitions (e.g., `types.go`) will be deprecated in favor of `agentml.wit` as the canonical type specification. This transition enables true polyglot namespace development.
 
 ---
 
