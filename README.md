@@ -4,6 +4,29 @@
 
 **The Universal Agent Standard**: Define your agent once in AgentML and deploy anywhere. Transform to LangGraph, CrewAI, n8n, OpenAI Agent Builder, or run natively with the agentmlx WASM runtime. AgentML unifies the fractured agentic ecosystem, establishing the W3C standard language for agents.
 
+---
+
+## ⚠️ Work in Progress
+
+**AgentML is in initial release and under heavy development.** We're building what we believe will become the universal language for agent frameworks—the Babel of the agentic ecosystem. However, we're not doing this alone.
+
+**Our vision:** Just as HTML became the universal language of the web, enabling any browser to render any website, **AgentML aims to be the universal language for agents**—enabling any runtime to execute any agent, and any agent to communicate with any other agent, regardless of the framework they were built with.
+
+**This is an early release:** Core features like event schema validation, external schema loading (`use:*` pattern), and framework transformations are actively being developed. APIs and capabilities will evolve based on real-world usage and community input.
+
+**We need your help.** The agent community's diverse perspectives, use cases, and expertise are essential to shaping a standard that truly serves everyone. Whether you're working with LangGraph, CrewAI, n8n, Autogen, or building your own framework, your input matters.
+
+**How to contribute:**
+- Share your use cases and pain points in [GitHub Discussions](https://github.com/agentflare-ai/agentml/discussions)
+- Propose language features via [GitHub Issues](https://github.com/agentflare-ai/agentml/issues)
+- Submit pull requests for improvements
+- Join our [Discord](#) community for real-time collaboration
+- Build and share example agents
+
+Together, we can establish AgentML as the W3C-based standard that unifies the fractured agent framework landscape.
+
+---
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -81,6 +104,8 @@ This means prompts don't need to list all possible actions—the runtime provide
 
 ### 3. Event Schema Validation
 
+> ⚠️ **Work in Progress**: Event schema validation and external schema loading are in active development. APIs and features may change as we refine the implementation based on community feedback.
+
 The `event:schema` attribute on transitions provides JSON schema validation for events:
 
 ```xml
@@ -112,6 +137,8 @@ Benefits:
 **Critical**: Always include `description` fields at both the schema level and property level. These descriptions are the primary way to guide LLMs in generating correct event data.
 
 ### JSON Pointer References with `use:*`
+
+> ⚠️ **Work in Progress**: External schema loading with `use:*` for OpenAPI/JSON Schema specifications is in active development. The unified pattern and automatic detection are still being refined.
 
 AgentML uses a **unified `use:*` pattern** that automatically detects whether you're loading a namespace implementation or an external specification. The loader intelligently determines the type based on the URI/path format.
 
@@ -593,13 +620,13 @@ AgentML documents can be transformed to:
 
 ```bash
 # Transform AgentML to LangGraph
-agentml transform customer-support.aml --target langgraph --output customer-support.py
+agentmlx transform customer-support.aml --target langgraph --output customer-support.py
 
 # Transform to n8n workflow
-agentml transform customer-support.aml --target n8n --output customer-support.json
+agentmlx transform customer-support.aml --target n8n --output customer-support.json
 
 # Transform to OpenAI Agent Builder
-agentml transform customer-support.aml --target openai --output customer-support-config.json
+agentmlx transform customer-support.aml --target openai --output customer-support-config.json
 ```
 
 ### Native Runtime: agentmlx
@@ -677,6 +704,8 @@ Additional transformations in development:
 
 ### The W3C Standard for Agents
 
+**AgentML to agents is what HTML is to the web.** Just as HTML became the universal markup language that enabled the web to flourish—allowing any browser to render any page—AgentML establishes a universal language for agents built on the solid foundation of W3C standards.
+
 By building on **W3C SCXML**, AgentML leverages:
 
 - **20+ years** of formal state machine research
@@ -691,6 +720,7 @@ AgentML extends SCXML with agent-specific capabilities while maintaining full co
 - AgentML can leverage SCXML verification tools
 - Standard SCXML transformations (XSLT, validation) work with AgentML
 - Cross-industry standardization enables broad ecosystem
+- **True interoperability**: Just as HTML enabled the web, AgentML enables the agentic ecosystem
 
 ## Remote Agent Communication
 
