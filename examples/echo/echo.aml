@@ -10,9 +10,11 @@
   <state id="main">
     <state id="read_input">
       <onentry>
-        <!-- Read from stdin without a prompt -->
-        <stdin:read location="user_input" prompt="" />
+        <!-- Read from stdin with a prompt -->
+        <stdin:read location="user_input" prompt="> " />
       </onentry>
+      <!-- Exit on EOF (stdin:read returns null) -->
+      <transition target="done" cond="user_input === null" />
       <transition target="log_output" />
     </state>
 
@@ -23,6 +25,8 @@
       </onentry>
       <transition target="read_input" />
     </state>
+
+    <state id="done" final="true" />
   </state>
 
 

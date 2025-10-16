@@ -1,0 +1,415 @@
+package agentflare:agentml@0.1.0;
+
+/// XML DOM interface for working with XML elements
+interface xmldom {
+    /// DOM element resource
+    resource element {
+        /// Get the tag name
+        tag-name: func() -> string;
+
+        /// Get an attribute value
+        get-attribute: func(name: string) -> string;
+
+        /// Set an attribute value
+        set-attribute: func(name: string, value: string) -> result<_, string>;
+
+        /// Check if an attribute exists
+        has-attribute: func(name: string) -> bool;
+
+        /// Get namespace URI
+        namespace-uri: func() -> string;
+
+        /// Get local name
+        local-name: func() -> string;
+
+        /// Get text content
+        text-content: func() -> string;
+
+        /// Get child elements
+        child-elements: func() -> list<element>;
+
+        /// Get first child element
+        first-child-element: func() -> option<element>;
+
+        /// Get next sibling element
+        next-sibling-element: func() -> option<element>;
+
+        /// Get parent element
+        parent-element: func() -> option<element>;
+    }
+}
+
+/// AgentML - SCXML-based state machine interpreter for WebAssembly
+interface types {
+    /// Namespace URI for AgentML extensions
+    const NAMESPACE-URI: string = "github.com/agentflare-ai/agentml/agent";
+
+    /// System variable names
+    const EVENT-SYSTEM-VARIABLE: string = "_event";
+    const SESSION-ID-SYSTEM-VARIABLE: string = "_sessionid";
+    const NAME-SYSTEM-VARIABLE: string = "_name";
+    const IOPROCESSORS-SYSTEM-VARIABLE: string = "_ioprocessors";
+    const X-SYSTEM-VARIABLE: string = "_x";
+
+    /// Event type classification
+    enum event-type {
+        internal,
+        external,
+        platform,
+    }
+
+    /// Expression type for validation
+    enum expression-type {
+        value,
+        condition,
+        location,
+    }
+
+    /// Log level for diagnostics
+    enum log-level {
+        debug,
+        info,
+        warn,
+        error,
+    }
+
+    /// Generic value type that can hold various data types
+    variant value {
+        none,
+        bool(bool),
+        s64(s64),
+        f64(f64),
+        string(string),
+        list(list<value>),
+        map(list<tuple<string, value>>),
+    }
+
+    /// Position information for diagnostics
+    record position {
+        file: string,
+        line: u32,
+        column: u32,
+        offset: u64,
+    }
+
+    /// Diagnostic trace
+    record trace {
+        level: log-level,
+        code: string,
+        message: string,
+        position: position,
+        tag: option<string>,
+        attribute: option<string>,
+        hints: list<string>,
+    }
+
+    /// Parameter for data operations
+    record param {
+        name: string,
+        expr: option<string>,
+        location: option<string>,
+    }
+
+    /// Content for data operations
+    record content {
+        expr: option<string>,
+        body: option<value>,
+    }
+
+    /// Send data encapsulation
+    record send-data {
+        event: string,
+        target: string,
+        %type: string,
+        id: string,
+        delay: option<string>,
+        name-list: list<string>,
+        params: list<param>,
+        content: option<content>,
+    }
+
+    /// Variable definition
+    record variable {
+        name: string,
+    }
+
+    /// Event structure
+    record event {
+        id: string,
+        name: string,
+        %type: event-type,
+        delay: option<string>,
+        data: option<value>,
+        metadata: option<value>,
+        invoke-id: option<string>,
+        timestamp: u64,
+        origin: option<string>,
+        origin-type: option<string>,
+        send-id: option<string>,
+        raw: option<string>,
+        target: option<string>,
+        target-type: option<string>,
+    }
+
+    /// Snapshot configuration
+    record snapshot-config {
+        exclude-all: bool,
+        exclude-configuration: bool,
+        exclude-data: bool,
+        exclude-queue: bool,
+        exclude-services: bool,
+        exclude-raise: bool,
+        exclude-send: bool,
+        exclude-cancel: bool,
+    }
+
+    /// Execution error
+    record execution-error {
+        message: string,
+        position: position,
+        tag: string,
+    }
+
+    /// Platform error
+    record platform-error {
+        event-name: string,
+        message: string,
+        data: list<tuple<string, value>>,
+        cause: option<string>,
+    }
+
+    /// Error type
+    variant error {
+        execution(execution-error),
+        platform(platform-error),
+        communication(string),
+        validation(string),
+        other(string),
+    }
+}
+
+/// Data model interface for SCXML data manipulation
+interface datamodel {
+    use types.{value, error, expression-type, event};
+    use xmldom.{element};
+
+    /// Data model resource
+    resource model {
+        /// Initialize the data model with data elements
+        initialize: func(data-elements: list<element>) -> result<_, error>;
+
+        /// Evaluate a value expression
+        evaluate-value: func(expression: string) -> result<value, error>;
+
+        /// Evaluate a conditional expression
+        evaluate-condition: func(expression: string) -> result<bool, error>;
+
+        /// Evaluate a location expression
+        evaluate-location: func(location: string) -> result<value, error>;
+
+        /// Assign a value to a location
+        assign: func(location: string, value: value) -> result<_, error>;
+
+        /// Get variable value by ID
+        get-variable: func(id: string) -> result<value, error>;
+
+        /// Set variable value by ID
+        set-variable: func(id: string, value: value) -> result<_, error>;
+
+        /// Get system variable value
+        get-system-variable: func(name: string) -> result<value, error>;
+
+        /// Set system variable value
+        set-system-variable: func(name: string, value: value) -> result<_, error>;
+
+        /// Set the current event
+        set-current-event: func(event: event) -> result<_, error>;
+
+        /// Execute a script
+        execute-script: func(script: string) -> result<_, error>;
+
+        /// Validate an expression
+        validate-expression: func(expression: string, expr-type: expression-type) -> result<_, error>;
+    }
+}
+
+/// I/O Processor interface for event communication
+interface ioprocessor {
+    use types.{event, error};
+
+    /// I/O Processor resource
+    resource processor {
+        /// Handle an event
+        handle: func(event: event) -> result<_, error>;
+
+        /// Get the location URI for this processor
+        location: func() -> result<string, error>;
+
+        /// Get the I/O processor type URI
+        %type: func() -> string;
+
+        /// Shutdown the processor
+        shutdown: func() -> result<_, error>;
+    }
+}
+
+/// Clock interface for time management
+interface clock {
+    /// Timer resource
+    resource timer {
+        /// Stop the timer
+        stop: func() -> bool;
+
+        /// Reset the timer
+        reset: func(duration-ms: u64) -> bool;
+    }
+
+    /// Ticker resource
+    resource ticker {
+        /// Stop the ticker
+        stop: func();
+
+        /// Reset the ticker
+        reset: func(duration-ms: u64);
+    }
+
+    /// Clock resource
+    resource instance {
+        /// Get current time (Unix timestamp in milliseconds)
+        now: func() -> u64;
+
+        /// Get time since a given timestamp
+        since: func(timestamp: u64) -> u64;
+
+        /// Sleep for a duration
+        sleep: func(duration-ms: u64) -> result<_, string>;
+
+        /// Create a new timer
+        new-timer: func(duration-ms: u64) -> timer;
+
+        /// Create a new ticker
+        new-ticker: func(duration-ms: u64) -> ticker;
+
+        /// Get the time scale
+        time-scale: func() -> f64;
+
+        /// Set the time scale
+        set-time-scale: func(scale: f64);
+
+        /// Advance time (mock clocks only)
+        advance: func(duration-ms: u64);
+
+        /// Pause time (mock clocks only)
+        pause: func();
+
+        /// Resume time (mock clocks only)
+        resume: func();
+
+        /// Check if paused
+        is-paused: func() -> bool;
+    }
+}
+
+/// Tracer interface for diagnostics
+interface tracer {
+    use types.{trace};
+
+    /// Tracer resource
+    resource instance {
+        /// Record an error diagnostic
+        error: func(code: string, message: string, line: u32, column: u32);
+
+        /// Record a warning diagnostic
+        warn: func(code: string, message: string, line: u32, column: u32);
+
+        /// Record an info diagnostic
+        info: func(code: string, message: string, line: u32, column: u32);
+
+        /// Get all diagnostics
+        diagnostics: func() -> list<trace>;
+
+        /// Check if there are errors
+        has-errors: func() -> bool;
+
+        /// Clear all diagnostics
+        clear: func();
+    }
+}
+
+/// Interpreter interface for SCXML execution
+interface interpreter {
+    use types.{event, error, send-data, snapshot-config, value};
+    use datamodel.{model};
+    use clock.{instance as clock-instance};
+    use tracer.{instance as tracer-instance};
+
+    /// Interpreter resource
+    resource instance {
+        /// Get session ID
+        session-id: func() -> string;
+
+        /// Get current configuration (active state IDs)
+        configuration: func() -> list<string>;
+
+        /// Check if a state is active
+        in: func(state-id: string) -> bool;
+
+        /// Raise an internal event
+        raise: func(event: event);
+
+        /// Send an event
+        send: func(event: event) -> result<_, error>;
+
+        /// Cancel a delayed send
+        cancel: func(send-id: string) -> result<_, error>;
+
+        /// Log a message
+        log: func(label: string, message: string);
+
+        /// Get the clock
+        clock: func() -> clock-instance;
+
+        /// Get the data model
+        datamodel: func() -> model;
+
+        /// Get the tracer
+        tracer: func() -> tracer-instance;
+
+        /// Send a message immediately
+        send-message: func(data: send-data) -> result<_, error>;
+
+        /// Schedule a delayed message
+        schedule-message: func(data: send-data) -> result<string, error>;
+
+        /// Get invoked session IDs
+        invoked-sessions: func() -> list<string>;
+
+        /// Get a snapshot of the current state
+        snapshot: func(config: option<snapshot-config>) -> result<string, error>;
+
+        /// Handle an event (IOProcessor interface)
+        handle: func(event: event) -> result<_, error>;
+
+        /// Get location (IOProcessor interface)
+        location: func() -> result<string, error>;
+
+        /// Shutdown the interpreter
+        shutdown: func() -> result<_, error>;
+    }
+
+    /// Create a new interpreter instance
+    create: func(scxml-document: string) -> result<instance, error>;
+
+    /// Start an interpreter
+    start: func(interp: instance) -> result<_, error>;
+}
+
+/// Main world for AgentML WASM component
+world agentml {
+    export xmldom;
+    export interpreter;
+    export datamodel;
+    export ioprocessor;
+    export clock;
+    export tracer;
+}

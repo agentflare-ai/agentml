@@ -105,8 +105,8 @@ func (e *readExec) Execute(ctx context.Context, interp agentml.Interpreter) erro
 				Cause:     err,
 			}
 		}
-		// EOF reached, store empty string
-		return dm.SetVariable(ctx, loc, "")
+		// EOF reached, store null to distinguish from empty input
+		return dm.SetVariable(ctx, loc, nil)
 	}
 
 	input := scanner.Text()
