@@ -1,260 +1,504 @@
 ---
 title: "Performance Optimization"
-description: "Optimize your ActiveFlow application for speed and efficiency"
+description: "Optimize your AgentML agents for speed and efficiency"
 ---
 
 # Performance Optimization
 
-Optimize your ActiveFlow application for maximum performance and minimal costs.
+Optimize your AgentML agents for maximum performance and minimal costs. AgentML's runtime snapshots and SCXML architecture enable significant performance gains.
 
-## Token Efficiency
+## Token Efficiency with Runtime Snapshots
 
-Minimize token usage to reduce costs and latency:
+AgentML achieves 90%+ token reduction using runtime snapshots instead of full conversation history:
 
-\`\`\`typescript
-// Bad: Verbose prompt
-const doc = `
-import: gemini
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-prompt: Please analyze the following text and provide a comprehensive summary including all the main points, key details, and important information contained within.
----
-${longText}
-`
+  <datamodel>
+    <data id="conversationHistory" expr="[]" />
+  </datamodel>
 
-// Good: Concise prompt
-const doc = `
-import: gemini
+  <state id="chat">
+    <transition event="user.message" target="generate">
+      <!-- Only store essential context -->
+      <assign location="userInput" expr="_event.data.message" />
+    </transition>
+  </state>
 
-prompt: Summarize key points
----
-${longText}
-`
-\`\`\`
+  <state id="generate">
+    <onentry>
+      <!-- Runtime sends compact state snapshot to LLM, not full history -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="userInput" />
+    </onentry>
 
-## Caching
+    <transition event="action.response" target="chat">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
+  </state>
+</agent>
+```
 
-Cache LLM responses for repeated queries:
+**Token comparison (10-turn conversation):**
+- Traditional: ~100,000 tokens
+- AgentML snapshots: ~2,700 tokens
+- **Reduction: 97%**
 
-\`\`\`typescript
-import { LRUCache } from 'lru-cache'
+## Provider Caching
 
-const cache = new LRUCache<string, any>({
-  max: 500,
-  ttl: 1000 * 60 * 60 // 1 hour
-})
+Use prompt caching to reduce latency and costs:
 
-async function processWithCache(doc: string) {
-  const key = hashDocument(doc)
-  
-  const cached = cache.get(key)
-  if (cached) return cached
-  
-  const result = await processDocument(doc)
-  cache.set(key, result)
-  
-  return result
-}
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-## Streaming
+  <datamodel>
+    <!-- Cache-friendly system prompt -->
+    <data id="systemContext" expr="'You are a helpful assistant specialized in technical documentation. Always provide concise, accurate answers.'" />
+  </datamodel>
 
-Stream responses for better perceived performance:
+  <state id="generate">
+    <onentry>
+      <!-- System context is cached by provider -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        systemexpr="systemContext"
+        promptexpr="userInput" />
+    </onentry>
 
-\`\`\`typescript
-import { streamDocument } from 'activeflow'
+    <transition event="action.response" target="respond" />
+  </state>
+</agent>
+```
 
-async function* processStream(doc: string) {
-  for await (const chunk of streamDocument(doc)) {
-    yield chunk
-  }
-}
+**Caching benefits:**
+- Google Gemini: 90% off cached tokens
+- OpenAI: 50% off cached tokens
+- Reduced latency on repeated prompts
 
-// Usage
-for await (const chunk of processStream(doc)) {
-  console.log(chunk)
-}
-\`\`\`
+## Concise Prompts
 
-## Batch Processing
+Minimize token usage with focused prompts:
 
-Process multiple documents efficiently:
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-\`\`\`typescript
-async function processBatch(docs: string[]) {
-  // Process in parallel with concurrency limit
-  const concurrency = 5
-  const results = []
-  
-  for (let i = 0; i < docs.length; i += concurrency) {
-    const batch = docs.slice(i, i + concurrency)
-    const batchResults = await Promise.all(
-      batch.map(doc => processDocument(doc))
-    )
-    results.push(...batchResults)
-  }
-  
-  return results
-}
-\`\`\`
+  <!-- Bad: Verbose prompt -->
+  <state id="verbose_generate">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Please carefully analyze the following text and provide a comprehensive summary that includes all the main points, key details, and important information contained within the text: ' + longText" />
+    </onentry>
+  </state>
 
-## Lazy Loading
+  <!-- Good: Concise prompt -->
+  <state id="concise_generate">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Summarize key points:\n' + longText" />
+    </onentry>
+  </state>
+</agent>
+```
 
-Load extensions only when needed:
+## Streaming Responses
 
-\`\`\`typescript
-// Bad: Load all extensions upfront
-import { GeminiExtension, MemoryExtension, OllamaExtension } from 'activeflow'
+Stream LLM responses for better perceived performance:
 
-// Good: Dynamic imports
-async function getExtension(name: string) {
-  switch (name) {
-    case 'gemini':
-      return (await import('activeflow/extensions/gemini')).GeminiExtension
-    case 'memory':
-      return (await import('activeflow/extensions/memory')).MemoryExtension
-    default:
-      throw new Error(`Unknown extension: ${name}`)
-  }
-}
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:stdin="github.com/agentflare-ai/agentml/stdin">
 
-## Connection Pooling
+  <state id="stream_generate">
+    <onentry>
+      <gemini:stream
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="userInput" />
+    </onentry>
 
-Reuse database connections:
+    <!-- Receive chunks as they arrive -->
+    <transition event="action.stream.chunk" target="stream_generate">
+      <stdin:write expr="_event.data.chunk" />
+    </transition>
 
-\`\`\`typescript
-import { Pool } from 'pg'
+    <!-- Complete when done -->
+    <transition event="action.stream.complete" target="complete">
+      <assign location="fullResponse" expr="_event.data.message" />
+    </transition>
+  </state>
+</agent>
+```
 
-const pool = new Pool({
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-})
+## Parallel State Processing
 
-async function query(sql: string, params: any[]) {
-  const client = await pool.connect()
-  try {
-    return await client.query(sql, params)
-  } finally {
-    client.release()
-  }
-}
-\`\`\`
+Process multiple tasks concurrently:
 
-## Compression
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-Compress large documents:
+  <datamodel>
+    <data id="summaryResult" expr="''" />
+    <data id="keywordsResult" expr="''" />
+    <data id="sentimentResult" expr="''" />
+  </datamodel>
 
-\`\`\`typescript
-import { gzip, gunzip } from 'zlib'
-import { promisify } from 'util'
+  <parallel id="analyze">
+    <!-- Run all analyses concurrently -->
+    <state id="summarize">
+      <onentry>
+        <gemini:generate
+          model="gemini-2.0-flash-exp"
+          location="_event"
+          promptexpr="'Summarize:\n' + text" />
+      </onentry>
+      <transition event="action.response" target="summarize_done">
+        <assign location="summaryResult" expr="_event.data.message" />
+      </transition>
+      <state id="summarize_done" />
+    </state>
 
-const gzipAsync = promisify(gzip)
-const gunzipAsync = promisify(gunzip)
+    <state id="extract_keywords">
+      <onentry>
+        <gemini:generate
+          model="gemini-2.0-flash-exp"
+          location="_event"
+          promptexpr="'Extract keywords:\n' + text" />
+      </onentry>
+      <transition event="action.response" target="keywords_done">
+        <assign location="keywordsResult" expr="_event.data.message" />
+      </transition>
+      <state id="keywords_done" />
+    </state>
 
-async function compressDocument(doc: string) {
-  const buffer = Buffer.from(doc, 'utf-8')
-  return await gzipAsync(buffer)
-}
+    <state id="analyze_sentiment">
+      <onentry>
+        <gemini:generate
+          model="gemini-2.0-flash-exp"
+          location="_event"
+          promptexpr="'Sentiment:\n' + text" />
+      </onentry>
+      <transition event="action.response" target="sentiment_done">
+        <assign location="sentimentResult" expr="_event.data.message" />
+      </transition>
+      <state id="sentiment_done" />
+    </state>
+  </parallel>
 
-async function decompressDocument(compressed: Buffer) {
-  const buffer = await gunzipAsync(compressed)
-  return buffer.toString('utf-8')
-}
-\`\`\`
+  <!-- Continue after all parallel states complete -->
+  <state id="combine_results">
+    <onentry>
+      <log expr="'All analyses complete'" />
+    </onentry>
+  </state>
+</agent>
+```
 
-## Monitoring
+## Batch Processing with Foreach
 
-Track performance metrics:
+Process collections efficiently:
 
-\`\`\`typescript
-import { performance } from 'perf_hooks'
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:memory="github.com/agentflare-ai/agentml/memory">
 
-async function processWithMetrics(doc: string) {
-  const start = performance.now()
-  
-  try {
-    const result = await processDocument(doc)
-    const duration = performance.now() - start
-    
-    console.log('Processing metrics:', {
-      duration,
-      tokens: result.tokens,
-      tokensPerSecond: result.tokens / (duration / 1000)
-    })
-    
-    return result
-  } catch (error) {
-    const duration = performance.now() - start
-    console.error('Processing failed:', { duration, error })
-    throw error
-  }
-}
-\`\`\`
+  <datamodel>
+    <data id="documents" expr="[
+      'Document 1 content...',
+      'Document 2 content...',
+      'Document 3 content...'
+    ]" />
+    <data id="results" expr="[]" />
+  </datamodel>
 
-## Memory Management
+  <state id="process_batch">
+    <onentry>
+      <!-- Batch embed all documents -->
+      <foreach array="documents" item="doc" index="i">
+        <memory:embed location="embedding" expr="doc" />
+        <assign location="results" expr="results.concat([{
+          index: i,
+          content: doc,
+          embedding: embedding
+        }])" />
+      </foreach>
+    </onentry>
 
-Prevent memory leaks:
+    <transition target="complete">
+      <log expr="'Processed ' + results.length + ' documents'" />
+    </transition>
+  </state>
+</agent>
+```
 
-\`\`\`typescript
-// Bad: Memory leak
-const cache = new Map()
-function process(doc: string) {
-  cache.set(doc, result) // Never cleared
-}
+## Local LLMs for High Volume
 
-// Good: Bounded cache
-import { LRUCache } from 'lru-cache'
-const cache = new LRUCache({ max: 1000 })
-\`\`\`
+Use Ollama for high-volume, low-latency scenarios:
 
-## Database Indexing
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:ollama="github.com/agentflare-ai/agentml/ollama">
 
-Index frequently queried fields:
+  <state id="classify">
+    <onentry>
+      <!-- Fast local classification -->
+      <ollama:generate
+        model="llama2"
+        location="_event"
+        promptexpr="'Classify intent: ' + userInput + '\nResponse: [greeting|question|command]'" />
+    </onentry>
 
-\`\`\`sql
-CREATE INDEX idx_documents_created_at ON documents(created_at);
-CREATE INDEX idx_documents_user_id ON documents(user_id);
-CREATE INDEX idx_documents_status ON documents(status);
-\`\`\`
+    <transition event="action.response" target="route">
+      <assign location="intent" expr="_event.data.message.trim()" />
+    </transition>
+  </state>
 
-## CDN for Static Assets
+  <state id="route">
+    <transition cond="intent === 'greeting'" target="handle_greeting" />
+    <transition cond="intent === 'question'" target="handle_question" />
+    <transition cond="intent === 'command'" target="handle_command" />
+  </state>
+</agent>
+```
 
-Serve static assets from a CDN:
+**Performance benefits:**
+- No API latency
+- No per-token costs
+- Consistent response times
+- Privacy (data stays local)
 
-\`\`\`typescript
-// next.config.js
-module.exports = {
-  assetPrefix: process.env.CDN_URL || '',
-}
-\`\`\`
+## Memory Database Optimization
 
-## Profiling
+Optimize vector search performance:
 
-Profile your application to find bottlenecks:
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:memory="github.com/agentflare-ai/agentml/memory">
 
-\`\`\`bash
-node --prof app.js
-node --prof-process isolate-*.log > profile.txt
-\`\`\`
+  <state id="search_optimized">
+    <onentry>
+      <!-- Generate query embedding -->
+      <memory:embed location="queryEmbedding" expr="userQuery" />
 
-Use Chrome DevTools for browser profiling.
+      <!-- Limit results for performance -->
+      <memory:search
+        location="results"
+        expr="queryEmbedding"
+        limit="5" />
+    </onentry>
+
+    <transition target="process_results">
+      <!-- Process only top 5 most relevant results -->
+      <log expr="'Found ' + results.length + ' relevant documents'" />
+    </transition>
+  </state>
+</agent>
+```
+
+**Optimization tips:**
+- Use appropriate `limit` values (5-10 for most cases)
+- Index frequently queried fields
+- Periodically vacuum database: `sqlite3 memory.db "VACUUM;"`
+- Monitor database file size
+
+## Minimize Datamodel Size
+
+Keep datamodel lean for efficient snapshots:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <!-- Bad: Storing everything -->
+  <datamodel>
+    <data id="fullHistory" expr="[]" />
+    <data id="allResponses" expr="[]" />
+    <data id="debugInfo" expr="{}" />
+  </datamodel>
+
+  <!-- Good: Store only essentials -->
+  <datamodel>
+    <data id="currentIntent" expr="''" />
+    <data id="lastResponse" expr="''" />
+    <data id="sessionId" expr="Date.now()" />
+  </datamodel>
+</agent>
+```
+
+**Benefits:**
+- Smaller runtime snapshots
+- Faster state transitions
+- Reduced token usage
+- Lower memory consumption
+
+## Conditional Event Handling
+
+Optimize transition evaluation order:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <state id="handle_input">
+    <!-- Put most common cases first for faster matching -->
+    <transition event="user.message" cond="intent === 'chat'" target="chat" />
+    <transition event="user.message" cond="intent === 'search'" target="search" />
+    <transition event="user.message" cond="intent === 'settings'" target="settings" />
+
+    <!-- Catch-all last -->
+    <transition event="user.message" target="unknown" />
+  </state>
+</agent>
+```
+
+## HTTP Connection Reuse
+
+IOProcessors reuse connections automatically:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <state id="fetch_data">
+    <onentry>
+      <!-- Multiple HTTP requests reuse connections -->
+      <send target="http://api.example.com/users" type="http">
+        <content expr="{method: 'GET'}" />
+      </send>
+
+      <send target="http://api.example.com/posts" type="http">
+        <content expr="{method: 'GET'}" />
+      </send>
+    </onentry>
+  </state>
+</agent>
+```
+
+## Deployment Optimization
+
+Optimize production deployments:
+
+```bash
+# Use systemd resource limits
+[Service]
+MemoryMax=512M
+CPUQuota=50%
+
+# Enable BBolt for persistent memory
+export AGENTML_MEMORY_DB=/var/lib/agentml/memory.db
+
+# Use fast SSD storage
+WorkingDirectory=/mnt/fast-ssd/agentml
+```
+
+## Monitoring Performance
+
+Track agent performance:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <datamodel>
+    <data id="startTime" expr="0" />
+    <data id="endTime" expr="0" />
+    <data id="tokensUsed" expr="0" />
+  </datamodel>
+
+  <state id="process">
+    <onentry>
+      <assign location="startTime" expr="Date.now()" />
+
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="userInput" />
+    </onentry>
+
+    <transition event="action.response" target="complete">
+      <assign location="endTime" expr="Date.now()" />
+      <assign location="tokensUsed" expr="_event.data.usage.totalTokens" />
+
+      <log expr="JSON.stringify({
+        duration_ms: endTime - startTime,
+        tokens_used: tokensUsed,
+        tokens_per_second: tokensUsed / ((endTime - startTime) / 1000)
+      })" />
+    </transition>
+  </state>
+</agent>
+```
 
 ## Load Testing
 
-Test performance under load:
+Test agent performance under load:
 
-\`\`\`typescript
-import autocannon from 'autocannon'
+```bash
+#!/bin/bash
 
-autocannon({
-  url: 'http://localhost:3000/api/process',
-  connections: 10,
-  duration: 30,
-  method: 'POST',
-  body: JSON.stringify({ document: testDoc }),
-  headers: {
-    'content-type': 'application/json'
-  }
-}, console.log)
-\`\`\`
+# load-test.sh
+concurrent_requests=10
+total_requests=100
+
+echo "Load testing: $concurrent_requests concurrent, $total_requests total"
+
+start_time=$(date +%s)
+
+for i in $(seq 1 $total_requests); do
+  agentmlx run agent.aml --event '{"name": "user.message", "data": {"message": "Hello"}}' &
+
+  # Limit concurrency
+  if [ $((i % concurrent_requests)) -eq 0 ]; then
+    wait
+  fi
+done
+
+wait
+end_time=$(date +%s)
+
+duration=$((end_time - start_time))
+rps=$((total_requests / duration))
+
+echo "Completed $total_requests requests in ${duration}s"
+echo "Requests per second: $rps"
+```
+
+## Best Practices
+
+1. **Use runtime snapshots**: Let AgentML handle context compression automatically
+2. **Enable provider caching**: Cache system prompts for repeated use
+3. **Write concise prompts**: Minimize token usage with focused prompts
+4. **Stream responses**: Improve perceived performance with streaming
+5. **Parallel processing**: Use `<parallel>` for concurrent operations
+6. **Limit search results**: Use appropriate `limit` values for vector search
+7. **Optimize datamodel**: Store only essential data
+8. **Use local LLMs**: Ollama for high-volume, low-latency scenarios
+9. **Order transitions**: Put common cases first
+10. **Monitor metrics**: Track tokens, latency, and throughput
+
+## Next Steps
+
+- Learn about [Error Handling](/best-practices/error-handling) strategies
+- Read [Testing](/best-practices/testing) techniques
+- Explore [Token Efficiency](/concepts/token-efficiency) deep dive
+- See [Memory Extension](/extensions/memory) for optimized storage

@@ -1,358 +1,316 @@
 ---
 title: "Memory Extension"
-description: "Add persistent memory to ActiveDocs"
+description: "Add vector search and graph database capabilities to AgentML agents with sqlite-graph"
 ---
 
 # Memory Extension
 
-The Memory extension adds persistent storage capabilities to ActiveDocs, allowing documents to remember state across sessions.
+The Memory namespace (`github.com/agentflare-ai/agentml/memory`) provides persistent storage, vector embeddings, similarity search, and graph database capabilities powered by `sqlite-graph` - all in a single SQLite file.
 
-## Installation
+## Features
 
-\`\`\`bash
-npm install @activedocs/extension-memory
-\`\`\`
+- **Vector embeddings**: Generate embeddings for semantic search
+- **Similarity search**: Find similar content using vector distance
+- **Graph database**: Store and query relationships with Cypher
+- **Key-value storage**: Simple persistent data storage
+- **All in SQLite**: Single file, no external dependencies
 
 ## Basic Usage
 
-\`\`\`typescript
-import: activedocs/core
-import: activedocs/extensions/memory
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:memory="github.com/agentflare-ai/agentml/memory">
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    memoryExtension({
-      storage: 'localStorage'
-    })
-  ]
-})
+  <state id="store">
+    <onentry>
+      <!-- Store key-value data -->
+      <memory:put key="user_name" expr="'Alice'" />
 
-// State is automatically persisted
-document.setState({ user: 'John' })
+      <!-- Generate and store embedding -->
+      <memory:embed location="embedding" expr="textContent" />
+    </onentry>
 
-// State is restored on next load
-const state = document.getState()
-console.log(state.user) // 'John'
-\`\`\`
+    <transition target="search" />
+  </state>
 
-## Storage Options
+  <state id="search">
+    <onentry>
+      <!-- Search by similarity -->
+      <memory:search location="results" expr="queryEmbedding" limit="5" />
+    </onentry>
 
-### Local Storage
+    <transition target="process_results" />
+  </state>
+</agent>
+```
 
-Store data in browser localStorage:
+## Actions
 
-\`\`\`typescript
-import: activedocs/extensions/memory
+### `<memory:put>`
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    memoryExtension({
-      storage: 'localStorage',
-      key: 'myapp-state' // Custom storage key
-    })
-  ]
-})
-\`\`\`
+Store key-value data:
 
-### Session Storage
+```xml
+<memory:put key="preference" expr="userPreference" />
+<memory:put key="last_query" expr="userQuery" />
+<memory:put key="session_data" expr='{"user": "alice", "timestamp": Date.now()}' />
+```
 
-Store data in browser sessionStorage:
+### `<memory:get>`
 
-\`\`\`typescript
-import: activedocs/extensions/memory
+Retrieve stored data:
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    memoryExtension({
-      storage: 'sessionStorage'
-    })
-  ]
-})
-\`\`\`
+```xml
+<memory:get key="preference" location="userPreference" />
+<memory:get key="session_data" location="session" />
+```
 
-### IndexedDB
+### `<memory:embed>`
 
-Store large amounts of data:
+Generate vector embeddings:
 
-\`\`\`typescript
-import: activedocs/extensions/memory
+```xml
+<memory:embed location="embedding" expr="textContent" />
+<memory:embed location="queryVector" expr="userQuery" />
+```
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    memoryExtension({
-      storage: 'indexedDB',
-      dbName: 'myapp',
-      storeName: 'documents'
-    })
-  ]
-})
-\`\`\`
+### `<memory:search>`
 
-### Custom Storage
+Vector similarity search:
 
-Implement custom storage backend:
+```xml
+<!-- Search for similar content -->
+<memory:search location="results" expr="queryEmbedding" limit="10" />
 
-\`\`\`typescript
-import: activedocs/extensions/memory
+<!-- Results stored in location variable -->
+<!-- _event.data.results = [{content, similarity, metadata}, ...] -->
+```
 
-const customStorage = {
-  async get(key: string) {
-    return await fetch(`/api/storage/${key}`).then(r => r.json())
-  },
-  
-  async set(key: string, value: any) {
-    await fetch(`/api/storage/${key}`, {
-      method: 'POST',
-      body: JSON.stringify(value)
-    })
-  },
-  
-  async remove(key: string) {
-    await fetch(`/api/storage/${key}`, { method: 'DELETE' })
-  }
-}
+### `<memory:graph-query>`
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    memoryExtension({
-      storage: customStorage
-    })
-  ]
-})
-\`\`\`
+Query graph database with Cypher:
+
+```xml
+<memory:graph-query location="results">
+  <query>
+    MATCH (p:Person)-[:KNOWS]->(friend:Person)
+    WHERE p.age > 25
+    RETURN p.name, friend.name, friend.age
+  </query>
+</memory:graph-query>
+```
+
+## Memory-Augmented Generation
+
+Combine memory with LLM for context-aware responses:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:memory="github.com/agentflare-ai/agentml/memory">
+
+  <datamodel>
+    <data id="userQuery" expr="''" />
+    <data id="context" expr="[]" />
+    <data id="response" expr="''" />
+  </datamodel>
+
+  <state id="search_context">
+    <onentry>
+      <!-- Generate query embedding -->
+      <memory:embed location="queryEmbedding" expr="userQuery" />
+
+      <!-- Search for relevant context -->
+      <memory:search location="searchResults" expr="queryEmbedding" limit="3" />
+
+      <!-- Extract context -->
+      <assign location="context" expr="searchResults.map(r => r.content)" />
+    </onentry>
+
+    <transition target="generate" />
+  </state>
+
+  <state id="generate">
+    <onentry>
+      <!-- Generate with context -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Context:\n' + context.join('\n\n') + '\n\nQuestion: ' + userQuery" />
+    </onentry>
+
+    <transition event="action.response" target="store_response">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <state id="store_response">
+    <onentry>
+      <!-- Store response for future searches -->
+      <memory:embed location="responseEmbedding" expr="userQuery + ' ' + response" />
+
+      <!-- Store with metadata -->
+      <memory:put
+        key="'qa_' + Date.now()"
+        expr='{"query": userQuery, "response": response, "embedding": responseEmbedding}' />
+    </onentry>
+
+    <transition target="complete" />
+  </state>
+</agent>
+```
+
+## Graph Database
+
+Model relationships with graph queries:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:memory="github.com/agentflare-ai/agentml/memory">
+
+  <state id="query_relationships">
+    <onentry>
+      <!-- Find friends of friends -->
+      <memory:graph-query location="friends_of_friends">
+        <query>
+          MATCH (me:Person {name: 'Alice'})-[:KNOWS]->(friend)-[:KNOWS]->(fof)
+          WHERE NOT (me)-[:KNOWS]->(fof)
+          RETURN DISTINCT fof.name AS suggestion, COUNT(friend) AS mutualFriends
+          ORDER BY mutualFriends DESC
+          LIMIT 5
+        </query>
+      </memory:graph-query>
+
+      <!-- Find common interests -->
+      <memory:graph-query location="common_interests">
+        <query>
+          MATCH (me:Person {name: 'Alice'})-[:LIKES]->(interest)<-[:LIKES]-(other:Person)
+          WHERE me <> other
+          RETURN other.name, COLLECT(interest.name) AS sharedInterests
+        </query>
+      </memory:graph-query>
+    </onentry>
+
+    <transition target="process_results" />
+  </state>
+
+  <state id="create_relationships">
+    <onentry>
+      <!-- Create nodes and relationships -->
+      <memory:graph-query location="result">
+        <query>
+          CREATE (alice:Person {name: 'Alice', age: 30})
+          CREATE (bob:Person {name: 'Bob', age: 25})
+          CREATE (alice)-[:KNOWS]->(bob)
+          RETURN alice, bob
+        </query>
+      </memory:graph-query>
+    </onentry>
+
+    <transition target="complete" />
+  </state>
+</agent>
+```
+
+## Semantic Search Example
+
+Build a semantic search agent:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:memory="github.com/agentflare-ai/agentml/memory"
+       import:stdin="github.com/agentflare-ai/agentml/stdin">
+
+  <state id="index_documents">
+    <onentry>
+      <!-- Index documents with embeddings -->
+      <foreach array="documents" item="doc" index="i">
+        <memory:embed location="embedding" expr="doc.content" />
+        <memory:put
+          key="'doc_' + i"
+          expr='{"content": doc.content, "title": doc.title, "embedding": embedding}' />
+      </foreach>
+    </onentry>
+
+    <transition target="search_prompt" />
+  </state>
+
+  <state id="search_prompt">
+    <onentry>
+      <stdin:write expr="'Enter search query:'" />
+      <stdin:read location="query" />
+    </onentry>
+
+    <transition event="stdin.received" target="search" />
+  </state>
+
+  <state id="search">
+    <onentry>
+      <!-- Generate query embedding -->
+      <memory:embed location="queryEmbedding" expr="query" />
+
+      <!-- Search similar documents -->
+      <memory:search location="results" expr="queryEmbedding" limit="5" />
+    </onentry>
+
+    <transition target="display_results" />
+  </state>
+
+  <state id="display_results">
+    <onentry>
+      <stdin:write expr="'Top results:\n' + results.map((r, i) => (i+1) + '. ' + r.title + ' (similarity: ' + r.similarity + ')').join('\n')" />
+    </onentry>
+
+    <transition target="search_prompt" />
+  </state>
+</agent>
+```
 
 ## Configuration
 
-Configure memory behavior:
+```bash
+# Set memory database path (optional)
+export AGENTML_MEMORY_DB=/path/to/memory.db
 
-\`\`\`typescript
-import: activedocs/extensions/memory
-
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    memoryExtension({
-      // Storage backend
-      storage: 'localStorage',
-      
-      // Time to live (ms)
-      ttl: 3600000, // 1 hour
-      
-      // Auto-save on state change
-      autoSave: true,
-      
-      // Debounce auto-save (ms)
-      debounce: 1000,
-      
-      // Compress data
-      compress: true,
-      
-      // Encrypt data
-      encrypt: {
-        enabled: true,
-        key: process.env.ENCRYPTION_KEY
-      }
-    })
-  ]
-})
-\`\`\`
-
-## Manual Control
-
-Control persistence manually:
-
-\`\`\`typescript
-import: activedocs/extensions/memory
-
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    memoryExtension({
-      storage: 'localStorage',
-      autoSave: false // Disable auto-save
-    })
-  ]
-})
-
-// Save manually
-await document.memory.save()
-
-// Load manually
-await document.memory.load()
-
-// Clear memory
-await document.memory.clear()
-\`\`\`
-
-## Selective Persistence
-
-Choose what to persist:
-
-\`\`\`typescript
-import: activedocs/extensions/memory
-
-const document = createDocument({
-  namespace: 'myapp',
-  state: {
-    user: null,
-    sessionId: null,
-    preferences: {}
-  },
-  extensions: [
-    memoryExtension({
-      storage: 'localStorage',
-      // Only persist specific fields
-      include: ['user', 'preferences'],
-      // Or exclude specific fields
-      exclude: ['sessionId']
-    })
-  ]
-})
-\`\`\`
-
-## Versioning
-
-Handle state schema changes:
-
-\`\`\`typescript
-import: activedocs/extensions/memory
-
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    memoryExtension({
-      storage: 'localStorage',
-      version: 2,
-      migrations: {
-        1: (state) => {
-          // Migrate from v1 to v2
-          return {
-            ...state,
-            newField: 'default'
-          }
-        },
-        2: (state) => {
-          // Migrate from v2 to v3
-          return {
-            ...state,
-            renamedField: state.oldField
-          }
-        }
-      }
-    })
-  ]
-})
-\`\`\`
-
-## Events
-
-Listen to memory events:
-
-\`\`\`typescript
-import: activedocs/extensions/memory
-
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [memoryExtension({ storage: 'localStorage' })]
-})
-
-document.on('memory:save', (event) => {
-  console.log('State saved:', event.state)
-})
-
-document.on('memory:load', (event) => {
-  console.log('State loaded:', event.state)
-})
-
-document.on('memory:clear', () => {
-  console.log('Memory cleared')
-})
-
-document.on('memory:error', (event) => {
-  console.error('Memory error:', event.error)
-})
-\`\`\`
-
-## Synchronization
-
-Sync state across tabs/windows:
-
-\`\`\`typescript
-import: activedocs/extensions/memory
-
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    memoryExtension({
-      storage: 'localStorage',
-      sync: true // Enable cross-tab sync
-    })
-  ]
-})
-
-// State changes in one tab are reflected in others
-document.on('memory:sync', (event) => {
-  console.log('State synced from another tab:', event.state)
-})
-\`\`\`
-
-## Compression
-
-Reduce storage size:
-
-\`\`\`typescript
-import: activedocs/extensions/memory
-
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    memoryExtension({
-      storage: 'localStorage',
-      compress: true,
-      compressionLevel: 6 // 1-9, higher = more compression
-    })
-  ]
-})
-\`\`\`
-
-## Encryption
-
-Secure sensitive data:
-
-\`\`\`typescript
-import: activedocs/extensions/memory
-
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    memoryExtension({
-      storage: 'localStorage',
-      encrypt: {
-        enabled: true,
-        algorithm: 'AES-GCM',
-        key: process.env.ENCRYPTION_KEY
-      }
-    })
-  ]
-})
-\`\`\`
+# Use default (./memory.db in current directory)
+agentmlx run agent.aml
+```
 
 ## Best Practices
 
-1. **Choose appropriate storage** - Consider data size and persistence needs
-2. **Set reasonable TTLs** - Don't store data forever
-3. **Handle migrations** - Plan for schema changes
-4. **Encrypt sensitive data** - Protect user information
-5. **Monitor storage usage** - Avoid quota limits
+1. **Index strategically**: Generate embeddings for searchable content
+2. **Use metadata**: Store additional information with embeddings
+3. **Limit search results**: Use appropriate `limit` values
+4. **Clean old data**: Periodically remove outdated entries
+5. **Optimize queries**: Use indexed fields in graph queries
+6. **Batch operations**: Group multiple puts/gets when possible
+7. **Test similarity**: Validate search relevance with sample queries
+8. **Monitor size**: Track database file size growth
+9. **Backup regularly**: SQLite files are easily backed up
+10. **Use transactions**: Group related operations for consistency
+
+## SQLite File
+
+All memory data is stored in a single SQLite file:
+
+```bash
+# View database
+sqlite3 memory.db ".tables"
+
+# Backup database
+cp memory.db memory.backup.db
+
+# Reset database
+rm memory.db
+```
 
 ## Next Steps
 
-- Explore [Gemini Extension](/extensions/gemini)
-- Try [Ollama Extension](/extensions/ollama)
-- Build [Custom Extensions](/extensions/custom)
-\`\`\`
+- Learn about [Gemini Extension](/extensions/gemini) for LLM-powered search
+- Explore [Ollama Extension](/extensions/ollama) for local embeddings
+- Read [Token Efficiency](/concepts/token-efficiency) for optimizing context
+- See [Best Practices](/best-practices/performance) for production tips

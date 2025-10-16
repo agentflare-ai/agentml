@@ -1,243 +1,590 @@
 ---
 title: "Namespace System"
-description: "Understanding ActiveDocs namespaces and isolation"
+description: "Extending AgentML functionality through the namespace system with import:prefix directives"
 ---
 
 # Namespace System
 
-Namespaces in ActiveDocs provide isolation, organization, and scoping for documents and their state.
+The namespace system is AgentML's mechanism for extending SCXML with custom actions and elements. Namespaces provide modular, reusable components for LLM integration, memory systems, I/O operations, and custom functionality.
 
-## What are Namespaces?
+## What Are Namespaces?
 
-Namespaces are hierarchical identifiers that isolate document state and prevent conflicts between different parts of your application.
+In AgentML, namespaces extend the base SCXML vocabulary with domain-specific actions. They are declared using the `import:prefix="uri"` directive on the `<agent>` root element:
 
-\`\`\`typescript
-import: activedocs/core
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:memory="github.com/agentflare-ai/agentml/memory">
 
-// Each namespace is completely isolated
-const userDoc = createDocument({ namespace: 'user' })
-const chatDoc = createDocument({ namespace: 'chat' })
-const settingsDoc = createDocument({ namespace: 'settings' })
-\`\`\`
+  <state id="processing">
+    <onentry>
+      <!-- Use Gemini namespace -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Process: ' + userInput" />
 
-## Namespace Hierarchy
+      <!-- Use Memory namespace -->
+      <memory:put key="last_input" expr="userInput" />
+    </onentry>
+  </state>
+</agent>
+```
 
-Namespaces support hierarchical organization using forward slashes:
+## Namespace URIs
 
-\`\`\`typescript
-import: activedocs/core
+Namespace URIs identify the implementation and version:
 
-// Hierarchical namespaces
-const app = createDocument({ namespace: 'app' })
-const appChat = createDocument({ namespace: 'app/chat' })
-const appChatMessages = createDocument({ namespace: 'app/chat/messages' })
-const appChatUsers = createDocument({ namespace: 'app/chat/users' })
-\`\`\`
+### Built-in Namespaces
 
-## Namespace Benefits
+AgentML provides several official namespaces:
 
-### Isolation
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:ollama="github.com/agentflare-ai/agentml/ollama"
+       import:memory="github.com/agentflare-ai/agentml/memory"
+       import:stdin="github.com/agentflare-ai/agentml/stdin">
+```
 
-Each namespace has its own isolated state:
+**Official Namespace URIs:**
+- `github.com/agentflare-ai/agentml/agent` - Core AgentML features (default)
+- `github.com/agentflare-ai/agentml/gemini` - Google Gemini LLM integration
+- `github.com/agentflare-ai/agentml/ollama` - Local LLM via Ollama
+- `github.com/agentflare-ai/agentml/memory` - Vector search and graph database
+- `github.com/agentflare-ai/agentml/stdin` - Console I/O
 
-\`\`\`typescript
-import: activedocs/core
+### External Schema Namespaces
 
-const doc1 = createDocument({
-  namespace: 'feature1',
-  state: { count: 0 }
-})
+Import JSON Schema or OpenAPI files:
 
-const doc2 = createDocument({
-  namespace: 'feature2',
-  state: { count: 0 }
-})
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:events="./schemas/events.json"
+       import:api="./schemas/openapi.yaml">
 
-// These don't interfere
-doc1.setState({ count: 10 })
-doc2.setState({ count: 20 })
+  <!-- Reference schemas using JSON Pointer -->
+  <transition event="user.message"
+              event:schema="events:#/components/schemas/UserMessage"
+              target="processing" />
+</agent>
+```
 
-console.log(doc1.getState().count) // 10
-console.log(doc2.getState().count) // 20
-\`\`\`
+## Namespace Prefix Conventions
 
-### Organization
+**Prefix Rules:**
+- Must be valid XML NCName (no colons, spaces)
+- Use lowercase for consistency
+- Choose descriptive names: `gemini`, `memory`, `custom`
+- Avoid reserved prefixes: `xml`, `xmlns`
 
-Organize related documents logically:
+**Good prefixes:**
+```xml
+import:gemini="..."
+import:memory="..."
+import:http="..."
+import:custom="..."
+```
 
-\`\`\`typescript
-import: activedocs/core
+**Avoid:**
+```xml
+import:ns1="..."  <!-- Not descriptive -->
+import:XML="..."  <!-- Reserved -->
+import:my-plugin="..."  <!-- Contains hyphen -->
+```
 
-// E-commerce app structure
-const cart = createDocument({ namespace: 'shop/cart' })
-const products = createDocument({ namespace: 'shop/products' })
-const checkout = createDocument({ namespace: 'shop/checkout' })
-const orders = createDocument({ namespace: 'shop/orders' })
-\`\`\`
+## Agent Namespace (Default)
 
-### Scoping
+The agent namespace is the default and provides AgentML-specific extensions:
 
-Scope event handlers and state to specific namespaces:
+### event:schema Attribute
 
-\`\`\`typescript
-import: activedocs/core
+Schema-guided event validation:
 
-const chatDoc = createDocument({
-  namespace: 'app/chat',
-  handlers: {
-    // Only handles events in this namespace
-    'message:new': (event) => {
-      console.log('New message in chat:', event.content)
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <transition event="intent.flight"
+              event:schema='{
+                "type": "object",
+                "properties": {
+                  "from": {"type": "string"},
+                  "to": {"type": "string"}
+                },
+                "required": ["from", "to"]
+              }'
+              target="handle_flight" />
+</agent>
+```
+
+### Runtime Snapshots
+
+The agent namespace enables runtime snapshot generation for token-efficient LLM prompts. The runtime automatically generates snapshots containing:
+
+- Current active states
+- Datamodel variables
+- Available events and their schemas
+- Transition conditions
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <datamodel>
+    <data id="from" expr="'NYC'" />
+    <data id="to" expr="'Paris'" />
+  </datamodel>
+
+  <state id="search_flights">
+    <!-- Runtime provides snapshot with datamodel context -->
+  </state>
+</agent>
+```
+
+## Gemini Namespace
+
+Google Gemini LLM integration:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <state id="generate">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'You are a helpful assistant. User: ' + userInput" />
+    </onentry>
+
+    <transition event="action.response" target="process_response">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
+
+    <transition event="action.error" target="handle_error" />
+  </state>
+</agent>
+```
+
+**Gemini Actions:**
+- `<gemini:generate>` - Generate text with Gemini models
+- `<gemini:stream>` - Stream responses token-by-token
+
+**Attributes:**
+- `model` - Model ID (e.g., "gemini-2.0-flash-exp")
+- `location` - Variable to store event reference
+- `promptexpr` - ECMAScript expression for prompt
+- `max-output-tokens` - Limit response length (optional)
+
+## Ollama Namespace
+
+Local LLM integration:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:ollama="github.com/agentflare-ai/agentml/ollama">
+
+  <state id="classify">
+    <onentry>
+      <ollama:generate
+        model="llama2"
+        location="_event"
+        promptexpr="'Classify this: ' + userInput" />
+    </onentry>
+
+    <transition event="action.response" target="handle_classification" />
+  </state>
+</agent>
+```
+
+**Ollama Actions:**
+- `<ollama:generate>` - Generate with local Ollama model
+- `<ollama:stream>` - Stream local model responses
+
+## Memory Namespace
+
+High-performance memory with vector search and graph database, powered by `sqlite-graph`:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:memory="github.com/agentflare-ai/agentml/memory">
+
+  <state id="store_and_query">
+    <onentry>
+      <!-- Vector embedding -->
+      <memory:embed location="embedding" expr="textContent" />
+
+      <!-- Key-value storage -->
+      <memory:put key="user_preference" expr="preferenceValue" />
+
+      <!-- Vector similarity search -->
+      <memory:search location="results" expr="queryEmbedding" limit="10" />
+
+      <!-- Graph query with Cypher -->
+      <memory:graph-query location="graph_results">
+        <query>
+          MATCH (p:Person)-[:KNOWS]->(friend)
+          WHERE p.age > 25
+          RETURN p.name, friend.name
+        </query>
+      </memory:graph-query>
+    </onentry>
+  </state>
+</agent>
+```
+
+**Memory Actions:**
+- `<memory:put>` - Store key-value data
+- `<memory:get>` - Retrieve by key
+- `<memory:embed>` - Generate vector embeddings
+- `<memory:search>` - Vector similarity search
+- `<memory:graph-query>` - Execute Cypher queries
+
+All data persists in a single SQLite file with vector and graph capabilities.
+
+## Stdin Namespace
+
+Console I/O for command-line agents:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:stdin="github.com/agentflare-ai/agentml/stdin">
+
+  <state id="get_input">
+    <onentry>
+      <stdin:read location="userInput" />
+    </onentry>
+
+    <transition event="stdin.received" target="process">
+      <assign location="input" expr="_event.data" />
+    </transition>
+  </state>
+
+  <state id="output">
+    <onentry>
+      <stdin:write expr="'Bot: ' + response" />
+    </onentry>
+
+    <transition target="get_input" />
+  </state>
+</agent>
+```
+
+**Stdin Actions:**
+- `<stdin:read>` - Read from console
+- `<stdin:write>` - Write to console
+
+## Creating Custom Namespaces
+
+### Go Implementation (Current)
+
+Currently, custom namespaces are implemented in Go:
+
+**customnamespace/actions.go:**
+```go
+package customnamespace
+
+import (
+    "github.com/agentflare-ai/agentmlx/pkg/scxml"
+)
+
+type CustomGenerateAction struct {
+    Model    string `xml:"model,attr"`
+    Location string `xml:"location,attr"`
+    Prompt   string `xml:"promptexpr,attr"`
+}
+
+func (a *CustomGenerateAction) Execute(ctx *scxml.Context) error {
+    // Process the action
+    result := processCustomModel(a.Model, a.Prompt, ctx)
+
+    // Store result in datamodel
+    ctx.SetVariable(a.Location, result)
+
+    // Optionally raise an event
+    ctx.RaiseEvent("custom.complete", map[string]interface{}{
+        "result": result,
+    })
+
+    return nil
+}
+
+func Register() {
+    scxml.RegisterNamespace("github.com/example/custom", map[string]interface{}{
+        "generate": &CustomGenerateAction{},
+    })
+}
+```
+
+**Usage in AgentML:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:custom="github.com/example/custom">
+
+  <state id="use_custom">
+    <onentry>
+      <custom:generate
+        model="mymodel"
+        location="_event"
+        promptexpr="'Process: ' + userInput" />
+    </onentry>
+
+    <transition event="custom.complete" target="next_state" />
+  </state>
+</agent>
+```
+
+### WASM Implementation (Planned)
+
+Future: Implement namespaces in any language via WebAssembly:
+
+**agentml.wit (WebAssembly Interface Types):**
+```wit
+package agentml:core
+
+interface namespace {
+    record context {
+        datamodel: string,
+        current-state: string,
     }
-  }
-})
-\`\`\`
 
-## Namespace Patterns
+    record action-params {
+        name: string,
+        attributes: list<tuple<string, string>>,
+        content: string,
+        context: context,
+    }
 
-### Feature-Based
+    record action-result {
+        success: bool,
+        events: list<tuple<string, string>>,
+        datamodel-updates: list<tuple<string, string>>,
+        error: option<string>,
+    }
 
-Organize by application features:
+    execute-action: func(params: action-params) -> action-result
+}
+```
 
-\`\`\`
-app/auth
-app/dashboard
-app/profile
-app/settings
-\`\`\`
+**Rust implementation:**
+```rust
+wit_bindgen::generate!({
+    path: "agentml.wit",
+});
 
-### Domain-Based
+struct MyCustomNamespace;
 
-Organize by business domains:
+impl Namespace for MyCustomNamespace {
+    fn execute_action(params: ActionParams) -> ActionResult {
+        // Parse attributes
+        let model = params.attributes.iter()
+            .find(|(k, _)| k == "model")
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default();
 
-\`\`\`
-ecommerce/products
-ecommerce/cart
-ecommerce/orders
-ecommerce/customers
-\`\`\`
+        // Execute custom logic
+        let result = process_with_model(&model, &params.content);
 
-### Layer-Based
+        // Return result with events
+        ActionResult {
+            success: true,
+            events: vec![("custom.complete".to_string(), result.clone())],
+            datamodel_updates: vec![("result".to_string(), result)],
+            error: None,
+        }
+    }
+}
+```
 
-Organize by application layers:
+**Load WASM namespace:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:custom="https://cdn.example.com/custom-namespace.wasm">
 
-\`\`\`
-ui/components
-ui/layouts
-data/api
-data/cache
-\`\`\`
-
-## Namespace Communication
-
-Documents in different namespaces can communicate through events:
-
-\`\`\`typescript
-import: activedocs/core
-
-const authDoc = createDocument({
-  namespace: 'app/auth',
-  state: { user: null }
-})
-
-const profileDoc = createDocument({
-  namespace: 'app/profile',
-  state: { data: null }
-})
-
-// Auth document emits event
-authDoc.on('user:login', (event) => {
-  authDoc.setState({ user: event.user })
-  
-  // Notify other namespaces
-  profileDoc.emit('auth:changed', { user: event.user })
-})
-
-// Profile document listens
-profileDoc.on('auth:changed', async (event) => {
-  const data = await fetchProfileData(event.user.id)
-  profileDoc.setState({ data })
-})
-\`\`\`
-
-## Global Events
-
-Use a global event bus for cross-namespace communication:
-
-\`\`\`typescript
-import: activedocs/core
-
-// Create global event bus
-const eventBus = createDocument({ namespace: 'global' })
-
-// Any document can emit to global
-const doc1 = createDocument({ namespace: 'feature1' })
-doc1.on('action:complete', () => {
-  eventBus.emit('global:notification', {
-    message: 'Action completed'
-  })
-})
-
-// Any document can listen to global
-const doc2 = createDocument({ namespace: 'feature2' })
-doc2.on('global:notification', (event) => {
-  showNotification(event.message)
-})
-\`\`\`
+  <state id="use_wasm">
+    <onentry>
+      <custom:action model="mymodel" />
+    </onentry>
+  </state>
+</agent>
+```
 
 ## Namespace Resolution
 
-ActiveDocs resolves namespaces hierarchically:
+The agentmlx runtime resolves namespaces:
 
-\`\`\`typescript
-import: activedocs/core
+1. **Built-in check**: Is URI a built-in namespace?
+2. **Local check**: Does URI reference a local file?
+3. **Registry check** (planned): Query namespace registry
+4. **WASM check** (planned): Is URI a WASM module URL?
+5. **Error**: Namespace not found
 
-// Parent namespace
-const parent = createDocument({
-  namespace: 'app',
-  state: { theme: 'light' }
-})
+```bash
+# List available namespaces
+agentmlx namespace list
 
-// Child can access parent state
-const child = createDocument({
-  namespace: 'app/feature',
-  state: { data: [] }
-})
+# Validate namespace usage
+agentmlx validate agent.aml
+```
 
-// Access parent state
-const parentState = getDocument('app').getState()
-console.log(parentState.theme) // 'light'
-\`\`\`
+## Namespace Patterns
+
+### Multi-Model Pattern
+
+Use different LLM providers for different tasks:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:ollama="github.com/agentflare-ai/agentml/ollama">
+
+  <state id="classify">
+    <!-- Fast local classification -->
+    <onentry>
+      <ollama:generate
+        model="llama2"
+        location="_event"
+        promptexpr="'Classify: ' + userInput" />
+    </onentry>
+
+    <transition event="action.response"
+                cond="_event.data.intent === 'complex'"
+                target="detailed_processing" />
+
+    <transition event="action.response" target="simple_processing" />
+  </state>
+
+  <state id="detailed_processing">
+    <!-- Powerful cloud model for complex tasks -->
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Detailed analysis: ' + userInput" />
+    </onentry>
+  </state>
+</agent>
+```
+
+### Memory-Augmented Generation
+
+Combine LLM with vector search:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:memory="github.com/agentflare-ai/agentml/memory">
+
+  <state id="answer_question">
+    <onentry>
+      <!-- Search memory for relevant context -->
+      <memory:embed location="query_embedding" expr="userQuestion" />
+      <memory:search location="context" expr="query_embedding" limit="5" />
+
+      <!-- Generate with context -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Answer based on context: ' + JSON.stringify(context) + '\nQuestion: ' + userQuestion" />
+    </onentry>
+
+    <transition event="action.response" target="store_answer">
+      <assign location="answer" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <state id="store_answer">
+    <onentry>
+      <!-- Store answer for future retrieval -->
+      <memory:put key="last_answer" expr="answer" />
+    </onentry>
+  </state>
+</agent>
+```
+
+### I/O Processing Pattern
+
+Combine I/O with LLM processing:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:stdin="github.com/agentflare-ai/agentml/stdin">
+
+  <state id="interactive">
+    <onentry>
+      <stdin:write expr="'Bot: How can I help you?'" />
+      <stdin:read location="userInput" />
+    </onentry>
+
+    <transition event="stdin.received" target="process">
+      <assign location="input" expr="_event.data" />
+    </transition>
+  </state>
+
+  <state id="process">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'User: ' + input" />
+    </onentry>
+
+    <transition event="action.response" target="respond">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <state id="respond">
+    <onentry>
+      <stdin:write expr="'Bot: ' + response" />
+    </onentry>
+
+    <transition target="interactive" />
+  </state>
+</agent>
+```
 
 ## Best Practices
 
-1. **Use clear naming** - Make namespace purposes obvious
-2. **Keep hierarchy shallow** - Avoid deeply nested namespaces (max 3-4 levels)
-3. **Group related features** - Organize by logical boundaries
-4. **Document your structure** - Maintain a namespace map
-5. **Avoid global state** - Use namespaces to scope state appropriately
+1. **Use specific URIs**: `github.com/org/project/namespace` not just `custom`
+2. **Document your namespace**: Provide clear usage examples and attribute documentation
+3. **Follow SCXML patterns**: Use `location` for output, `expr` for input, standard action patterns
+4. **Handle errors**: Emit `error.execution.*` events for failures
+5. **Version namespaces**: Include version in URI for breaking changes
+6. **Test thoroughly**: Unit test all namespace actions
+7. **Provide schemas**: Document expected event schemas for namespace actions
+8. **Keep actions atomic**: One action should do one thing
+9. **Use standard events**: Follow AgentML event naming conventions
+10. **Plan for WASM**: Design with future WASM portability in mind
 
-## Namespace Utilities
+## Namespace Registry (Planned)
 
-\`\`\`typescript
-import: activedocs/core
+Future centralized registry for discovering and installing namespaces:
 
-// Get document by namespace
-const doc = getDocument('app/chat')
+```bash
+# Search for namespaces
+agentmlx namespace search stripe
 
-// Check if namespace exists
-const exists = hasDocument('app/chat')
+# Install namespace
+agentmlx namespace install github.com/community/stripe
 
-// List all namespaces
-const namespaces = listNamespaces()
+# List installed namespaces
+agentmlx namespace list
 
-// Remove document and namespace
-removeDocument('app/chat')
-\`\`\`
+# Update namespace
+agentmlx namespace update github.com/community/stripe
+
+# Remove namespace
+agentmlx namespace remove github.com/community/stripe
+```
 
 ## Next Steps
 
-- Learn about [Interpreter](/architecture/interpreter)
-- Explore [I/O Processors](/architecture/io-processors)
-- Understand [Document Structure](/architecture/document-structure)
-\`\`\`
+- Learn about [Interpreter](/architecture/interpreter) to understand how namespaces execute
+- Explore [I/O Processors](/architecture/io-processors) for external communication
+- See [Custom Extensions](/extensions/custom) for creating namespaces
+- Read [Namespaces Concept](/concepts/namespaces) for usage patterns
+- Review [Memory Extension](/extensions/memory) for sqlite-graph integration

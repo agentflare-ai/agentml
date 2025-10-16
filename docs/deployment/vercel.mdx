@@ -1,93 +1,184 @@
 ---
 title: "Deploy to Vercel"
-description: "Deploy your ActiveFlow application to Vercel with zero configuration"
+description: "Deploy AgentML agents as serverless functions on Vercel"
 ---
 
 # Deploy to Vercel
 
-Deploy your ActiveFlow application to Vercel with automatic builds, previews, and production deployments.
+Deploy AgentML agents as Vercel serverless functions for auto-scaling, edge deployment, and zero configuration.
 
-## Quick Deploy
+## Overview
 
-The fastest way to deploy your ActiveFlow app:
+AgentML agents can run as Vercel serverless functions by wrapping the agentmlx runtime in a function handler. This provides:
+- Auto-scaling based on demand
+- Global edge deployment
+- Zero infrastructure management
+- Pay-per-execution pricing
 
-\`\`\`bash
-npm install -g vercel
-vercel
-\`\`\`
+## Project Structure
 
-Follow the prompts to link your project and deploy.
+```
+project/
+├── agents/
+│   └── chatbot.aml          # Your AgentML agent
+├── api/
+│   └── agent.ts             # Vercel function handler
+├── package.json
+└── vercel.json
+```
 
-## Configuration
+## Vercel Function Handler
 
-Create a `vercel.json` file in your project root:
+**api/agent.ts:**
+```typescript
+import { exec } from 'child_process'
+import { promisify } from 'util'
+import { writeFile } from 'fs/promises'
 
-\`\`\`json
-{
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "env": {
-    "NODE_ENV": "production"
+const execAsync = promisify(exec)
+
+export const config = {
+  runtime: 'nodejs18',
+  maxDuration: 60, // seconds
+}
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const { event, data } = req.body
+
+  try {
+    // Execute agentmlx with event
+    const eventData = JSON.stringify({ name: event, data })
+    const { stdout, stderr } = await execAsync(
+      `agentmlx run agents/chatbot.aml --event '${eventData}'`,
+      {
+        env: {
+          ...process.env,
+          GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+        }
+      }
+    )
+
+    // Parse and return result
+    const result = JSON.parse(stdout)
+    res.status(200).json(result)
+  } catch (error) {
+    console.error('Agent execution error:', error)
+    res.status(500).json({ error: error.message })
   }
 }
-\`\`\`
+```
 
 ## Environment Variables
 
-Set your environment variables in the Vercel dashboard or via CLI:
+Set environment variables in Vercel dashboard or CLI:
 
-\`\`\`bash
-vercel env add GEMINI_API_KEY
-vercel env add DATABASE_URL
-\`\`\`
+```bash
+# Vercel CLI
+vercel env add GEMINI_API_KEY production
+vercel env add OLLAMA_BASE_URL production
+vercel env add AGENTML_MEMORY_DB production
 
-## Automatic Deployments
+# Or via dashboard at vercel.com/dashboard
+```
 
-Connect your GitHub repository for automatic deployments:
+## Configuration
 
-1. Go to [vercel.com/new](https://vercel.com/new)
-2. Import your repository
-3. Configure build settings
-4. Deploy
+**vercel.json:**
+```json
+{
+  "functions": {
+    "api/agent.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  },
+  "env": {
+    "GEMINI_API_KEY": "@gemini-api-key",
+    "NODE_ENV": "production"
+  }
+}
+```
 
-Every push to `main` triggers a production deployment. Pull requests get preview deployments.
+## Edge Functions (Experimental)
 
-## Edge Functions
+For ultra-low latency, use Vercel Edge Functions with WASM:
 
-ActiveFlow works great with Vercel Edge Functions for low-latency responses:
-
-\`\`\`typescript
-// api/process.ts
+**api/edge-agent.ts:**
+```typescript
 export const config = {
   runtime: 'edge',
 }
 
 export default async function handler(req: Request) {
-  const { processDocument } = await import('activeflow')
-  
-  const doc = await req.json()
-  const result = await processDocument(doc)
-  
-  return new Response(JSON.stringify(result), {
-    headers: { 'content-type': 'application/json' },
+  // Future: Load AgentML WASM runtime
+  // const { runAgent } = await import('@agentml/wasm')
+
+  const { event, data } = await req.json()
+
+  // Execute agent in edge runtime
+  // const result = await runAgent('agents/chatbot.aml', event, data)
+
+  return new Response(JSON.stringify({ result }), {
+    headers: { 'Content-Type': 'application/json' },
   })
 }
-\`\`\`
+```
 
-## Monitoring
+## Deployment
 
-Use Vercel Analytics and Logs to monitor your ActiveFlow application:
+### Automatic (Git Integration)
 
-- Real-time logs in the dashboard
-- Performance metrics
-- Error tracking
-- Custom analytics events
+1. Connect repository to Vercel
+2. Configure build settings
+3. Every push to `main` deploys automatically
+
+### Manual
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+
+# Deploy to production
+vercel --prod
+```
 
 ## Best Practices
 
-- Use environment variables for API keys
-- Enable caching for static assets
-- Use Edge Functions for low-latency endpoints
-- Monitor token usage and costs
-- Set up alerts for errors
-\`\`\`
+1. **Keep agents small**: Faster cold starts
+2. **Use environment variables**: Never commit API keys
+3. **Set appropriate timeouts**: Match function duration to agent complexity
+4. **Monitor usage**: Track invocations and costs
+5. **Cache when possible**: Use Vercel's caching for static responses
+6. **Test locally**: Use `vercel dev` for local testing
+
+## Limitations
+
+- **Cold starts**: First invocation may be slower
+- **Execution time**: Max 60 seconds (Hobby), 300 seconds (Pro)
+- **Memory**: Max 3GB
+- **Stateless**: No persistent file system between invocations
+
+## Monitoring
+
+Use Vercel Analytics and Logs:
+
+```bash
+# View logs
+vercel logs
+
+# Monitor in real-time
+vercel logs --follow
+```
+
+## Next Steps
+
+- Try [Docker Deployment](/deployment/docker) for containerized deployment
+- Learn about [Self-Hosted](/deployment/self-hosted) for full control
+- Read [Performance Best Practices](/best-practices/performance) for optimization

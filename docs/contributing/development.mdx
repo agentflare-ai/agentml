@@ -1,234 +1,533 @@
 ---
 title: "Development Guide"
-description: "Set up your development environment for ActiveFlow"
+description: "Set up your development environment for AgentML"
 ---
 
 # Development Guide
 
-Set up your local development environment to contribute to ActiveFlow.
+Set up your local development environment to contribute to AgentML and agentmlx.
 
 ## Prerequisites
 
+### For AgentML (Specification & Docs)
 - Node.js 18+ or 20+
 - npm or pnpm
 - Git
 - Code editor (VS Code recommended)
 
-## Clone Repository
+### For agentmlx (Runtime)
+- Go 1.21+
+- Git
+- Make (optional, for build scripts)
+- Code editor with Go support
 
-\`\`\`bash
-git clone https://github.com/activeflow/activeflow.git
-cd activeflow
-\`\`\`
+## Clone Repositories
 
-## Install Dependencies
+### AgentML Specification
 
-\`\`\`bash
-npm install
-\`\`\`
+```bash
+git clone https://github.com/agentflare-ai/agentml.git
+cd agentml
+```
 
-Or with pnpm:
+### agentmlx Runtime
 
-\`\`\`bash
-pnpm install
-\`\`\`
+```bash
+git clone https://github.com/agentflare-ai/agentmlx.git
+cd agentmlx
+```
 
 ## Project Structure
 
-\`\`\`
-activeflow/
-├── src/
-│   ├── core/           # Core interpreter and parser
-│   ├── extensions/     # Built-in extensions
-│   ├── types/          # TypeScript types
-│   └── utils/          # Utility functions
+### agentml (Specification)
+
+```
+agentml/
+├── docs/                  # Documentation (MDX)
+│   ├── getting-started/
+│   ├── concepts/
+│   ├── architecture/
+│   ├── extensions/
+│   ├── deployment/
+│   ├── best-practices/
+│   └── contributing/
+├── examples/              # Example agents
+│   ├── chatbot.aml
+│   ├── workflow.aml
+│   └── rag-agent.aml
+├── schemas/               # JSON schemas
+└── package.json
+```
+
+### agentmlx (Runtime)
+
+```
+agentmlx/
+├── cmd/
+│   └── agentmlx/         # CLI entry point
+│       └── main.go
+├── pkg/
+│   ├── scxml/            # SCXML interpreter
+│   ├── namespaces/       # Built-in namespaces
+│   │   ├── gemini/       # Gemini extension
+│   │   ├── ollama/       # Ollama extension
+│   │   ├── memory/       # Memory extension
+│   │   └── stdin/        # Stdin/stdout extension
+│   ├── parser/           # XML parser
+│   ├── datamodel/        # ECMAScript datamodel
+│   └── ioprocessor/      # I/O processors (HTTP, WebSocket)
 ├── tests/
-│   ├── unit/           # Unit tests
-│   ├── integration/    # Integration tests
-│   └── e2e/            # End-to-end tests
-├── docs/               # Documentation (MDX)
-├── examples/           # Example applications
-└── scripts/            # Build and utility scripts
-\`\`\`
+│   ├── unit/             # Unit tests
+│   ├── integration/      # Integration tests
+│   └── conformance/      # W3C SCXML conformance tests
+├── examples/             # Example agents
+└── go.mod
+```
+
+## Development Setup
+
+### AgentML Documentation
+
+Install dependencies:
+
+```bash
+cd agentml
+npm install
+```
+
+Start documentation server:
+
+```bash
+npm run docs:dev
+```
+
+Visit `http://localhost:3000` to view docs.
+
+### agentmlx Runtime
+
+Install Go dependencies:
+
+```bash
+cd agentmlx
+go mod download
+```
+
+Build the runtime:
+
+```bash
+go build -o agentmlx cmd/agentmlx/main.go
+```
+
+Run an agent:
+
+```bash
+./agentmlx run examples/chatbot.aml
+```
 
 ## Development Workflow
 
-Start development mode with watch:
+### Runtime Development
 
-\`\`\`bash
-npm run dev
-\`\`\`
+**Watch and rebuild:**
 
-Run tests in watch mode:
+```bash
+# Terminal 1: Watch for changes
+go run cmd/agentmlx/main.go run examples/test.aml
 
-\`\`\`bash
-npm run test:watch
-\`\`\`
+# Terminal 2: Make changes to source
+vim pkg/scxml/interpreter.go
+```
 
-Build the project:
+**Run tests in watch mode:**
 
-\`\`\`bash
-npm run build
-\`\`\`
+```bash
+# Install gotestsum
+go install gotest.tools/gotestsum@latest
+
+# Watch tests
+gotestsum --watch -- -v ./...
+```
+
+**Hot reload for development:**
+
+```bash
+# Install air
+go install github.com/cosmtrek/air@latest
+
+# Run with hot reload
+air
+```
+
+### Adding a New Namespace
+
+1. **Create namespace package:**
+
+```bash
+mkdir -p pkg/namespaces/myextension
+```
+
+2. **Implement actions:**
+
+```go
+// pkg/namespaces/myextension/extension.go
+package myextension
+
+import "github.com/agentflare-ai/agentmlx/pkg/scxml"
+
+type MyAction struct {
+    Param    string `xml:"param,attr"`
+    Location string `xml:"location,attr"`
+}
+
+func (a *MyAction) Execute(ctx *scxml.Context) error {
+    // Your implementation
+    result := process(a.Param)
+
+    ctx.SetVariable(a.Location, result)
+    ctx.RaiseEvent("myext.complete", map[string]interface{}{
+        "result": result,
+    })
+
+    return nil
+}
+
+func Register() {
+    scxml.RegisterNamespace("github.com/example/myextension", map[string]interface{}{
+        "myaction": &MyAction{},
+    })
+}
+```
+
+3. **Add tests:**
+
+```go
+// pkg/namespaces/myextension/extension_test.go
+package myextension
+
+import (
+    "testing"
+    "github.com/stretchr/testify/assert"
+    "github.com/agentflare-ai/agentmlx/pkg/scxml"
+)
+
+func TestMyAction(t *testing.T) {
+    ctx := scxml.NewTestContext()
+
+    action := &MyAction{
+        Param:    "test",
+        Location: "result",
+    }
+
+    err := action.Execute(ctx)
+    assert.NoError(t, err)
+
+    result := ctx.GetVariable("result")
+    assert.NotNil(t, result)
+}
+```
+
+4. **Register in runtime:**
+
+```go
+// cmd/agentmlx/main.go
+import "github.com/agentflare-ai/agentmlx/pkg/namespaces/myextension"
+
+func init() {
+    myextension.Register()
+}
+```
 
 ## Testing
 
-Run all tests:
+### Unit Tests
 
-\`\`\`bash
-npm test
-\`\`\`
+```bash
+# Run all tests
+go test ./...
 
-Run specific test file:
+# Run specific package
+go test ./pkg/scxml/...
 
-\`\`\`bash
-npm test -- parser.test.ts
-\`\`\`
+# Run with coverage
+go test -cover ./...
 
-Run with coverage:
+# Generate coverage report
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+```
 
-\`\`\`bash
-npm run test:coverage
-\`\`\`
+### Integration Tests
+
+```bash
+# Run integration tests
+go test ./tests/integration/...
+
+# Run specific test
+go test -run TestChatbotAgent ./tests/integration/...
+```
+
+### SCXML Conformance Tests
+
+```bash
+# Run W3C conformance tests
+go test ./tests/conformance/...
+
+# Run specific conformance test
+go test -run TestDatamodel ./tests/conformance/...
+
+# View conformance report
+go test -v ./tests/conformance/... | grep -E "PASS|FAIL"
+```
+
+### Validate Example Agents
+
+```bash
+# Validate all examples
+for agent in examples/*.aml; do
+    ./agentmlx validate "$agent"
+done
+
+# Run all examples
+for agent in examples/*.aml; do
+    echo "Testing $agent"
+    ./agentmlx run "$agent" --event '{"name": "test"}'
+done
+```
 
 ## Debugging
 
-Use VS Code debugger with this configuration:
+### VS Code Launch Configuration
 
-\`\`\`json
+**.vscode/launch.json:**
+
+```json
 {
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "node",
+      "name": "Debug agentmlx",
+      "type": "go",
       "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/agentmlx",
+      "args": ["run", "examples/chatbot.aml"],
+      "env": {
+        "GEMINI_API_KEY": "your-api-key"
+      }
+    },
+    {
       "name": "Debug Tests",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["test", "--", "--inspect-brk"],
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen"
+      "type": "go",
+      "request": "launch",
+      "mode": "test",
+      "program": "${workspaceFolder}/pkg/scxml",
+      "args": ["-test.v", "-test.run", "TestStateMachine"]
     }
   ]
 }
-\`\`\`
+```
 
-## Code Generation
+### Delve Debugger
 
-Generate new extension:
+```bash
+# Install delve
+go install github.com/go-delve/delve/cmd/dlv@latest
 
-\`\`\`bash
-npm run generate:extension -- --name MyExtension
-\`\`\`
+# Debug with delve
+dlv debug cmd/agentmlx/main.go -- run examples/chatbot.aml
 
-Generate new test:
+# Set breakpoint
+(dlv) break pkg/scxml/interpreter.go:123
+(dlv) continue
+```
 
-\`\`\`bash
-npm run generate:test -- --name my-feature
-\`\`\`
+### Debug Logging
 
-## Documentation
+Enable debug output:
 
-Preview documentation locally:
+```bash
+# Set log level
+export AGENTML_LOG_LEVEL=debug
+./agentmlx run agent.aml
 
-\`\`\`bash
-cd docs-site
-npm install
-npm run dev
-\`\`\`
+# Verbose output
+./agentmlx run agent.aml --verbose
+```
 
-## Linting and Formatting
+## Benchmarking
 
-Lint code:
+Profile runtime performance:
 
-\`\`\`bash
-npm run lint
-\`\`\`
+```bash
+# CPU profiling
+go test -cpuprofile=cpu.prof -bench=. ./pkg/scxml/
+go tool pprof cpu.prof
 
-Fix linting issues:
+# Memory profiling
+go test -memprofile=mem.prof -bench=. ./pkg/scxml/
+go tool pprof mem.prof
 
-\`\`\`bash
-npm run lint:fix
-\`\`\`
+# Benchmark specific functions
+go test -bench=BenchmarkInterpreter -benchmem ./pkg/scxml/
+```
 
-Format code:
+## Code Quality
 
-\`\`\`bash
-npm run format
-\`\`\`
+### Linting
 
-## Type Checking
+```bash
+# Install golangci-lint
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
-Run TypeScript type checker:
+# Run linter
+golangci-lint run
 
-\`\`\`bash
-npm run type-check
-\`\`\`
+# Run with auto-fix
+golangci-lint run --fix
+```
 
-## Building Extensions
+### Formatting
 
-Create a new extension:
+```bash
+# Format all code
+go fmt ./...
 
-\`\`\`typescript
-// src/extensions/my-extension.ts
-import { Extension } from '../types'
+# Format imports
+go install golang.org/x/tools/cmd/goimports@latest
+goimports -w .
+```
 
-export class MyExtension implements Extension {
-  name = 'my-extension'
-  
-  async process(input: string, context: any) {
-    // Your extension logic
-    return { output: input }
-  }
-}
-\`\`\`
+### Static Analysis
 
-Register the extension:
+```bash
+# Vet code
+go vet ./...
 
-\`\`\`typescript
-// src/extensions/index.ts
-export { MyExtension } from './my-extension'
-\`\`\`
+# Check for inefficient assignments
+go install github.com/gordonklaus/ineffassign@latest
+ineffassign ./...
 
-## Performance Profiling
+# Check for common mistakes
+go install honnef.co/go/tools/cmd/staticcheck@latest
+staticcheck ./...
+```
 
-Profile the interpreter:
+## Documentation Development
 
-\`\`\`bash
-node --prof src/cli.js process document.af
-node --prof-process isolate-*.log > profile.txt
-\`\`\`
+### Local Preview
+
+```bash
+cd agentml
+npm run docs:dev
+```
+
+### Build Documentation
+
+```bash
+npm run docs:build
+```
+
+### Add New Documentation
+
+Create MDX file:
+
+```mdx
+---
+title: "Your Title"
+description: "Brief description"
+---
+
+# Your Title
+
+Content goes here...
+```
+
+Update navigation in `docs-site/nav.ts`.
 
 ## Release Process
 
-1. Update version in `package.json`
-2. Update CHANGELOG.md
-3. Create git tag: `git tag v1.0.0`
-4. Push tag: `git push origin v1.0.0`
-5. GitHub Actions will publish to npm
+### Version Bump
+
+```bash
+# Update version
+vim VERSION  # Update version number
+
+# Tag release
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+### Build Release Binaries
+
+```bash
+# Build for all platforms
+make release
+
+# Or manually
+GOOS=linux GOARCH=amd64 go build -o agentmlx-linux-amd64 cmd/agentmlx/main.go
+GOOS=darwin GOARCH=arm64 go build -o agentmlx-darwin-arm64 cmd/agentmlx/main.go
+GOOS=windows GOARCH=amd64 go build -o agentmlx-windows-amd64.exe cmd/agentmlx/main.go
+```
+
+### Update Install Script
+
+Update version in `install.sh`:
+
+```bash
+VERSION="0.2.0"
+```
 
 ## Continuous Integration
 
-Tests run automatically on:
+### GitHub Actions
+
+CI runs automatically on:
 - Pull requests
 - Pushes to main branch
 - Release tags
 
-View CI status in GitHub Actions.
+**Workflows:**
+- `.github/workflows/test.yml` - Run tests
+- `.github/workflows/conformance.yml` - SCXML conformance
+- `.github/workflows/lint.yml` - Code quality
+- `.github/workflows/release.yml` - Build releases
 
-## Getting Help
+### Local CI Simulation
 
-- Read the documentation
-- Check existing issues
-- Ask in Discord
-- Open a discussion on GitHub
+```bash
+# Install act
+brew install act
+
+# Run CI locally
+act push
+act pull_request
+```
 
 ## Best Practices
 
-- Write tests first (TDD)
-- Keep commits atomic
-- Update documentation
-- Follow code style
-- Be responsive to reviews
+1. **Write tests first**: Follow TDD for new features
+2. **Keep commits atomic**: One logical change per commit
+3. **Update documentation**: Document as you code
+4. **Follow Go conventions**: Use `gofmt`, follow Effective Go
+5. **Check conformance**: Ensure SCXML compliance
+6. **Profile performance**: Benchmark critical paths
+7. **Handle errors**: Always check and handle errors properly
+8. **Log appropriately**: Use structured logging
+9. **Review before commit**: Self-review your changes
+10. **Be responsive**: Address review comments promptly
 
-Happy coding!
-\`\`\`
+## Getting Help
+
+- **Documentation**: Read the full [AgentML docs](/getting-started/overview)
+- **Issues**: Search [existing issues](https://github.com/agentflare-ai/agentml/issues)
+- **Discussions**: Ask in [GitHub Discussions](https://github.com/agentflare-ai/agentml/discussions)
+- **Discord**: Join our community (coming soon)
+
+## Resources
+
+- [W3C SCXML Specification](https://www.w3.org/TR/scxml/)
+- [Effective Go](https://golang.org/doc/effective_go.html)
+- [Go Testing](https://golang.org/pkg/testing/)
+- [Delve Debugger](https://github.com/go-delve/delve)
+
+Happy coding! Let's build the future of AI agents together.

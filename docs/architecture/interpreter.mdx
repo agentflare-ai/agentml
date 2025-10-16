@@ -1,301 +1,557 @@
 ---
 title: "Interpreter"
-description: "Understanding the ActiveDocs interpreter and execution engine"
+description: "Understanding the AgentML interpreter: SCXML execution engine for state machines"
 ---
 
 # Interpreter
 
-The ActiveDocs interpreter is the execution engine that processes events, manages state transitions, and coordinates LLM interactions.
+The AgentML interpreter is the core execution engine that processes SCXML state machines. It manages state transitions, evaluates conditions, executes actions, and generates runtime snapshots for LLM prompts.
 
 ## Overview
 
-The interpreter acts as the central coordinator for all document operations, ensuring events are processed correctly and state remains consistent.
+The interpreter is based on the W3C SCXML specification, with AgentML extensions for LLM integration and token efficiency. It ensures deterministic, auditable agent behavior.
 
-\`\`\`typescript
-import: activedocs/core
-
-// The interpreter runs behind the scenes
-const document = createDocument({
-  namespace: 'myapp',
-  state: { count: 0 }
-})
-
-// Interpreter processes this state change
-document.setState({ count: 1 })
-
-// Interpreter coordinates this LLM call
-await document.prompt('Generate text')
-\`\`\`
+**Key responsibilities:**
+- Parse and validate AgentML documents
+- Execute state machine transitions
+- Manage datamodel (variables)
+- Process events from internal and external sources
+- Generate runtime snapshots for LLMs
+- Coordinate namespace actions
+- Handle errors and recovery
 
 ## Execution Model
 
-### Event Loop
+### Run-to-Completion
 
-The interpreter uses an event loop to process operations:
+The interpreter uses a **run-to-completion** execution model:
 
-\`\`\`
-1. Event emitted
-2. Interpreter receives event
-3. Handlers executed in order
-4. State updated if needed
-5. Side effects processed
-6. Next event
-\`\`\`
+```
+1. Process external event
+2. Execute microstep:
+   - Select enabled transitions
+   - Exit current states
+   - Execute transition actions
+   - Enter new states
+3. Process internal events from step 2
+4. Repeat until stable (no more internal events)
+5. Wait for next external event
+```
 
-### Synchronous vs Asynchronous
+This ensures:
+- **Determinism**: Same events produce same state paths
+- **Atomicity**: State changes complete before next event
+- **Consistency**: State machine is always in valid configuration
 
-The interpreter handles both sync and async operations:
+### Event Queue
 
-\`\`\`typescript
-import: activedocs/core
+The interpreter maintains separate queues for internal and external events:
 
-const document = createDocument({
-  namespace: 'myapp',
-  handlers: {
-    // Synchronous handler
-    'event:sync': (event) => {
-      console.log('Immediate execution')
-    },
-    
-    // Asynchronous handler
-    'event:async': async (event) => {
-      await delay(1000)
-      console.log('Delayed execution')
-    }
-  }
-})
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-## State Management
+  <state id="process">
+    <onentry>
+      <!-- Internal event - processed immediately in same microstep -->
+      <raise event="internal.ready" />
 
-The interpreter ensures state consistency:
+      <!-- External event - queued for next macrostep -->
+      <send event="external.notify" target="#_external" />
+    </onentry>
 
-### State Validation
+    <transition event="internal.ready" target="ready" />
+  </state>
+</agent>
+```
 
-\`\`\`typescript
-import: activedocs/core
-import: zod
+**Event priority:**
+1. Internal events (`<raise>`)
+2. Platform events (errors, done events)
+3. External events (`<send>`, IOProcessor events)
 
-const document = createDocument({
-  namespace: 'myapp',
-  schema: {
-    count: z.number().min(0)
-  },
-  state: { count: 0 }
-})
+## State Configuration
 
-// Interpreter validates before applying
-document.setState({ count: -1 }) // Throws validation error
-\`\`\`
+The interpreter maintains the current **state configuration** - the set of active states at any time:
 
-### State Transactions
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-\`\`\`typescript
-import: activedocs/core
+  <state id="parent">
+    <state id="child1">
+      <!-- Configuration: [parent, child1] -->
+    </state>
 
-// Interpreter ensures atomic updates
-document.transaction((state) => {
-  state.count += 1
-  state.lastUpdated = Date.now()
-  
-  if (state.count > 10) {
-    throw new Error('Count too high')
-  }
-  
-  return state // Committed only if no error
-})
-\`\`\`
+    <state id="child2">
+      <!-- Configuration: [parent, child2] -->
+    </state>
+  </state>
+</agent>
+```
 
-## LLM Coordination
+**With parallel states:**
+```xml
+<parallel id="multi_task">
+  <state id="region1">
+    <state id="r1_active" />
+  </state>
 
-The interpreter manages LLM interactions:
+  <state id="region2">
+    <state id="r2_active" />
+  </state>
+</parallel>
+<!-- Configuration: [multi_task, region1, r1_active, region2, r2_active] -->
+```
 
-### Request Processing
+## Datamodel
 
-\`\`\`typescript
-import: activedocs/core
+The interpreter manages the ECMAScript datamodel:
 
-// Interpreter coordinates the full lifecycle
-await document.prompt('Generate text', {
-  onStart: () => {
-    // Interpreter fires llm:start event
-  },
-  onToken: (token) => {
-    // Interpreter fires llm:token event
-  },
-  onComplete: (content) => {
-    // Interpreter fires llm:complete event
-  },
-  onError: (error) => {
-    // Interpreter fires llm:error event
-  }
-})
-\`\`\`
+### Data Elements
 
-### Token Management
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-\`\`\`typescript
-import: activedocs/core
+  <datamodel>
+    <!-- Initialize with expression -->
+    <data id="count" expr="0" />
 
-// Interpreter tracks token usage
-document.on('llm:token', (event) => {
-  console.log('Tokens used:', event.usage.total)
-  console.log('Tokens remaining:', event.usage.remaining)
-})
-\`\`\`
+    <!-- Initialize with JSON -->
+    <data id="user" expr='{"name": "Alice", "age": 30}' />
+
+    <!-- Initialize with array -->
+    <data id="items" expr="[]" />
+
+    <!-- No initialization - undefined -->
+    <data id="result" />
+  </datamodel>
+</agent>
+```
+
+### Assignments
+
+```xml
+<state id="update">
+  <onentry>
+    <!-- Assign to existing variable -->
+    <assign location="count" expr="count + 1" />
+
+    <!-- Assign nested property -->
+    <assign location="user.name" expr="'Bob'" />
+
+    <!-- Assign from event data -->
+    <assign location="result" expr="_event.data" />
+  </onentry>
+</state>
+```
+
+### System Variables
+
+The interpreter provides these system variables:
+
+```xml
+<state id="process">
+  <onentry>
+    <!-- _event: Current event object -->
+    <log expr="_event.name" />           <!-- Event name -->
+    <log expr="_event.data" />           <!-- Event payload -->
+    <log expr="_event.origin" />         <!-- Event source -->
+    <log expr="_event.type" />           <!-- Event type (platform/external/internal) -->
+
+    <!-- _sessionid: Unique session identifier -->
+    <log expr="_sessionid" />
+
+    <!-- _name: Agent name from <agent name="..."> -->
+    <log expr="_name" />
+
+    <!-- In(state): Check if state is active -->
+    <if cond="In('processing')">
+      <log expr="'Currently processing'" />
+    </if>
+  </onentry>
+</state>
+```
+
+## Transition Selection
+
+The interpreter selects transitions based on event matching and conditions:
+
+### Event Matching
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <state id="listen">
+    <!-- Exact match -->
+    <transition event="user.message.text" target="handle_text" />
+
+    <!-- Wildcard - matches user.message.* -->
+    <transition event="user.message" target="handle_message" />
+
+    <!-- Multiple events (space-separated) -->
+    <transition event="error.network error.timeout" target="retry" />
+
+    <!-- Eventless - always enabled -->
+    <transition target="next" />
+  </state>
+</agent>
+```
+
+### Condition Evaluation
+
+```xml
+<state id="validate">
+  <onentry>
+    <assign location="age" expr="_event.data.age" />
+  </onentry>
+
+  <!-- Conditions evaluated in document order -->
+  <transition cond="age < 13" target="child" />
+  <transition cond="age < 18" target="teen" />
+  <transition cond="age < 65" target="adult" />
+  <transition target="senior" />  <!-- Default -->
+</state>
+```
+
+### Conflicting Transitions
+
+If multiple transitions are enabled, the interpreter selects based on:
+
+1. **Document order**: Earlier transitions have priority
+2. **Descendant priority**: Child state transitions override parent
+3. **First match wins**: First enabled transition is taken
+
+```xml
+<state id="parent">
+  <transition event="e" target="state1" />
+
+  <state id="child">
+    <!-- This takes priority over parent transition -->
+    <transition event="e" target="state2" />
+  </state>
+</state>
+```
+
+## Entry and Exit Processing
+
+### Entry Order
+
+States are entered depth-first:
+
+```xml
+<state id="outer">
+  <!-- 1. Enter outer -->
+  <onentry>
+    <log expr="'Enter outer'" />
+  </onentry>
+
+  <state id="middle">
+    <!-- 2. Enter middle -->
+    <onentry>
+      <log expr="'Enter middle'" />
+    </onentry>
+
+    <state id="inner">
+      <!-- 3. Enter inner -->
+      <onentry>
+        <log expr="'Enter inner'" />
+      </onentry>
+    </state>
+  </state>
+</state>
+```
+
+### Exit Order
+
+States are exited depth-first (innermost first):
+
+```xml
+<!-- Transition from inner to outer2 -->
+<!-- 1. Exit inner -->
+<!-- 2. Exit middle -->
+<!-- 3. Exit outer -->
+<!-- 4. Enter outer2 -->
+```
+
+## Runtime Snapshots
+
+A key AgentML innovation: the interpreter generates **runtime snapshots** for token-efficient LLM prompts.
+
+### Snapshot Contents
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <datamodel>
+    <data id="from" expr="'NYC'" />
+    <data id="to" expr="'Paris'" />
+    <data id="date" expr="'2025-01-15'" />
+  </datamodel>
+
+  <state id="search_flights">
+    <transition event="flight.found"
+                event:schema='{"type": "object", "properties": {"price": {"type": "number"}}, "required": ["price"]}'
+                target="book_flight" />
+  </state>
+</agent>
+```
+
+**Runtime Snapshot:**
+```xml
+<snapshot session="abc123" timestamp="2025-01-15T10:30:00Z">
+  <configuration>
+    <state id="search_flights" />
+  </configuration>
+
+  <datamodel>
+    <data id="from" value="NYC" />
+    <data id="to" value="Paris" />
+    <data id="date" value="2025-01-15" />
+  </datamodel>
+
+  <available_events>
+    <event name="flight.found" schema='{"type": "object", "properties": {"price": {"type": "number"}}, "required": ["price"]}' />
+  </available_events>
+</snapshot>
+```
+
+This snapshot is sent to the LLM instead of full conversation history, achieving 90%+ token reduction.
+
+### Snapshot Generation
+
+```bash
+# Save snapshots during execution
+agentmlx run agent.aml --save-snapshots ./debug --snapshot-interval 1
+
+# Inspect snapshots
+ls ./debug/
+# snapshot_0001.xml
+# snapshot_0002.xml
+# snapshot_0003.xml
+```
 
 ## Error Handling
 
-The interpreter provides robust error handling:
-
-### Error Boundaries
-
-\`\`\`typescript
-import: activedocs/core
-
-const document = createDocument({
-  namespace: 'myapp',
-  errorHandler: (error, context) => {
-    console.error('Error in:', context.namespace)
-    console.error('Error:', error.message)
-    
-    // Recover or propagate
-    if (error.recoverable) {
-      return { recovered: true }
-    }
-    throw error
-  }
-})
-\`\`\`
+The interpreter raises platform events for errors:
 
 ### Error Events
 
-\`\`\`typescript
-import: activedocs/core
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-document.on('error', (event) => {
-  console.error('Error occurred:', event.error)
-  console.log('Context:', event.context)
-  console.log('Stack:', event.stack)
-})
-\`\`\`
+  <state id="risky_operation">
+    <onentry>
+      <assign location="result" expr="computeRiskyValue()" />
+    </onentry>
 
-## Performance Optimization
+    <!-- Handle execution errors -->
+    <transition event="error.execution" target="handle_error">
+      <assign location="errorDetails" expr="_event.data" />
+    </transition>
 
-The interpreter includes several optimizations:
+    <transition target="success" />
+  </state>
 
-### Batching
+  <state id="handle_error">
+    <onentry>
+      <log expr="'Error: ' + errorDetails.message" />
+    </onentry>
+  </state>
+</agent>
+```
 
-\`\`\`typescript
-import: activedocs/core
+### Validation Errors
 
-// Interpreter batches multiple state updates
-document.batch(() => {
-  document.setState({ field1: 'value1' })
-  document.setState({ field2: 'value2' })
-  document.setState({ field3: 'value3' })
-}) // Only one state change event fired
-\`\`\`
+```xml
+<transition event="user.input"
+            event:schema='{"type": "object", "properties": {"age": {"type": "number"}}, "required": ["age"]}'
+            target="valid" />
 
-### Debouncing
+<!-- Catch schema validation errors -->
+<transition event="error.execution.validation" target="invalid_input">
+  <assign location="validationError" expr="_event.data" />
+</transition>
+```
 
-\`\`\`typescript
-import: activedocs/core
+### Communication Errors
 
-// Interpreter can debounce frequent updates
-document.setState({ search: 'query' }, {
-  debounce: 300 // Wait 300ms before applying
-})
-\`\`\`
+```xml
+<state id="send_request">
+  <onentry>
+    <send event="api.request"
+          target="https://api.example.com/endpoint"
+          type="github.com/agentflare-ai/agentml/ioprocessor/http">
+      <param name="data" expr="requestData" />
+    </send>
+  </onentry>
 
-### Memoization
-
-\`\`\`typescript
-import: activedocs/core
-
-// Interpreter memoizes computed values
-const document = createDocument({
-  namespace: 'myapp',
-  computed: {
-    total: (state) => {
-      // Only recomputed when dependencies change
-      return state.items.reduce((sum, item) => sum + item.price, 0)
-    }
-  }
-})
-\`\`\`
-
-## Debugging
-
-The interpreter provides debugging capabilities:
-
-### Debug Mode
-
-\`\`\`typescript
-import: activedocs/core
-
-// Enable debug mode
-const document = createDocument({
-  namespace: 'myapp',
-  debug: true
-})
-
-// Interpreter logs all operations
-document.setState({ value: 'test' })
-// [ActiveDocs] State change in myapp: { value: 'test' }
-\`\`\`
-
-### Event Tracing
-
-\`\`\`typescript
-import: activedocs/core
-
-// Trace event flow
-document.trace('llm:*', (event) => {
-  console.log('Event:', event.type)
-  console.log('Timestamp:', event.timestamp)
-  console.log('Data:', event.data)
-})
-\`\`\`
+  <!-- Handle send errors -->
+  <transition event="error.communication" target="retry">
+    <assign location="retryCount" expr="retryCount + 1" />
+  </transition>
+</state>
+```
 
 ## Interpreter Configuration
 
-Customize interpreter behavior:
+### Command-Line Options
 
-\`\`\`typescript
-import: activedocs/core
+```bash
+# Basic execution
+agentmlx run agent.aml
 
-const document = createDocument({
-  namespace: 'myapp',
-  interpreter: {
-    // Maximum event queue size
-    maxQueueSize: 1000,
-    
-    // Event processing timeout
-    timeout: 5000,
-    
-    // Enable strict mode
-    strict: true,
-    
-    // Custom error handler
-    onError: (error) => {
-      console.error(error)
-    }
-  }
-})
-\`\`\`
+# With input event
+agentmlx run agent.aml --event user.message --data '{"message": "Hello"}'
+
+# Verbose logging
+agentmlx run agent.aml --verbose
+
+# Save snapshots
+agentmlx run agent.aml --save-snapshots ./debug
+
+# Token usage logging
+agentmlx run agent.aml --log-tokens
+
+# Set environment variables
+agentmlx run agent.aml --env GEMINI_API_KEY=xxx
+```
+
+### Validation
+
+```bash
+# Validate before running
+agentmlx validate agent.aml
+
+# Check specific aspects
+agentmlx validate agent.aml --check-states       # State reachability
+agentmlx validate agent.aml --check-events       # Event coverage
+agentmlx validate agent.aml --check-schemas      # Schema validity
+```
+
+## Performance Optimizations
+
+### State Indexing
+
+The interpreter builds indexes for fast state lookups:
+- State ID to state element
+- State ID to parent state
+- Transition event patterns
+- State entry/exit handlers
+
+### Transition Caching
+
+Frequently used transition conditions are cached:
+```xml
+<transition cond="count > 10" target="overflow" />
+<!-- Condition compiled and cached on first evaluation -->
+```
+
+### Datamodel Efficiency
+
+- ECMAScript expressions compiled once
+- Variables stored in optimized map structure
+- Event data passed by reference when possible
+
+## Debugging
+
+### Verbose Output
+
+```bash
+agentmlx run agent.aml --verbose
+```
+
+Output:
+```
+[INFO] Entering state: awaiting_input
+[INFO] Received event: user.message
+[INFO] Evaluating transition: user.message -> processing
+[INFO] Exiting state: awaiting_input
+[INFO] Executing transition actions
+[INFO] Entering state: processing
+[INFO] Executing action: <gemini:generate>
+[INFO] Generated snapshot: 245 tokens
+[INFO] LLM request completed: 78 tokens response
+[INFO] Raised event: action.response
+```
+
+### State Tracing
+
+```bash
+# Trace state transitions
+agentmlx run agent.aml --trace-states
+
+# Output
+# awaiting_input -> processing -> responding -> awaiting_input
+```
+
+### Event Logging
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <!-- Log all events -->
+  <datamodel>
+    <data id="eventLog" expr="[]" />
+  </datamodel>
+
+  <state id="root">
+    <onentry>
+      <assign location="eventLog"
+              expr="eventLog.concat([{name: _event.name, data: _event.data, timestamp: Date.now()}])" />
+    </onentry>
+
+    <!-- Rest of agent -->
+  </state>
+</agent>
+```
+
+## SCXML Conformance
+
+AgentML interpreter: **95.9% W3C SCXML conformance** (185/193 tests passing)
+
+**Supported features:**
+- Basic state machine execution
+- Hierarchical states
+- Parallel states
+- History states (shallow and deep)
+- Eventless transitions
+- Conditional transitions
+- ECMAScript datamodel
+- `<raise>`, `<send>`, `<assign>`, `<log>`
+- `<if>`, `<elseif>`, `<else>`
+- `<foreach>`
+- `<invoke>` (sub-machines)
+- Error events
+- Done events
+- Event wildcards
+
+**Not yet supported:**
+- `<cancel>` (delayed send cancellation)
+- Some edge cases in parallel state completion
 
 ## Best Practices
 
-1. **Trust the interpreter** - Let it handle coordination
-2. **Use async handlers** - For I/O operations
-3. **Handle errors** - Implement error handlers
-4. **Enable debugging** - During development
-5. **Monitor performance** - Watch for bottlenecks
+1. **Trust the interpreter**: Let it handle state coordination
+2. **Use verbose mode**: During development for visibility
+3. **Validate before running**: Catch errors early
+4. **Monitor snapshots**: Check token usage
+5. **Handle errors**: Add error transitions for robustness
+6. **Keep states focused**: Single responsibility per state
+7. **Log strategically**: Use `<log>` for debugging
+8. **Test coverage**: Ensure all states are reachable
+9. **Profile performance**: Use `--log-tokens` to track efficiency
+10. **Version your agents**: Use version control for agent files
 
 ## Next Steps
 
-- Learn about [I/O Processors](/architecture/io-processors)
-- Explore [Document Structure](/architecture/document-structure)
-- Understand [Namespace System](/architecture/namespace-system)
-\`\`\`
+- Learn about [I/O Processors](/architecture/io-processors) for external communication
+- Explore [Namespace System](/architecture/namespace-system) for custom actions
+- Read [Document Structure](/architecture/document-structure) for SCXML syntax
+- Understand [State Machines](/concepts/state-machines) for patterns
+- See [Token Efficiency](/concepts/token-efficiency) for snapshot optimization

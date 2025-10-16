@@ -1,195 +1,417 @@
 ---
 title: "Error Handling"
-description: "Best practices for handling errors in ActiveFlow applications"
+description: "Best practices for handling errors in AgentML agents"
 ---
 
 # Error Handling
 
-Robust error handling is essential for production ActiveFlow applications.
+Robust error handling is essential for production AgentML agents. SCXML's event-driven architecture provides natural patterns for graceful error handling.
 
-## Error Types
+## Error Events
 
-ActiveFlow distinguishes between different error types:
+SCXML defines standard error events that agents can handle:
 
-\`\`\`typescript
-import { ProcessingError, ValidationError, TimeoutError } from 'activeflow'
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-try {
-  await processDocument(doc)
-} catch (error) {
-  if (error instanceof ValidationError) {
-    console.error('Invalid document format:', error.message)
-  } else if (error instanceof TimeoutError) {
-    console.error('Processing timeout:', error.message)
-  } else if (error instanceof ProcessingError) {
-    console.error('Processing failed:', error.message)
-  } else {
-    console.error('Unknown error:', error)
-  }
-}
-\`\`\`
+  <state id="processing">
+    <onentry>
+      <log expr="'Starting processing...'" />
+    </onentry>
+
+    <!-- Handle validation errors -->
+    <transition event="error.execution" target="handle_error">
+      <assign location="errorType" expr="'execution'" />
+      <assign location="errorMessage" expr="_event.data.error" />
+    </transition>
+
+    <!-- Handle communication errors -->
+    <transition event="error.communication" target="handle_error">
+      <assign location="errorType" expr="'communication'" />
+      <assign location="errorMessage" expr="_event.data.error" />
+    </transition>
+  </state>
+
+  <state id="handle_error">
+    <onentry>
+      <log expr="'Error occurred: ' + errorType + ' - ' + errorMessage" />
+    </onentry>
+
+    <transition target="recovery" />
+  </state>
+</agent>
+```
 
 ## Graceful Degradation
 
-Handle errors gracefully without crashing:
+Handle errors gracefully without halting the agent:
 
-\`\`\`typescript
-async function processWithFallback(doc: string) {
-  try {
-    return await processDocument(doc)
-  } catch (error) {
-    console.error('Primary processing failed, using fallback')
-    return await processFallback(doc)
-  }
-}
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:ollama="github.com/agentflare-ai/agentml/ollama">
 
-## Retry Logic
+  <datamodel>
+    <data id="retryCount" expr="0" />
+    <data id="maxRetries" expr="3" />
+  </datamodel>
 
-Implement exponential backoff for transient failures:
+  <state id="generate_primary">
+    <onentry>
+      <!-- Try primary provider (Gemini) -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="userInput" />
+    </onentry>
 
-\`\`\`typescript
-async function processWithRetry(doc: string, maxRetries = 3) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await processDocument(doc)
-    } catch (error) {
-      if (i === maxRetries - 1) throw error
-      
-      const delay = Math.pow(2, i) * 1000
-      console.log(`Retry ${i + 1}/${maxRetries} after ${delay}ms`)
-      await new Promise(resolve => setTimeout(resolve, delay))
-    }
-  }
-}
-\`\`\`
+    <transition event="action.response" target="success">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
 
-## Error Boundaries
+    <!-- Fallback to local LLM on error -->
+    <transition event="error.execution" target="generate_fallback">
+      <log expr="'Primary provider failed, using fallback'" />
+    </transition>
+  </state>
 
-Use error boundaries in React applications:
+  <state id="generate_fallback">
+    <onentry>
+      <!-- Use local Ollama as fallback -->
+      <ollama:generate
+        model="llama2"
+        location="_event"
+        promptexpr="userInput" />
+    </onentry>
 
-\`\`\`typescript
-import { ErrorBoundary } from 'react-error-boundary'
+    <transition event="action.response" target="success">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
 
-function ErrorFallback({ error, resetErrorBoundary }) {
-  return (
-    <div role="alert">
-      <p>Something went wrong:</p>
-      <pre>{error.message}</pre>
-      <button onClick={resetErrorBoundary}>Try again</button>
-    </div>
-  )
-}
+    <transition event="error.execution" target="complete_failure">
+      <log expr="'Both providers failed'" />
+    </transition>
+  </state>
+</agent>
+```
 
-function App() {
-  return (
-    <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <ActiveFlowComponent />
-    </ErrorBoundary>
-  )
-}
-\`\`\`
+## Retry Logic with Exponential Backoff
 
-## Logging
+Implement retry logic using state machines:
 
-Implement comprehensive logging:
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-\`\`\`typescript
-import { logger } from './logger'
+  <datamodel>
+    <data id="retryCount" expr="0" />
+    <data id="maxRetries" expr="3" />
+    <data id="backoffMs" expr="1000" />
+  </datamodel>
 
-try {
-  logger.info('Starting document processing', { docId: doc.id })
-  const result = await processDocument(doc)
-  logger.info('Processing completed', { docId: doc.id, duration: result.duration })
-  return result
-} catch (error) {
-  logger.error('Processing failed', { 
-    docId: doc.id, 
-    error: error.message,
-    stack: error.stack 
-  })
-  throw error
-}
-\`\`\`
+  <state id="attempt_processing">
+    <onentry>
+      <log expr="'Attempt ' + (retryCount + 1) + ' of ' + maxRetries" />
 
-## Validation
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="userInput" />
+    </onentry>
 
-Validate inputs early:
+    <transition event="action.response" target="success">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
 
-\`\`\`typescript
-function validateDocument(doc: unknown): asserts doc is Document {
-  if (!doc || typeof doc !== 'object') {
-    throw new ValidationError('Document must be an object')
-  }
-  
-  if (!('content' in doc) || typeof doc.content !== 'string') {
-    throw new ValidationError('Document must have a content string')
-  }
-  
-  if (doc.content.length === 0) {
-    throw new ValidationError('Document content cannot be empty')
-  }
-}
-\`\`\`
+    <!-- Retry on error if retries remaining -->
+    <transition event="error.execution" cond="retryCount &lt; maxRetries" target="retry_delay">
+      <assign location="retryCount" expr="retryCount + 1" />
+      <assign location="backoffMs" expr="backoffMs * 2" />
+      <log expr="'Retrying after ' + backoffMs + 'ms...'" />
+    </transition>
 
-## Circuit Breaker
+    <!-- Give up after max retries -->
+    <transition event="error.execution" target="max_retries_exceeded">
+      <log expr="'Max retries exceeded'" />
+    </transition>
+  </state>
 
-Prevent cascading failures:
+  <state id="retry_delay">
+    <onentry>
+      <!-- Send delayed retry event -->
+      <send event="retry" delayexpr="backoffMs + 'ms'" />
+    </onentry>
 
-\`\`\`typescript
-class CircuitBreaker {
-  private failures = 0
-  private lastFailure = 0
-  private readonly threshold = 5
-  private readonly timeout = 60000
+    <transition event="retry" target="attempt_processing" />
+  </state>
+</agent>
+```
 
-  async execute<T>(fn: () => Promise<T>): Promise<T> {
-    if (this.isOpen()) {
-      throw new Error('Circuit breaker is open')
-    }
+## Validation with JSON Schema
 
-    try {
-      const result = await fn()
-      this.onSuccess()
-      return result
-    } catch (error) {
-      this.onFailure()
-      throw error
-    }
-  }
+Validate LLM outputs using `event:schema`:
 
-  private isOpen(): boolean {
-    return this.failures >= this.threshold && 
-           Date.now() - this.lastFailure < this.timeout
-  }
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-  private onSuccess() {
-    this.failures = 0
-  }
+  <state id="request_booking">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Extract booking details: ' + userInput" />
+    </onentry>
 
-  private onFailure() {
-    this.failures++
-    this.lastFailure = Date.now()
-  }
-}
-\`\`\`
+    <!-- Valid response matching schema -->
+    <transition
+      event="action.response"
+      event:schema='{
+        "type": "object",
+        "properties": {
+          "from": {"type": "string"},
+          "to": {"type": "string"},
+          "date": {"type": "string", "format": "date"}
+        },
+        "required": ["from", "to", "date"]
+      }'
+      target="process_booking">
+      <assign location="booking" expr="_event.data" />
+    </transition>
 
-## Monitoring
+    <!-- Invalid response - retry -->
+    <transition event="action.response" target="request_booking">
+      <log expr="'Invalid booking format, retrying...'" />
+    </transition>
 
-Track errors in production:
+    <transition event="error.execution" target="handle_error" />
+  </state>
 
-\`\`\`typescript
-import * as Sentry from '@sentry/node'
+  <state id="handle_error">
+    <onentry>
+      <log expr="'Booking extraction failed: ' + _event.data.error" />
+    </onentry>
+    <transition target="final" />
+  </state>
+</agent>
+```
 
-Sentry.init({ dsn: process.env.SENTRY_DSN })
+## Circuit Breaker Pattern
 
-try {
-  await processDocument(doc)
-} catch (error) {
-  Sentry.captureException(error, {
-    tags: { component: 'document-processor' },
-    extra: { docId: doc.id }
-  })
-  throw error
-}
-\`\`\`
+Prevent cascading failures using parallel states:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <datamodel>
+    <data id="failureCount" expr="0" />
+    <data id="lastFailureTime" expr="0" />
+    <data id="circuitThreshold" expr="5" />
+    <data id="circuitTimeoutMs" expr="60000" />
+  </datamodel>
+
+  <parallel id="main">
+    <!-- Circuit breaker monitor -->
+    <state id="circuit_monitor">
+      <state id="circuit_closed">
+        <transition cond="failureCount >= circuitThreshold" target="circuit_open">
+          <assign location="lastFailureTime" expr="Date.now()" />
+          <log expr="'Circuit breaker opened'" />
+        </transition>
+      </state>
+
+      <state id="circuit_open">
+        <transition cond="(Date.now() - lastFailureTime) > circuitTimeoutMs" target="circuit_half_open">
+          <log expr="'Circuit breaker half-open, testing...'" />
+        </transition>
+      </state>
+
+      <state id="circuit_half_open">
+        <transition event="request.success" target="circuit_closed">
+          <assign location="failureCount" expr="0" />
+          <log expr="'Circuit breaker closed'" />
+        </transition>
+
+        <transition event="request.failure" target="circuit_open">
+          <assign location="lastFailureTime" expr="Date.now()" />
+        </transition>
+      </state>
+    </state>
+
+    <!-- Request processor -->
+    <state id="request_processor">
+      <state id="idle">
+        <transition event="user.request" cond="In('circuit_closed') || In('circuit_half_open')" target="processing">
+          <assign location="userInput" expr="_event.data.message" />
+        </transition>
+
+        <transition event="user.request" target="circuit_blocked">
+          <log expr="'Request blocked: circuit breaker open'" />
+        </transition>
+      </state>
+
+      <state id="processing">
+        <onentry>
+          <gemini:generate
+            model="gemini-2.0-flash-exp"
+            location="_event"
+            promptexpr="userInput" />
+        </onentry>
+
+        <transition event="action.response" target="idle">
+          <raise event="request.success" />
+          <assign location="response" expr="_event.data.message" />
+        </transition>
+
+        <transition event="error.execution" target="idle">
+          <raise event="request.failure" />
+          <assign location="failureCount" expr="failureCount + 1" />
+        </transition>
+      </state>
+
+      <state id="circuit_blocked">
+        <onentry>
+          <log expr="'Service unavailable: circuit breaker open'" />
+        </onentry>
+        <transition target="idle" />
+      </state>
+    </state>
+  </parallel>
+</agent>
+```
+
+## Logging Best Practices
+
+Use `<log>` for debugging and monitoring:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <state id="processing">
+    <onentry>
+      <!-- Log entry with context -->
+      <log expr="'[' + Date.now() + '] Entering state: processing'" />
+      <log expr="'Input: ' + JSON.stringify(userInput)" />
+
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="userInput" />
+    </onentry>
+
+    <transition event="action.response" target="complete">
+      <log expr="'[' + Date.now() + '] Processing completed successfully'" />
+      <log expr="'Tokens used: ' + _event.data.usage.totalTokens" />
+      <assign location="response" expr="_event.data.message" />
+    </transition>
+
+    <transition event="error.execution" target="handle_error">
+      <log expr="'[' + Date.now() + '] ERROR: ' + _event.data.error" />
+      <log expr="'Stack: ' + _event.data.stack" />
+      <log expr="'Datamodel state: ' + JSON.stringify({userInput, retryCount})" />
+    </transition>
+  </state>
+</agent>
+```
+
+## Error Context
+
+Capture error context for debugging:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <datamodel>
+    <data id="errorLog" expr="[]" />
+  </datamodel>
+
+  <state id="processing">
+    <transition event="error.execution" target="handle_error">
+      <!-- Capture full error context -->
+      <assign location="errorLog" expr="errorLog.concat([{
+        timestamp: Date.now(),
+        state: 'processing',
+        error: _event.data.error,
+        code: _event.data.code,
+        datamodel: {
+          userInput: userInput,
+          retryCount: retryCount
+        }
+      }])" />
+    </transition>
+  </state>
+
+  <state id="handle_error">
+    <onentry>
+      <log expr="'Error log: ' + JSON.stringify(errorLog, null, 2)" />
+    </onentry>
+
+    <transition cond="retryCount &lt; 3" target="retry">
+      <assign location="retryCount" expr="retryCount + 1" />
+    </transition>
+
+    <transition target="final" />
+  </state>
+</agent>
+```
+
+## Monitoring and Observability
+
+Monitor agent health in production:
+
+```bash
+# View agent logs
+agentmlx run agent.aml 2>&1 | tee agent.log
+
+# Monitor with systemd
+sudo journalctl -u agentml-agent -f
+
+# Check agent status
+agentmlx validate agent.aml
+```
+
+Use structured logging for analysis:
+
+```xml
+<state id="processing">
+  <onentry>
+    <!-- Structured log for parsing -->
+    <log expr="JSON.stringify({
+      level: 'info',
+      event: 'processing_started',
+      timestamp: Date.now(),
+      state: 'processing',
+      input_length: userInput.length
+    })" />
+  </onentry>
+</state>
+```
+
+## Best Practices
+
+1. **Use error events**: Handle `error.execution` and `error.communication` events
+2. **Validate inputs**: Use JSON Schema with `event:schema` attribute
+3. **Implement fallbacks**: Gracefully degrade to alternative providers
+4. **Retry with backoff**: Use exponential backoff for transient failures
+5. **Circuit breakers**: Prevent cascading failures with circuit breaker pattern
+6. **Log comprehensively**: Include context, timestamps, and datamodel state
+7. **Capture error context**: Store error details for debugging
+8. **Monitor in production**: Use systemd journald or log aggregation
+9. **Test error paths**: Ensure error handling works as expected
+10. **Document error states**: Clearly document error recovery paths
+
+## Next Steps
+
+- Learn about [Testing](/best-practices/testing) strategies for agents
+- Read [Performance](/best-practices/performance) optimization techniques
+- Explore [State Machines](/concepts/state-machines) for robust control flow
+- See [Event-Driven LLM](/concepts/event-driven-llm) for event patterns

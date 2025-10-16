@@ -1,159 +1,281 @@
 ---
 title: "Docker Deployment"
-description: "Containerize and deploy your ActiveFlow application with Docker"
+description: "Containerize and deploy AgentML agents with Docker"
 ---
 
 # Docker Deployment
 
-Run ActiveFlow in Docker containers for consistent, portable deployments.
+Package AgentML agents as Docker containers for portable, consistent deployments across any infrastructure.
 
-## Dockerfile
+## Basic Dockerfile
 
-Create a `Dockerfile` in your project root:
+**Dockerfile:**
+```dockerfile
+FROM debian:bookworm-slim
 
-\`\`\`dockerfile
-FROM node:20-alpine AS builder
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
+# Install agentmlx
+RUN curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+
+# Create app directory
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
+# Copy agent files
+COPY agents/ /app/agents/
 
-COPY . .
-RUN npm run build
+# Set environment
+ENV PATH="/root/.agentml/bin:${PATH}"
 
-FROM node:20-alpine AS runner
+# Expose port if agent uses HTTP I/O
+EXPOSE 8080
 
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-
-EXPOSE 3000
-
-CMD ["node", "dist/index.js"]
-\`\`\`
+# Run agent
+CMD ["agentmlx", "run", "agents/main.aml"]
+```
 
 ## Build and Run
 
-Build your Docker image:
+```bash
+# Build image
+docker build -t my-agent:latest .
 
-\`\`\`bash
-docker build -t activeflow-app .
-\`\`\`
-
-Run the container:
-
-\`\`\`bash
-docker run -p 3000:3000 \
+# Run container
+docker run -d \
+  --name my-agent \
   -e GEMINI_API_KEY=your_key \
-  -e DATABASE_URL=your_db_url \
-  activeflow-app
-\`\`\`
+  -p 8080:8080 \
+  my-agent:latest
+
+# View logs
+docker logs -f my-agent
+```
 
 ## Docker Compose
 
-For multi-container setups, use `docker-compose.yml`:
+For multi-agent systems:
 
-\`\`\`yaml
+**docker-compose.yml:**
+```yaml
 version: '3.8'
 
 services:
-  app:
+  orchestrator:
     build: .
-    ports:
-      - "3000:3000"
     environment:
-      - NODE_ENV=production
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - DATABASE_URL=postgresql://postgres:password@db:5432/activeflow
+      - WORKER_URL=http://worker:8080
+    ports:
+      - "8080:8080"
     depends_on:
-      - db
-    restart: unless-stopped
+      - worker
+      - memory
+    command: ["agentmlx", "run", "agents/orchestrator.aml"]
 
-  db:
+  worker:
+    build: .
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - MEMORY_DB=/data/memory.db
+    volumes:
+      - worker_data:/data
+    command: ["agentmlx", "run", "agents/worker.aml"]
+    deploy:
+      replicas: 3
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+
+  memory:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_DB=activeflow
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=agentml
+      - POSTGRES_PASSWORD=secure_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
 
 volumes:
+  worker_data:
+  ollama_models:
   postgres_data:
-\`\`\`
+```
 
-Run with:
+Start all services:
 
-\`\`\`bash
+```bash
 docker-compose up -d
-\`\`\`
+```
 
-## Environment Variables
+## Multi-Stage Build
 
-Use a `.env` file for local development:
+Optimize image size:
 
-\`\`\`env
-GEMINI_API_KEY=your_key_here
-DATABASE_URL=postgresql://postgres:password@localhost:5432/activeflow
-NODE_ENV=production
-\`\`\`
+**Dockerfile:**
+```dockerfile
+# Stage 1: Download agentmlx
+FROM debian:bookworm-slim AS installer
 
-Load it with Docker Compose:
+RUN apt-get update && apt-get install -y curl ca-certificates
+RUN curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
 
-\`\`\`bash
-docker-compose --env-file .env up
-\`\`\`
+# Stage 2: Runtime
+FROM debian:bookworm-slim
+
+# Copy only agentmlx binary
+COPY --from=installer /root/.agentml/bin/agentmlx /usr/local/bin/
+
+# Copy agent files
+WORKDIR /app
+COPY agents/ /app/agents/
+
+# Run as non-root
+RUN useradd -m -u 1000 agent && chown -R agent:agent /app
+USER agent
+
+CMD ["agentmlx", "run", "agents/main.aml"]
+```
 
 ## Health Checks
 
-Add health checks to your Dockerfile:
+Add health checks for container orchestration:
 
-\`\`\`dockerfile
+```dockerfile
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
-\`\`\`
+  CMD agentmlx validate agents/main.aml || exit 1
+```
 
-## Production Optimization
+Or with HTTP endpoint:
 
-- Use multi-stage builds to reduce image size
-- Run as non-root user for security
-- Use `.dockerignore` to exclude unnecessary files
-- Enable BuildKit for faster builds
-- Use specific version tags, not `latest`
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8080/health || exit 1
+```
 
-## Kubernetes
+## Kubernetes Deployment
 
-Deploy to Kubernetes with a deployment manifest:
-
-\`\`\`yaml
+**deployment.yaml:**
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: activeflow-app
+  name: agentml-app
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: activeflow
+      app: agentml
   template:
     metadata:
       labels:
-        app: activeflow
+        app: agentml
     spec:
       containers:
-      - name: app
-        image: activeflow-app:latest
+      - name: agent
+        image: my-agent:latest
         ports:
-        - containerPort: 3000
+        - containerPort: 8080
         env:
         - name: GEMINI_API_KEY
           valueFrom:
             secretKeyRef:
-              name: activeflow-secrets
+              name: agentml-secrets
               key: gemini-api-key
-\`\`\`
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentml-service
+spec:
+  selector:
+    app: agentml
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: LoadBalancer
+```
+
+Deploy:
+
+```bash
+kubectl apply -f deployment.yaml
+```
+
+## Secrets Management
+
+Store API keys securely:
+
+```bash
+# Create secret
+kubectl create secret generic agentml-secrets \
+  --from-literal=gemini-api-key=your_key_here
+
+# Or from file
+kubectl create secret generic agentml-secrets \
+  --from-env-file=.env
+```
+
+## Best Practices
+
+1. **Use multi-stage builds**: Minimize image size
+2. **Run as non-root**: Improve security
+3. **Set resource limits**: Prevent resource exhaustion
+4. **Use .dockerignore**: Exclude unnecessary files
+5. **Tag images properly**: Use semantic versioning
+6. **Health checks**: Enable container orchestration features
+7. **Log to stdout**: Enable log aggregation
+8. **Mount volumes**: Persist memory database if needed
+
+**.dockerignore:**
+```
+.git
+node_modules
+*.log
+.env
+README.md
+docs/
+```
+
+## Monitoring
+
+Use Prometheus for metrics:
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'agentml-agents'
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names: ['default']
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        regex: agentml
+        action: keep
+```
+
+## Next Steps
+
+- Try [Vercel Deployment](/deployment/vercel) for serverless
+- Learn about [Self-Hosted](/deployment/self-hosted) deployment
+- Read [Performance](/best-practices/performance) for optimization

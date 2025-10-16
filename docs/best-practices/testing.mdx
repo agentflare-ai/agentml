@@ -1,190 +1,366 @@
 ---
 title: "Testing"
-description: "Testing strategies for ActiveFlow applications"
+description: "Testing strategies for AgentML agents"
 ---
 
 # Testing
 
-Comprehensive testing ensures your ActiveFlow application works reliably.
+Comprehensive testing ensures your AgentML agents work reliably. AgentML's SCXML foundation enables systematic testing of state machines, events, and transitions.
 
-## Unit Testing
+## Validation Testing
 
-Test individual functions and components:
+Validate agent syntax before deployment:
 
-\`\`\`typescript
-import { describe, it, expect } from 'vitest'
-import { processDocument } from './processor'
+```bash
+# Validate agent file
+agentmlx validate agent.aml
 
-describe('processDocument', () => {
-  it('should process valid document', async () => {
-    const doc = `
-      import: gemini
-      
-      prompt: Summarize this text
-      ---
-      This is a test document.
-    `
-    
-    const result = await processDocument(doc)
-    expect(result).toBeDefined()
-    expect(result.output).toContain('summary')
-  })
+# Validate and show details
+agentmlx validate agent.aml --verbose
 
-  it('should throw on invalid document', async () => {
-    const doc = 'invalid document'
-    await expect(processDocument(doc)).rejects.toThrow()
-  })
-})
-\`\`\`
+# Validate all agents
+find agents/ -name "*.aml" -exec agentmlx validate {} \;
+```
+
+Expected output:
+```
+✓ Agent is valid SCXML
+✓ All namespaces are registered
+✓ Datamodel expressions are valid
+✓ Event schemas are valid JSON Schema
+```
+
+## Unit Testing States
+
+Test individual states with targeted events:
+
+**test-agent.aml:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <datamodel>
+    <data id="result" expr="''" />
+  </datamodel>
+
+  <state id="parse_input">
+    <onentry>
+      <assign location="result" expr="userInput.trim().toLowerCase()" />
+      <raise event="parse.complete" />
+    </onentry>
+
+    <transition event="parse.complete" target="complete" />
+  </state>
+
+  <state id="complete">
+    <onentry>
+      <log expr="'Result: ' + result" />
+    </onentry>
+  </state>
+</agent>
+```
+
+**test.sh:**
+```bash
+#!/bin/bash
+
+# Test valid input
+result=$(agentmlx run test-agent.aml --event '{"name": "start", "data": {"userInput": "  HELLO  "}}')
+echo "$result" | grep -q "hello" && echo "✓ Parse test passed" || echo "✗ Parse test failed"
+
+# Test empty input
+result=$(agentmlx run test-agent.aml --event '{"name": "start", "data": {"userInput": ""}}')
+echo "$result" | grep -q '""' && echo "✓ Empty input test passed" || echo "✗ Empty input test failed"
+```
 
 ## Integration Testing
 
-Test component interactions:
+Test multi-state workflows:
 
-\`\`\`typescript
-import { describe, it, expect, beforeEach } from 'vitest'
-import { createTestContext } from './test-utils'
+**integration-test.aml:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:memory="github.com/agentflare-ai/agentml/memory">
 
-describe('Document Processing Pipeline', () => {
-  let context
+  <datamodel>
+    <data id="testPassed" expr="false" />
+  </datamodel>
 
-  beforeEach(() => {
-    context = createTestContext()
-  })
+  <state id="store_data">
+    <onentry>
+      <memory:put key="test_key" expr="'test_value'" />
+      <raise event="stored" />
+    </onentry>
 
-  it('should process document through full pipeline', async () => {
-    const doc = `
-      import: gemini
-      import: memory
-      
-      prompt: Process this
-      ---
-      Test content
-    `
-    
-    const result = await context.pipeline.process(doc)
-    
-    expect(result.status).toBe('success')
-    expect(context.memory.get('last_result')).toBeDefined()
-  })
-})
-\`\`\`
+    <transition event="stored" target="retrieve_data" />
+  </state>
+
+  <state id="retrieve_data">
+    <onentry>
+      <memory:get key="test_key" location="retrieved" />
+    </onentry>
+
+    <transition target="verify" />
+  </state>
+
+  <state id="verify">
+    <onentry>
+      <assign location="testPassed" expr="retrieved === 'test_value'" />
+      <log expr="testPassed ? '✓ Integration test passed' : '✗ Integration test failed'" />
+    </onentry>
+
+    <transition target="final" />
+  </state>
+</agent>
+```
+
+Run integration tests:
+```bash
+agentmlx run integration-test.aml
+```
 
 ## Mocking LLM Calls
 
-Mock external API calls for faster, deterministic tests:
+Create test agents without LLM dependencies:
 
-\`\`\`typescript
-import { vi } from 'vitest'
-import { GeminiExtension } from 'activeflow/extensions/gemini'
+**mock-agent.aml:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-vi.mock('activeflow/extensions/gemini', () => ({
-  GeminiExtension: vi.fn().mockImplementation(() => ({
-    process: vi.fn().mockResolvedValue({
-      output: 'Mocked response',
-      tokens: 100
-    })
-  }))
-}))
+  <datamodel>
+    <!-- Mock LLM responses for testing -->
+    <data id="mockResponses" expr="{
+      'hello': 'Hi there! How can I help?',
+      'weather': 'The weather is sunny today.',
+      'default': 'I can help with that.'
+    }" />
+  </datamodel>
 
-describe('with mocked LLM', () => {
-  it('should use mocked response', async () => {
-    const result = await processDocument(doc)
-    expect(result.output).toBe('Mocked response')
-  })
-})
-\`\`\`
+  <state id="process_input">
+    <onentry>
+      <!-- Simulate LLM response with mock data -->
+      <assign location="response" expr="mockResponses[userInput] || mockResponses['default']" />
+      <raise event="action.response" />
+    </onentry>
 
-## Snapshot Testing
+    <transition event="action.response" target="respond">
+      <log expr="'Mock response: ' + response" />
+    </transition>
+  </state>
 
-Test document output consistency:
+  <state id="respond">
+    <onentry>
+      <log expr="response" />
+    </onentry>
+    <transition target="final" />
+  </state>
+</agent>
+```
 
-\`\`\`typescript
-import { describe, it, expect } from 'vitest'
+## State Machine Testing
 
-describe('Document Output', () => {
-  it('should match snapshot', async () => {
-    const doc = `
-      import: gemini
-      prompt: Say hello
-    `
-    
-    const result = await processDocument(doc)
-    expect(result).toMatchSnapshot()
-  })
-})
-\`\`\`
+Test state transitions systematically:
 
-## End-to-End Testing
+**state-test.aml:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-Test complete user workflows with Playwright:
+  <datamodel>
+    <data id="stateLog" expr="[]" />
+  </datamodel>
 
-\`\`\`typescript
-import { test, expect } from '@playwright/test'
+  <state id="idle">
+    <onentry>
+      <assign location="stateLog" expr="stateLog.concat(['idle'])" />
+    </onentry>
 
-test('process document via UI', async ({ page }) => {
-  await page.goto('http://localhost:3000')
-  
-  await page.fill('#document-input', `
-    import: gemini
-    prompt: Hello world
-  `)
-  
-  await page.click('#process-button')
-  
-  await expect(page.locator('#result')).toContainText('Hello')
-})
-\`\`\`
+    <transition event="start" target="processing" />
+  </state>
+
+  <state id="processing">
+    <onentry>
+      <assign location="stateLog" expr="stateLog.concat(['processing'])" />
+      <raise event="done" />
+    </onentry>
+
+    <transition event="done" target="complete" />
+  </state>
+
+  <state id="complete">
+    <onentry>
+      <assign location="stateLog" expr="stateLog.concat(['complete'])" />
+      <log expr="'State transitions: ' + stateLog.join(' -> ')" />
+
+      <!-- Verify expected state sequence -->
+      <assign location="testPassed" expr="
+        stateLog.length === 3 &&
+        stateLog[0] === 'idle' &&
+        stateLog[1] === 'processing' &&
+        stateLog[2] === 'complete'
+      " />
+
+      <log expr="testPassed ? '✓ State transition test passed' : '✗ State transition test failed'" />
+    </onentry>
+
+    <transition target="final" />
+  </state>
+</agent>
+```
+
+## Event Testing
+
+Test event handling and data:
+
+**event-test.aml:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <state id="await_event">
+    <transition event="user.message" target="validate_event">
+      <assign location="eventData" expr="_event.data" />
+    </transition>
+  </state>
+
+  <state id="validate_event">
+    <onentry>
+      <!-- Test event structure -->
+      <assign location="hasMessage" expr="'message' in eventData" />
+      <assign location="hasTimestamp" expr="'timestamp' in eventData" />
+
+      <assign location="testPassed" expr="hasMessage && hasTimestamp" />
+
+      <log expr="testPassed ?
+        '✓ Event structure test passed' :
+        '✗ Event structure test failed: missing ' +
+        (!hasMessage ? 'message' : 'timestamp')" />
+    </onentry>
+
+    <transition target="final" />
+  </state>
+</agent>
+```
+
+Test with events:
+```bash
+agentmlx run event-test.aml --event '{
+  "name": "user.message",
+  "data": {
+    "message": "Hello",
+    "timestamp": 1234567890
+  }
+}'
+```
+
+## Schema Validation Testing
+
+Test JSON Schema validation:
+
+**schema-test.aml:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <datamodel>
+    <data id="validCount" expr="0" />
+    <data id="invalidCount" expr="0" />
+  </datamodel>
+
+  <state id="await_response">
+    <!-- Valid schema match -->
+    <transition
+      event="action.response"
+      event:schema='{
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "age": {"type": "number"}
+        },
+        "required": ["name", "age"]
+      }'
+      target="valid_response">
+      <assign location="validCount" expr="validCount + 1" />
+    </transition>
+
+    <!-- Invalid schema -->
+    <transition event="action.response" target="invalid_response">
+      <assign location="invalidCount" expr="invalidCount + 1" />
+    </transition>
+  </state>
+
+  <state id="valid_response">
+    <onentry>
+      <log expr="'✓ Schema validation passed: ' + validCount" />
+    </onentry>
+    <transition target="final" />
+  </state>
+
+  <state id="invalid_response">
+    <onentry>
+      <log expr="'✗ Schema validation failed: ' + invalidCount" />
+    </onentry>
+    <transition target="final" />
+  </state>
+</agent>
+```
 
 ## Performance Testing
 
-Measure processing performance:
+Measure agent execution time:
 
-\`\`\`typescript
-import { describe, it, expect } from 'vitest'
+```bash
+#!/bin/bash
 
-describe('Performance', () => {
-  it('should process document within time limit', async () => {
-    const start = Date.now()
-    await processDocument(doc)
-    const duration = Date.now() - start
-    
-    expect(duration).toBeLessThan(5000) // 5 seconds
-  })
+echo "Performance test: 10 iterations"
 
-  it('should handle concurrent requests', async () => {
-    const docs = Array(10).fill(testDoc)
-    const start = Date.now()
-    
-    await Promise.all(docs.map(doc => processDocument(doc)))
-    
-    const duration = Date.now() - start
-    expect(duration).toBeLessThan(10000)
-  })
-})
-\`\`\`
+total_time=0
+iterations=10
 
-## Test Coverage
+for i in $(seq 1 $iterations); do
+  start=$(date +%s%N)
+  agentmlx run agent.aml --event '{"name": "start"}' > /dev/null
+  end=$(date +%s%N)
 
-Aim for high test coverage:
+  duration=$((($end - $start) / 1000000)) # Convert to ms
+  total_time=$(($total_time + $duration))
 
-\`\`\`bash
-npm run test:coverage
-\`\`\`
+  echo "Iteration $i: ${duration}ms"
+done
 
-Target coverage goals:
-- Statements: 80%+
-- Branches: 75%+
-- Functions: 80%+
-- Lines: 80%+
+avg_time=$(($total_time / $iterations))
+echo "Average execution time: ${avg_time}ms"
+
+# Assert performance threshold
+if [ $avg_time -lt 1000 ]; then
+  echo "✓ Performance test passed"
+else
+  echo "✗ Performance test failed: ${avg_time}ms exceeds 1000ms threshold"
+fi
+```
+
+## SCXML Conformance Testing
+
+AgentML passes 185/193 W3C SCXML tests (95.9%). Verify conformance:
+
+```bash
+# Run SCXML conformance tests
+agentmlx test --conformance
+
+# Test specific features
+agentmlx test --conformance --feature datamodel
+agentmlx test --conformance --feature transitions
+```
 
 ## Continuous Integration
 
-Run tests in CI/CD:
+Set up CI/CD testing:
 
-\`\`\`yaml
-# .github/workflows/test.yml
-name: Tests
+**.github/workflows/test.yml:**
+```yaml
+name: Test AgentML Agents
 
 on: [push, pull_request]
 
@@ -192,29 +368,83 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-      - run: npm ci
-      - run: npm test
-      - run: npm run test:coverage
-\`\`\`
+      - uses: actions/checkout@v4
+
+      - name: Install agentmlx
+        run: curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+
+      - name: Add to PATH
+        run: echo "$HOME/.agentml/bin" >> $GITHUB_PATH
+
+      - name: Validate agents
+        run: |
+          for agent in agents/*.aml; do
+            echo "Validating $agent"
+            agentmlx validate "$agent"
+          done
+
+      - name: Run tests
+        run: |
+          for test in tests/*.aml; do
+            echo "Running $test"
+            agentmlx run "$test"
+          done
+
+      - name: Performance tests
+        run: bash tests/performance.sh
+```
 
 ## Test Organization
 
-Structure tests logically:
+Structure your tests:
 
-\`\`\`
-tests/
-├── unit/
-│   ├── parser.test.ts
-│   ├── interpreter.test.ts
-│   └── extensions/
-├── integration/
-│   ├── pipeline.test.ts
-│   └── state-machine.test.ts
-└── e2e/
-    ├── user-flows.spec.ts
-    └── api.spec.ts
-\`\`\`
+```
+project/
+├── agents/
+│   ├── chatbot.aml
+│   └── workflow.aml
+├── tests/
+│   ├── unit/
+│   │   ├── parse-test.aml
+│   │   ├── validate-test.aml
+│   │   └── transform-test.aml
+│   ├── integration/
+│   │   ├── memory-test.aml
+│   │   ├── llm-test.aml
+│   │   └── multi-state-test.aml
+│   ├── e2e/
+│   │   └── full-workflow-test.aml
+│   └── performance/
+│       └── benchmark.sh
+└── .github/
+    └── workflows/
+        └── test.yml
+```
+
+## Test Coverage Goals
+
+Target coverage for production agents:
+- **States**: 100% - All states should be reachable
+- **Transitions**: 90%+ - All critical paths covered
+- **Events**: 80%+ - All expected events tested
+- **Error paths**: 100% - All error handlers validated
+
+## Best Practices
+
+1. **Validate early**: Use `agentmlx validate` before deploying
+2. **Test states individually**: Isolate state logic for unit tests
+3. **Mock LLM calls**: Use mock data to avoid API costs in tests
+4. **Test event schemas**: Verify JSON Schema validation works
+5. **Measure performance**: Track execution time and token usage
+6. **Use CI/CD**: Automate testing on every commit
+7. **Test error paths**: Ensure error handling works correctly
+8. **Version test data**: Track test inputs and expected outputs
+9. **Document tests**: Explain what each test validates
+10. **Run conformance tests**: Verify SCXML compliance
+
+## Next Steps
+
+- Learn about [Error Handling](/best-practices/error-handling) strategies
+- Read [Performance](/best-practices/performance) optimization techniques
+- Explore [State Machines](/concepts/state-machines) for testable designs
+- See [Event-Driven LLM](/concepts/event-driven-llm) for event testing patterns

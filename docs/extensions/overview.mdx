@@ -1,313 +1,364 @@
 ---
 title: "Extensions Overview"
-description: "Extending ActiveDocs with custom functionality"
+description: "Extending AgentML with namespace-based extensions for LLM, memory, and I/O operations"
 ---
 
 # Extensions Overview
 
-ActiveDocs is designed to be extensible. Add custom functionality through extensions that integrate seamlessly with the core framework.
+AgentML extensions are namespaces that add custom actions to your agents. They integrate seamlessly through the `import:prefix="uri"` directive, providing modular capabilities without modifying core SCXML functionality.
 
-## What are Extensions?
+## What Are Extensions?
 
-Extensions are modular packages that add new capabilities to ActiveDocs without modifying the core framework.
+Extensions in AgentML are namespace implementations that provide XML actions for your agents:
 
-\`\`\`typescript
-import: activedocs/core
-import: activedocs/extensions/gemini
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:memory="github.com/agentflare-ai/agentml/memory">
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [geminiExtension()]
-})
-\`\`\`
+  <state id="process">
+    <onentry>
+      <!-- Use Gemini extension -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="userInput" />
+
+      <!-- Use Memory extension -->
+      <memory:put key="last_input" expr="userInput" />
+    </onentry>
+  </state>
+</agent>
+```
 
 ## Official Extensions
 
-ActiveDocs provides several official extensions:
-
 ### Gemini Extension
 
-Integrate Google's Gemini models:
+Google Gemini LLM integration:
 
-\`\`\`typescript
-import: activedocs/extensions/gemini
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    geminiExtension({
-      apiKey: process.env.GEMINI_API_KEY,
-      model: 'gemini-pro'
-    })
-  ]
-})
-\`\`\`
+  <state id="generate">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Explain quantum computing'" />
+    </onentry>
+
+    <transition event="action.response" target="process" />
+  </state>
+</agent>
+```
+
+**Environment setup:**
+```bash
+export GEMINI_API_KEY=your_key_here
+agentmlx run agent.aml
+```
 
 [Learn more about Gemini Extension →](/extensions/gemini)
 
-### Memory Extension
-
-Add persistent memory to your documents:
-
-\`\`\`typescript
-import: activedocs/extensions/memory
-
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    memoryExtension({
-      storage: 'localStorage',
-      ttl: 3600000 // 1 hour
-    })
-  ]
-})
-\`\`\`
-
-[Learn more about Memory Extension →](/extensions/memory)
-
 ### Ollama Extension
 
-Use local Ollama models:
+Local LLM integration via Ollama:
 
-\`\`\`typescript
-import: activedocs/extensions/ollama
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:ollama="github.com/agentflare-ai/agentml/ollama">
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    ollamaExtension({
-      baseUrl: 'http://localhost:11434',
-      model: 'llama2'
-    })
-  ]
-})
-\`\`\`
+  <state id="classify">
+    <onentry>
+      <ollama:generate
+        model="llama2"
+        location="_event"
+        promptexpr="'Classify: ' + userInput" />
+    </onentry>
+
+    <transition event="action.response" target="handle_classification" />
+  </state>
+</agent>
+```
+
+**Prerequisites:**
+```bash
+# Install Ollama
+curl https://ollama.ai/install.sh | sh
+
+# Pull model
+ollama pull llama2
+
+# Run agent
+agentmlx run agent.aml
+```
 
 [Learn more about Ollama Extension →](/extensions/ollama)
 
+### Memory Extension
+
+Vector search and graph database powered by sqlite-graph:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:memory="github.com/agentflare-ai/agentml/memory">
+
+  <state id="store_and_search">
+    <onentry>
+      <!-- Generate embedding -->
+      <memory:embed location="embedding" expr="textContent" />
+
+      <!-- Vector search -->
+      <memory:search location="results" expr="queryEmbedding" limit="5" />
+
+      <!-- Graph query -->
+      <memory:graph-query location="graph_results">
+        <query>
+          MATCH (p:Person)-[:KNOWS]->(friend)
+          RETURN p.name, friend.name
+        </query>
+      </memory:graph-query>
+    </onentry>
+  </state>
+</agent>
+```
+
+[Learn more about Memory Extension →](/extensions/memory)
+
+### Stdin Extension
+
+Console I/O for terminal agents:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:stdin="github.com/agentflare-ai/agentml/stdin">
+
+  <state id="interactive">
+    <onentry>
+      <stdin:write expr="'Bot: How can I help?'" />
+      <stdin:read location="userInput" />
+    </onentry>
+
+    <transition event="stdin.received" target="process" />
+  </state>
+</agent>
+```
+
 ## Extension Architecture
 
-Extensions follow a standard architecture:
+Extensions are namespaces that:
+1. Register custom XML actions
+2. Execute during state machine transitions
+3. Raise events back to the agent
+4. Manage external resources (LLM APIs, databases, I/O)
 
-\`\`\`typescript
-import: activedocs/core
+### Event Flow
 
-interface Extension {
-  name: string
-  version: string
-  init: (document: Document) => void
-  destroy?: () => void
-}
+```xml
+<state id="example">
+  <onentry>
+    <!-- 1. Action executes -->
+    <gemini:generate model="gemini-2.0-flash-exp" location="_event" promptexpr="'Hello'" />
+  </onentry>
 
-const myExtension = (): Extension => ({
-  name: 'my-extension',
-  version: '1.0.0',
-  
-  init: (document) => {
-    // Add functionality to document
-    document.on('custom:event', handleEvent)
-  },
-  
-  destroy: () => {
-    // Clean up resources
-  }
-})
-\`\`\`
+  <!-- 2. Extension raises event -->
+  <transition event="action.response" target="success">
+    <!-- 3. Access event data -->
+    <assign location="result" expr="_event.data.message" />
+  </transition>
+
+  <!-- 4. Handle errors -->
+  <transition event="action.error" target="error_handler" />
+</state>
+```
+
+## Multiple Extensions
+
+Combine extensions for powerful functionality:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini"
+       import:ollama="github.com/agentflare-ai/agentml/ollama"
+       import:memory="github.com/agentflare-ai/agentml/memory"
+       import:stdin="github.com/agentflare-ai/agentml/stdin">
+
+  <state id="interactive">
+    <onentry>
+      <stdin:read location="userInput" />
+    </onentry>
+
+    <transition event="stdin.received" target="classify" />
+  </state>
+
+  <state id="classify">
+    <onentry>
+      <!-- Fast local classification -->
+      <ollama:generate model="llama2" location="_event" promptexpr="'Classify: ' + userInput" />
+    </onentry>
+
+    <transition event="action.response"
+                cond="_event.data.category === 'complex'"
+                target="deep_processing" />
+
+    <transition event="action.response" target="simple_processing" />
+  </state>
+
+  <state id="deep_processing">
+    <onentry>
+      <!-- Search memory for context -->
+      <memory:embed location="embedding" expr="userInput" />
+      <memory:search location="context" expr="embedding" limit="3" />
+
+      <!-- Generate with Gemini and context -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Context: ' + JSON.stringify(context) + '\nQuestion: ' + userInput" />
+    </onentry>
+
+    <transition event="action.response" target="respond" />
+  </state>
+
+  <state id="respond">
+    <onentry>
+      <stdin:write expr="'Bot: ' + response" />
+      <memory:put key="last_response" expr="response" />
+    </onentry>
+
+    <transition target="interactive" />
+  </state>
+</agent>
+```
 
 ## Creating Custom Extensions
 
-Build your own extensions:
+Build custom namespaces in Go:
 
-### Basic Extension
+**myextension/actions.go:**
+```go
+package myextension
 
-\`\`\`typescript
-import: activedocs/core
+import (
+    "github.com/agentflare-ai/agentmlx/pkg/scxml"
+)
 
-const loggerExtension = (options = {}) => ({
-  name: 'logger',
-  version: '1.0.0',
-  
-  init: (document) => {
-    document.on('*', (event) => {
-      console.log(`[${document.namespace}]`, event.type, event.data)
-    })
-  }
-})
-
-// Use it
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [loggerExtension()]
-})
-\`\`\`
-
-### Advanced Extension
-
-\`\`\`typescript
-import: activedocs/core
-
-const analyticsExtension = (options) => {
-  let analytics = null
-  
-  return {
-    name: 'analytics',
-    version: '1.0.0',
-    
-    init: (document) => {
-      // Initialize analytics
-      analytics = initAnalytics(options.apiKey)
-      
-      // Track events
-      document.on('llm:complete', (event) => {
-        analytics.track('llm_completion', {
-          namespace: document.namespace,
-          tokens: event.usage.total,
-          duration: event.duration
-        })
-      })
-      
-      // Add custom methods
-      document.trackEvent = (name, data) => {
-        analytics.track(name, data)
-      }
-    },
-    
-    destroy: () => {
-      analytics?.close()
-    }
-  }
+type ProcessAction struct {
+    Model    string `xml:"model,attr"`
+    Location string `xml:"location,attr"`
+    Input    string `xml:"inputexpr,attr"`
 }
-\`\`\`
 
-## Extension Lifecycle
+func (a *ProcessAction) Execute(ctx *scxml.Context) error {
+    // Get input from datamodel
+    input := ctx.EvalExpression(a.Input)
 
-Extensions go through several lifecycle stages:
+    // Process with custom logic
+    result := customProcess(a.Model, input)
 
-### 1. Registration
+    // Store result
+    ctx.SetVariable(a.Location, result)
 
-\`\`\`typescript
-import: activedocs/core
-
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    extension1(),
-    extension2(),
-    extension3()
-  ]
-})
-\`\`\`
-
-### 2. Initialization
-
-\`\`\`typescript
-// Extensions are initialized in order
-extension1.init(document)
-extension2.init(document)
-extension3.init(document)
-\`\`\`
-
-### 3. Active
-
-\`\`\`typescript
-// Extensions are active and responding to events
-document.emit('custom:event', { data: 'value' })
-\`\`\`
-
-### 4. Cleanup
-
-\`\`\`typescript
-// Extensions are destroyed when document is destroyed
-document.destroy()
-// Calls extension1.destroy(), extension2.destroy(), etc.
-\`\`\`
-
-## Extension Communication
-
-Extensions can communicate with each other:
-
-\`\`\`typescript
-import: activedocs/core
-
-const extension1 = () => ({
-  name: 'extension1',
-  version: '1.0.0',
-  
-  init: (document) => {
-    document.on('ext1:ready', () => {
-      document.emit('ext1:initialized', { ready: true })
+    // Raise completion event
+    ctx.RaiseEvent("custom.complete", map[string]interface{}{
+        "result": result,
     })
-  }
-})
 
-const extension2 = () => ({
-  name: 'extension2',
-  version: '1.0.0',
-  
-  init: (document) => {
-    document.on('ext1:initialized', (event) => {
-      console.log('Extension 1 is ready:', event.ready)
+    return nil
+}
+
+func Register() {
+    scxml.RegisterNamespace("github.com/example/myextension", map[string]interface{}{
+        "process": &ProcessAction{},
     })
-  }
-})
-\`\`\`
+}
+```
+
+**Usage:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:custom="github.com/example/myextension">
+
+  <state id="use_custom">
+    <onentry>
+      <custom:process
+        model="mymodel"
+        location="_event"
+        inputexpr="userInput" />
+    </onentry>
+
+    <transition event="custom.complete" target="process_result" />
+  </state>
+</agent>
+```
+
+[Learn more about Custom Extensions →](/extensions/custom)
 
 ## Extension Configuration
 
-Configure extensions with options:
+Configure extensions via environment variables or command-line:
 
-\`\`\`typescript
-import: activedocs/core
+```bash
+# Gemini API key
+export GEMINI_API_KEY=your_key
 
-const configurableExtension = (options = {}) => {
-  const config = {
-    enabled: true,
-    debug: false,
-    ...options
-  }
-  
-  return {
-    name: 'configurable',
-    version: '1.0.0',
-    
-    init: (document) => {
-      if (!config.enabled) return
-      
-      if (config.debug) {
-        console.log('Extension initialized with config:', config)
-      }
-      
-      // Use configuration
-    }
-  }
-}
+# Ollama server URL
+export OLLAMA_BASE_URL=http://localhost:11434
 
-// Use with custom config
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    configurableExtension({
-      enabled: true,
-      debug: true,
-      customOption: 'value'
-    })
-  ]
-})
-\`\`\`
+# Memory database path
+export AGENTML_MEMORY_DB=/path/to/memory.db
+
+# Run agent
+agentmlx run agent.aml
+```
+
+## Available Extensions
+
+| Extension | Purpose | Status |
+|-----------|---------|--------|
+| **gemini** | Google Gemini LLM integration | ✅ Stable |
+| **ollama** | Local LLM via Ollama | ✅ Stable |
+| **memory** | Vector search + graph database | ✅ Stable |
+| **stdin** | Console I/O | ✅ Stable |
+| **http** | HTTP I/O Processor | ✅ Stable |
+| **websocket** | WebSocket I/O Processor | 🚧 Beta |
 
 ## Best Practices
 
-1. **Follow naming conventions** - Use descriptive extension names
-2. **Version your extensions** - Use semantic versioning
-3. **Document your API** - Make extension usage clear
-4. **Handle errors gracefully** - Don't crash the host document
-5. **Clean up resources** - Implement destroy method
-6. **Test thoroughly** - Unit test extension functionality
+1. **Import only what you need**: Don't import unused namespaces
+2. **Handle errors**: Add error transitions for all extension actions
+3. **Use schemas**: Define `event:schema` for extension-generated events
+4. **Monitor resources**: Track API usage, memory consumption
+5. **Test thoroughly**: Validate extension behavior in all states
+6. **Document dependencies**: Note required environment variables
+7. **Version carefully**: Pin extension versions for stability
+8. **Secure credentials**: Never hardcode API keys in agent files
+
+## Extension Registry (Planned)
+
+Future: Centralized registry for discovering extensions:
+
+```bash
+# Search for extensions
+agentmlx extension search stripe
+
+# Install extension
+agentmlx extension install github.com/community/stripe
+
+# List installed
+agentmlx extension list
+
+# Update extension
+agentmlx extension update github.com/community/stripe
+```
 
 ## Next Steps
 
-- Explore [Gemini Extension](/extensions/gemini)
-- Learn about [Memory Extension](/extensions/memory)
-- Try [Ollama Extension](/extensions/ollama)
-- Build [Custom Extensions](/extensions/custom)
-\`\`\`
+- Explore [Gemini Extension](/extensions/gemini) for cloud LLM integration
+- Learn about [Ollama Extension](/extensions/ollama) for local models
+- Discover [Memory Extension](/extensions/memory) for vector search
+- Build [Custom Extensions](/extensions/custom) for specialized needs
+- Read [Namespace System](/architecture/namespace-system) for technical details

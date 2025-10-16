@@ -1,337 +1,286 @@
 ---
 title: "Ollama Extension"
-description: "Use local Ollama models with ActiveDocs"
+description: "Use local LLM models with AgentML via Ollama"
 ---
 
 # Ollama Extension
 
-The Ollama extension enables ActiveDocs to use locally-hosted Ollama models for LLM operations.
-
-## Installation
-
-\`\`\`bash
-npm install @activedocs/extension-ollama
-\`\`\`
+The Ollama namespace (`github.com/agentflare-ai/agentml/ollama`) enables AgentML agents to use locally-hosted Ollama models, providing privacy and cost-effective LLM capabilities.
 
 ## Prerequisites
 
-Install and run Ollama locally:
+Install and run Ollama:
 
-\`\`\`bash
+```bash
 # Install Ollama
 curl https://ollama.ai/install.sh | sh
 
 # Pull a model
 ollama pull llama2
 
-# Start Ollama server
+# Start Ollama server (runs on http://localhost:11434 by default)
 ollama serve
-\`\`\`
+```
 
 ## Basic Usage
 
-\`\`\`typescript
-import: activedocs/core
-import: activedocs/extensions/ollama
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:ollama="github.com/agentflare-ai/agentml/ollama">
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    ollamaExtension({
-      baseUrl: 'http://localhost:11434',
-      model: 'llama2'
-    })
-  ]
-})
+  <datamodel>
+    <data id="userInput" expr="''" />
+    <data id="response" expr="''" />
+  </datamodel>
 
-// Use Ollama for prompts
-const response = await document.prompt('Explain machine learning')
-\`\`\`
+  <state id="process">
+    <onentry>
+      <ollama:generate
+        model="llama2"
+        location="_event"
+        promptexpr="'You are a helpful assistant. User: ' + userInput" />
+    </onentry>
 
-## Configuration
+    <transition event="action.response" target="complete">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
 
-Configure the Ollama extension:
+    <transition event="action.error" target="error_handler" />
+  </state>
+</agent>
+```
 
-\`\`\`typescript
-import: activedocs/extensions/ollama
+## Actions
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    ollamaExtension({
-      // Ollama server URL
-      baseUrl: 'http://localhost:11434',
-      
-      // Model to use
-      model: 'llama2',
-      
-      // Generation options
-      options: {
-        temperature: 0.7,
-        top_k: 40,
-        top_p: 0.9,
-        num_predict: 128
-      }
-    })
-  ]
-})
-\`\`\`
+### `<ollama:generate>`
+
+Generate text with local Ollama models:
+
+**Attributes:**
+- `model` (required) - Model name (e.g., "llama2", "mistral", "codellama")
+- `location` (required) - Variable to store event reference
+- `promptexpr` (required) - ECMAScript expression for the prompt
+
+**Events raised:**
+- `action.response` - Generation completed
+  - `_event.data.message` - Generated text
+- `action.error` - Generation failed
+  - `_event.data.error` - Error details
 
 ## Available Models
 
-Use different Ollama models:
-
 ### Llama 2
 
-\`\`\`typescript
-import: activedocs/extensions/ollama
+Meta's open-source model:
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    ollamaExtension({
-      baseUrl: 'http://localhost:11434',
-      model: 'llama2' // or 'llama2:13b', 'llama2:70b'
-    })
-  ]
-})
-\`\`\`
+```bash
+# Pull different sizes
+ollama pull llama2        # 7B parameters
+ollama pull llama2:13b    # 13B parameters
+ollama pull llama2:70b    # 70B parameters
+```
+
+```xml
+<ollama:generate
+  model="llama2"
+  location="_event"
+  promptexpr="userQuery" />
+```
 
 ### Mistral
 
-\`\`\`typescript
-import: activedocs/extensions/ollama
+High-performance open model:
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    ollamaExtension({
-      baseUrl: 'http://localhost:11434',
-      model: 'mistral'
-    })
-  ]
-})
-\`\`\`
+```bash
+ollama pull mistral
+```
+
+```xml
+<ollama:generate
+  model="mistral"
+  location="_event"
+  promptexpr="userQuery" />
+```
 
 ### Code Llama
 
-\`\`\`typescript
-import: activedocs/extensions/ollama
+Specialized for code generation:
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    ollamaExtension({
-      baseUrl: 'http://localhost:11434',
-      model: 'codellama'
-    })
-  ]
-})
-\`\`\`
+```bash
+ollama pull codellama
+```
+
+```xml
+<ollama:generate
+  model="codellama"
+  location="_event"
+  promptexpr="'Write a Python function that: ' + task" />
+```
 
 ### Custom Models
 
-\`\`\`typescript
-import: activedocs/extensions/ollama
+Use your own fine-tuned models:
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    ollamaExtension({
-      baseUrl: 'http://localhost:11434',
-      model: 'my-custom-model'
-    })
-  ]
-})
-\`\`\`
+```bash
+# Create Modelfile
+cat > Modelfile <<EOF
+FROM llama2
+PARAMETER temperature 0.8
+SYSTEM "You are a specialized assistant for..."
+EOF
 
-## Streaming
+# Build custom model
+ollama create my-custom-model -f Modelfile
 
-Stream responses from Ollama:
+# Pull from registry
+ollama pull username/model-name
+```
 
-\`\`\`typescript
-import: activedocs/extensions/ollama
+```xml
+<ollama:generate
+  model="my-custom-model"
+  location="_event"
+  promptexpr="userQuery" />
+```
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    ollamaExtension({
-      baseUrl: 'http://localhost:11434',
-      model: 'llama2'
-    })
-  ]
-})
+## Hybrid: Local + Cloud
 
-document.stream('Write a poem about nature', {
-  onToken: (token) => {
-    process.stdout.write(token)
-  },
-  onComplete: (content) => {
-    console.log('\n\nComplete!')
-  }
-})
-\`\`\`
+Use Ollama for classification, Gemini for generation:
 
-## Generation Options
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:ollama="github.com/agentflare-ai/agentml/ollama"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-Control generation behavior:
+  <state id="classify">
+    <!-- Fast local classification -->
+    <onentry>
+      <ollama:generate
+        model="llama2"
+        location="_event"
+        promptexpr="'Classify this as simple or complex: ' + userInput" />
+    </onentry>
 
-\`\`\`typescript
-import: activedocs/extensions/ollama
+    <transition event="action.response"
+                cond="_event.data.message.includes('complex')"
+                target="cloud_generation" />
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    ollamaExtension({
-      baseUrl: 'http://localhost:11434',
-      model: 'llama2',
-      options: {
-        // Temperature: 0.0 to 1.0
-        temperature: 0.8,
-        
-        // Top-K sampling
-        top_k: 40,
-        
-        // Top-P sampling
-        top_p: 0.9,
-        
-        // Number of tokens to predict
-        num_predict: 256,
-        
-        // Stop sequences
-        stop: ['END', '\n\n'],
-        
-        // Repeat penalty
-        repeat_penalty: 1.1,
-        
-        // Context window size
-        num_ctx: 2048
-      }
-    })
-  ]
-})
-\`\`\`
+    <transition event="action.response" target="local_generation" />
+  </state>
 
-## Context Management
+  <state id="cloud_generation">
+    <!-- Use Gemini for complex queries -->
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Provide detailed analysis: ' + userInput" />
+    </onentry>
 
-Manage conversation context:
+    <transition event="action.response" target="respond" />
+  </state>
 
-\`\`\`typescript
-import: activedocs/extensions/ollama
+  <state id="local_generation">
+    <!-- Use Ollama for simple queries -->
+    <onentry>
+      <ollama:generate
+        model="llama2"
+        location="_event"
+        promptexpr="'Provide brief answer: ' + userInput" />
+    </onentry>
 
-const document = createDocument({
-  namespace: 'myapp',
-  state: {
-    context: []
-  },
-  extensions: [
-    ollamaExtension({
-      baseUrl: 'http://localhost:11434',
-      model: 'llama2'
-    })
-  ]
-})
-
-// Add to context
-document.on('ollama:complete', (event) => {
-  const context = document.getState().context
-  document.setState({
-    context: [...context, event.context]
-  })
-})
-
-// Use context in next prompt
-const response = await document.prompt('Continue the conversation', {
-  context: document.getState().context
-})
-\`\`\`
-
-## Model Management
-
-Manage Ollama models:
-
-\`\`\`typescript
-import: activedocs/extensions/ollama
-
-// List available models
-const models = await ollama.listModels()
-console.log('Available models:', models)
-
-// Pull a new model
-await ollama.pullModel('mistral')
-
-// Delete a model
-await ollama.deleteModel('old-model')
-
-// Show model info
-const info = await ollama.showModel('llama2')
-console.log('Model info:', info)
-\`\`\`
+    <transition event="action.response" target="respond" />
+  </state>
+</agent>
+```
 
 ## Error Handling
 
 Handle Ollama-specific errors:
 
-\`\`\`typescript
-import: activedocs/extensions/ollama
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:ollama="github.com/agentflare-ai/agentml/ollama">
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    ollamaExtension({
-      baseUrl: 'http://localhost:11434',
-      model: 'llama2'
-    })
-  ]
-})
+  <state id="generate">
+    <onentry>
+      <ollama:generate
+        model="llama2"
+        location="_event"
+        promptexpr="userQuery" />
+    </onentry>
 
-document.on('ollama:error', (event) => {
-  if (event.error.code === 'MODEL_NOT_FOUND') {
-    console.log('Model not found, pulling...')
-    ollama.pullModel(event.model)
-  } else if (event.error.code === 'CONNECTION_FAILED') {
-    console.log('Cannot connect to Ollama server')
-  } else {
-    console.error('Ollama error:', event.error)
-  }
-})
-\`\`\`
+    <!-- Success -->
+    <transition event="action.response" target="success" />
 
-## Performance Monitoring
+    <!-- Model not found -->
+    <transition event="action.error"
+                cond="_event.data.error.type === 'model_not_found'"
+                target="model_missing">
+      <log expr="'Model llama2 not found. Please run: ollama pull llama2'" />
+    </transition>
 
-Monitor Ollama performance:
+    <!-- Connection failed -->
+    <transition event="action.error"
+                cond="_event.data.error.type === 'connection_failed'"
+                target="ollama_offline">
+      <log expr="'Cannot connect to Ollama. Is it running?'" />
+    </transition>
 
-\`\`\`typescript
-import: activedocs/extensions/ollama
+    <!-- Other errors -->
+    <transition event="action.error" target="failed" />
+  </state>
+</agent>
+```
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    ollamaExtension({
-      baseUrl: 'http://localhost:11434',
-      model: 'llama2'
-    })
-  ]
-})
+## Configuration
 
-document.on('ollama:complete', (event) => {
-  console.log('Generation time:', event.duration, 'ms')
-  console.log('Tokens per second:', event.tokensPerSecond)
-  console.log('Total tokens:', event.totalTokens)
-})
-\`\`\`
+Configure Ollama server URL:
+
+```bash
+# Default (localhost)
+agentmlx run agent.aml
+
+# Custom Ollama server
+export OLLAMA_BASE_URL=http://ollama-server:11434
+agentmlx run agent.aml
+```
 
 ## Best Practices
 
-1. **Choose appropriate models** - Balance size and performance
-2. **Manage context** - Keep context windows reasonable
-3. **Monitor performance** - Track generation speed
-4. **Handle errors** - Implement fallbacks
-5. **Update models** - Keep Ollama and models up to date
+1. **Choose appropriate models**: Balance size and performance
+2. **Pull models first**: Ensure models are downloaded before running
+3. **Handle offline scenarios**: Add error handling for connection failures
+4. **Monitor performance**: Local models vary in speed by hardware
+5. **Use hybrid approach**: Combine local and cloud models strategically
+6. **Test model sizes**: Try different parameter counts (7B, 13B, 70B)
+7. **Update regularly**: Keep Ollama and models up to date
+8. **Optimize hardware**: Use GPU acceleration when available
+
+## Model Management
+
+```bash
+# List installed models
+ollama list
+
+# Pull a model
+ollama pull llama2
+
+# Remove a model
+ollama rm old-model
+
+# Show model information
+ollama show llama2
+
+# Update a model
+ollama pull llama2
+```
 
 ## Next Steps
 
-- Explore [Gemini Extension](/extensions/gemini)
-- Learn about [Memory Extension](/extensions/memory)
-- Build [Custom Extensions](/extensions/custom)
-\`\`\`
+- Learn about [Gemini Extension](/extensions/gemini) for cloud models
+- Explore [Memory Extension](/extensions/memory) for context augmentation
+- Read [Extensions Overview](/extensions/overview) for combining extensions
+- See [Performance](/best-practices/performance) for optimization tips

@@ -1,368 +1,712 @@
 ---
 title: "I/O Processors"
-description: "Understanding input/output processing in ActiveDocs"
+description: "External communication in AgentML via SCXML I/O Processors for HTTP, WebSocket, and distributed systems"
 ---
 
 # I/O Processors
 
-I/O processors handle the transformation and routing of data between your application, LLMs, and external systems.
+I/O Processors (IOProcessors) are SCXML's mechanism for communicating with external systems. In AgentML, they enable agents to send and receive events over HTTP, WebSocket, and other protocols, creating distributed multi-agent systems.
 
 ## Overview
 
-I/O processors are middleware components that intercept, transform, and route data flowing through ActiveDocs.
+IOProcessors bridge the gap between state machines and the outside world. They handle:
+- Sending events to external systems
+- Receiving events from external sources
+- Protocol-specific serialization/deserialization
+- Connection management
+- Error handling
 
-\`\`\`typescript
-import: activedocs/core
+## The `<send>` Element
 
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    input: [preprocessInput],
-    output: [postprocessOutput]
-  }
-})
-\`\`\`
+The `<send>` element sends events to external targets via IOProcessors:
 
-## Input Processors
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-Input processors transform data before it reaches the LLM:
+  <state id="notify">
+    <onentry>
+      <send event="task.completed"
+            target="https://api.example.com/webhooks"
+            type="github.com/agentflare-ai/agentml/ioprocessor/http">
+        <param name="taskId" expr="currentTask.id" />
+        <param name="result" expr="currentTask.result" />
+      </send>
+    </onentry>
 
-### Basic Input Processing
+    <transition event="task.acknowledged" target="done" />
+    <transition event="error.communication" target="retry" />
+  </state>
+</agent>
+```
 
-\`\`\`typescript
-import: activedocs/core
+**Attributes:**
+- `event` - Event name to send (required)
+- `target` - Destination URI (required for external sends)
+- `type` - IOProcessor type (optional, inferred from target)
+- `delay` - Delay before sending (optional)
+- `id` - Send ID for cancellation (optional)
 
-const preprocessInput = (input: string) => {
-  // Clean and format input
-  return input
-    .trim()
-    .replace(/\s+/g, ' ')
-    .toLowerCase()
-}
+**Child elements:**
+- `<param>` - Event data parameters
+- `<content>` - Event data as XML/JSON content
 
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    input: [preprocessInput]
-  }
-})
+## Built-in IOProcessors
 
-// Input is processed before sending to LLM
-await document.prompt('  HELLO  WORLD  ')
-// Actually sends: "hello world"
-\`\`\`
+### HTTP IOProcessor
 
-### Advanced Input Processing
+Send events via HTTP POST requests:
 
-\`\`\`typescript
-import: activedocs/core
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-const addContext = (input: string, context: any) => {
-  const userContext = context.getState().user
-  return `User: ${userContext.name}\nQuery: ${input}`
-}
+  <state id="call_api">
+    <onentry>
+      <send event="api.request"
+            target="https://api.example.com/process"
+            type="github.com/agentflare-ai/agentml/ioprocessor/http">
+        <param name="query" expr="userInput" />
+        <param name="userId" expr="currentUser.id" />
+      </send>
+    </onentry>
 
-const validateInput = (input: string) => {
-  if (input.length > 1000) {
-    throw new Error('Input too long')
-  }
-  return input
-}
+    <!-- Response arrives as event -->
+    <transition event="api.response" target="process_response">
+      <assign location="apiResult" expr="_event.data" />
+    </transition>
 
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    input: [
-      validateInput,
-      addContext
-    ]
-  }
-})
-\`\`\`
+    <transition event="error.communication" target="handle_error">
+      <assign location="errorDetails" expr="_event.data" />
+    </transition>
+  </state>
+</agent>
+```
 
-## Output Processors
+**HTTP Request Format:**
+```http
+POST /process HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
 
-Output processors transform LLM responses:
-
-### Basic Output Processing
-
-\`\`\`typescript
-import: activedocs/core
-
-const formatOutput = (output: string) => {
-  // Format markdown
-  return output
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-}
-
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    output: [formatOutput]
-  }
-})
-\`\`\`
-
-### Advanced Output Processing
-
-\`\`\`typescript
-import: activedocs/core
-
-const extractMetadata = (output: string) => {
-  const metadata = {
-    wordCount: output.split(/\s+/).length,
-    hasCode: output.includes('```'),
-    sentiment: analyzeSentiment(output)
-  }
-  
-  return {
-    content: output,
-    metadata
+{
+  "event": "api.request",
+  "data": {
+    "query": "user input text",
+    "userId": "user123"
   }
 }
+```
 
-const cacheOutput = async (output: any) => {
-  await cache.set(output.content, output.metadata)
-  return output
-}
-
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    output: [
-      extractMetadata,
-      cacheOutput
-    ]
-  }
-})
-\`\`\`
-
-## Streaming Processors
-
-Handle streaming responses with processors:
-
-\`\`\`typescript
-import: activedocs/core
-
-const streamProcessor = {
-  onToken: (token: string) => {
-    // Process each token
-    return token.toUpperCase()
-  },
-  onComplete: (content: string) => {
-    // Process complete response
-    return content.trim()
+**HTTP Response Format:**
+```json
+{
+  "event": "api.response",
+  "data": {
+    "result": "processed data"
   }
 }
+```
 
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    stream: streamProcessor
+### WebSocket IOProcessor
+
+Persistent bidirectional communication:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <state id="connect">
+    <onentry>
+      <!-- Connect to WebSocket -->
+      <send event="ws.connect"
+            target="wss://chat.example.com/room/123"
+            type="github.com/agentflare-ai/agentml/ioprocessor/websocket" />
+    </onentry>
+
+    <transition event="ws.connected" target="chat">
+      <assign location="connected" expr="true" />
+    </transition>
+
+    <transition event="error.communication" target="reconnect" />
+  </state>
+
+  <state id="chat">
+    <onentry>
+      <!-- Send message -->
+      <send event="chat.message"
+            target="wss://chat.example.com/room/123"
+            type="github.com/agentflare-ai/agentml/ioprocessor/websocket">
+        <param name="text" expr="messageText" />
+        <param name="sender" expr="userId" />
+      </send>
+    </onentry>
+
+    <!-- Receive incoming messages -->
+    <transition event="chat.message" target="process_message">
+      <assign location="lastMessage" expr="_event.data" />
+    </transition>
+
+    <transition event="ws.disconnected" target="reconnect" />
+  </state>
+</agent>
+```
+
+**WebSocket Message Format:**
+```json
+{
+  "event": "chat.message",
+  "data": {
+    "text": "Hello everyone",
+    "sender": "user123"
   }
-})
+}
+```
 
-document.stream('Generate text', {
-  onToken: (token) => {
-    // Receives processed tokens
-    console.log(token) // UPPERCASE
+### Stdin IOProcessor (Console I/O)
+
+Built into the `stdin` namespace:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:stdin="github.com/agentflare-ai/agentml/stdin">
+
+  <state id="read_input">
+    <onentry>
+      <stdin:write expr="'Bot: What can I help you with?'" />
+      <stdin:read location="userInput" />
+    </onentry>
+
+    <transition event="stdin.received" target="process">
+      <assign location="input" expr="_event.data" />
+    </transition>
+  </state>
+</agent>
+```
+
+### Internal IOProcessor
+
+Send to the same agent (internal events):
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <state id="process">
+    <onentry>
+      <!-- Send to self -->
+      <send event="internal.processed"
+            target="#_internal"
+            delay="1s">
+        <param name="result" expr="processedData" />
+      </send>
+    </onentry>
+
+    <transition event="internal.processed" target="next_step" />
+  </state>
+</agent>
+```
+
+### SCXML IOProcessor
+
+Send to other AgentML agents:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <state id="coordinate">
+    <onentry>
+      <!-- Send to another agent instance -->
+      <send event="task.assigned"
+            target="#_scxml_session-id-123"
+            type="github.com/agentflare-ai/agentml/ioprocessor/scxml">
+        <param name="taskId" expr="newTask.id" />
+        <param name="priority" expr="'high'" />
+      </send>
+    </onentry>
+
+    <transition event="task.accepted" target="monitor" />
+    <transition event="task.rejected" target="reassign" />
+  </state>
+</agent>
+```
+
+## Multi-Agent Communication
+
+### Distributed Agent System
+
+```xml
+<!-- Orchestrator Agent -->
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       name="orchestrator"
+       datamodel="ecmascript">
+
+  <datamodel>
+    <data id="workers" expr="['http://worker1:8080', 'http://worker2:8080']" />
+    <data id="tasks" expr="[]" />
+    <data id="results" expr="[]" />
+  </datamodel>
+
+  <state id="distribute">
+    <onentry>
+      <!-- Send tasks to workers -->
+      <foreach array="workers" item="worker" index="i">
+        <send event="task.process"
+              targetexpr="worker + '/agent'"
+              type="github.com/agentflare-ai/agentml/ioprocessor/http">
+          <param name="taskId" expr="tasks[i].id" />
+          <param name="data" expr="tasks[i].data" />
+        </send>
+      </foreach>
+    </onentry>
+
+    <!-- Collect results -->
+    <transition event="task.result" target="aggregate">
+      <assign location="results" expr="results.concat([_event.data])" />
+    </transition>
+  </state>
+
+  <state id="aggregate">
+    <onentry>
+      <if cond="results.length === workers.length">
+        <raise event="all.completed" />
+      </if>
+    </onentry>
+
+    <transition event="all.completed" target="finalize" />
+  </state>
+</agent>
+```
+
+```xml
+<!-- Worker Agent -->
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       name="worker"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <state id="idle">
+    <!-- Receive tasks from orchestrator -->
+    <transition event="task.process" target="processing">
+      <assign location="currentTask" expr="_event.data" />
+    </transition>
+  </state>
+
+  <state id="processing">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Process: ' + currentTask.data" />
+    </onentry>
+
+    <transition event="action.response" target="respond">
+      <assign location="result" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <state id="respond">
+    <onentry>
+      <!-- Send result back to orchestrator -->
+      <send event="task.result"
+            targetexpr="_event.origin"
+            type="github.com/agentflare-ai/agentml/ioprocessor/http">
+        <param name="taskId" expr="currentTask.taskId" />
+        <param name="result" expr="result" />
+      </send>
+    </onentry>
+
+    <transition target="idle" />
+  </state>
+</agent>
+```
+
+## Event Routing
+
+### Target Resolution
+
+The `target` attribute determines where events are sent:
+
+```xml
+<!-- Internal (same agent) -->
+<send event="e" target="#_internal" />
+
+<!-- SCXML session (another agent instance) -->
+<send event="e" target="#_scxml_abc123" />
+
+<!-- HTTP endpoint -->
+<send event="e" target="https://api.example.com/webhook" />
+
+<!-- WebSocket connection -->
+<send event="e" target="wss://realtime.example.com/events" />
+
+<!-- Dynamic target from variable -->
+<send event="e" targetexpr="apiEndpoint" />
+```
+
+### Event Origin
+
+Responses know where they came from via `_event.origin`:
+
+```xml
+<state id="request">
+  <onentry>
+    <send event="api.request" target="https://api.example.com/process" />
+  </onentry>
+
+  <transition event="api.response" target="respond">
+    <!-- _event.origin = https://api.example.com/process -->
+    <log expr="'Response from: ' + _event.origin" />
+  </transition>
+</state>
+```
+
+## Delayed Sends
+
+Send events after a delay:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <state id="waiting">
+    <onentry>
+      <!-- Send after 30 seconds -->
+      <send event="timeout"
+            target="#_internal"
+            id="timeout_send"
+            delay="30s" />
+    </onentry>
+
+    <!-- Can cancel before delay expires -->
+    <transition event="user.input" target="process">
+      <cancel sendid="timeout_send" />
+    </transition>
+
+    <transition event="timeout" target="timed_out" />
+  </state>
+</agent>
+```
+
+**Delay formats:**
+- Milliseconds: `1000ms`
+- Seconds: `30s`
+- Minutes: `5m`
+- Hours: `1h`
+- Expression: `delayexpr="timeout_duration"`
+
+## Content Types
+
+### Parameter-based (default)
+
+```xml
+<send event="api.request" target="https://api.example.com/process">
+  <param name="field1" expr="'value1'" />
+  <param name="field2" expr="123" />
+</send>
+```
+
+Sends:
+```json
+{
+  "event": "api.request",
+  "data": {
+    "field1": "value1",
+    "field2": 123
   }
-})
-\`\`\`
+}
+```
 
-## Error Processors
+### Content-based
 
-Handle errors in the processing pipeline:
+```xml
+<send event="api.request" target="https://api.example.com/process">
+  <content expr='{"query": userInput, "options": {"format": "json"}}' />
+</send>
+```
 
-\`\`\`typescript
-import: activedocs/core
-
-const errorProcessor = (error: Error, context: any) => {
-  console.error('Processing error:', error)
-  
-  // Transform error
-  if (error.message.includes('rate limit')) {
-    return {
-      type: 'rate_limit',
-      retryAfter: 60000,
-      message: 'Please try again in 1 minute'
+Or inline:
+```xml
+<send event="api.request" target="https://api.example.com/process">
+  <content>
+    {
+      "query": "search term",
+      "options": {
+        "format": "json"
+      }
     }
-  }
-  
-  return error
+  </content>
+</send>
+```
+
+## Error Handling
+
+IOProcessors raise error events on failure:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <state id="send_request">
+    <onentry>
+      <send event="api.request"
+            target="https://api.example.com/process"
+            id="api_send">
+        <param name="data" expr="requestData" />
+      </send>
+    </onentry>
+
+    <!-- Communication errors -->
+    <transition event="error.communication" target="handle_error">
+      <assign location="errorType" expr="'communication'" />
+      <assign location="errorDetails" expr="_event.data" />
+    </transition>
+
+    <!-- Send-specific errors -->
+    <transition event="error.send" target="handle_error">
+      <assign location="errorType" expr="'send'" />
+    </transition>
+
+    <!-- Timeout -->
+    <transition event="timeout" target="retry">
+      <assign location="retryCount" expr="retryCount + 1" />
+    </transition>
+
+    <transition event="api.response" target="success" />
+  </state>
+
+  <state id="handle_error">
+    <onentry>
+      <log expr="'Error: ' + errorType + ' - ' + JSON.stringify(errorDetails)" />
+
+      <if cond="retryCount < 3">
+        <raise event="should.retry" />
+      <else/>
+        <raise event="should.fail" />
+      </if>
+    </onentry>
+
+    <transition event="should.retry" target="send_request" />
+    <transition event="should.fail" target="failed" />
+  </state>
+</agent>
+```
+
+## Custom IOProcessors
+
+### Go Implementation
+
+```go
+package customioprocessor
+
+import (
+    "github.com/agentflare-ai/agentmlx/pkg/ioprocessor"
+)
+
+type SlackIOProcessor struct {
+    apiToken string
 }
 
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    error: errorProcessor
-  }
-})
-\`\`\`
-
-## Processor Chains
-
-Combine multiple processors:
-
-\`\`\`typescript
-import: activedocs/core
-
-// Input chain
-const inputChain = [
-  validateInput,
-  sanitizeInput,
-  addContext,
-  formatForLLM
-]
-
-// Output chain
-const outputChain = [
-  parseResponse,
-  extractData,
-  formatForUI,
-  cacheResult
-]
-
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    input: inputChain,
-    output: outputChain
-  }
-})
-\`\`\`
-
-## Conditional Processing
-
-Apply processors conditionally:
-
-\`\`\`typescript
-import: activedocs/core
-
-const conditionalProcessor = (input: string, context: any) => {
-  const state = context.getState()
-  
-  if (state.mode === 'strict') {
-    return strictValidation(input)
-  } else if (state.mode === 'lenient') {
-    return lenientValidation(input)
-  }
-  
-  return input
+func NewSlackIOProcessor(token string) *SlackIOProcessor {
+    return &SlackIOProcessor{apiToken: token}
 }
 
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    input: [conditionalProcessor]
-  }
-})
-\`\`\`
-
-## Async Processors
-
-Use async operations in processors:
-
-\`\`\`typescript
-import: activedocs/core
-
-const asyncInputProcessor = async (input: string) => {
-  // Fetch additional context
-  const context = await fetchContext(input)
-  
-  // Enhance input with context
-  return `${input}\n\nContext: ${context}`
+func (p *SlackIOProcessor) Type() string {
+    return "github.com/example/ioprocessor/slack"
 }
 
-const asyncOutputProcessor = async (output: string) => {
-  // Save to database
-  await saveToDatabase(output)
-  
-  // Send notification
-  await sendNotification(output)
-  
-  return output
+func (p *SlackIOProcessor) Send(target string, event *ioprocessor.Event) error {
+    // Parse target as Slack channel ID
+    channelID := target
+
+    // Send message via Slack API
+    return p.sendSlackMessage(channelID, event.Name, event.Data)
 }
 
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    input: [asyncInputProcessor],
-    output: [asyncOutputProcessor]
-  }
-})
-\`\`\`
+func (p *SlackIOProcessor) Receive(callback func(*ioprocessor.Event)) error {
+    // Set up Slack event listener
+    // Call callback when events arrive
+    return p.listenSlackEvents(callback)
+}
 
-## Built-in Processors
+func Register(token string) {
+    ioprocessor.RegisterIOProcessor(NewSlackIOProcessor(token))
+}
+```
 
-ActiveDocs includes several built-in processors:
+**Usage:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-### Token Counter
+  <state id="notify_team">
+    <onentry>
+      <send event="deployment.complete"
+            target="C01234567"
+            type="github.com/example/ioprocessor/slack">
+        <param name="message" expr="'Deployment v' + version + ' completed'" />
+        <param name="status" expr="'success'" />
+      </send>
+    </onentry>
+  </state>
+</agent>
+```
 
-\`\`\`typescript
-import: activedocs/core
-import: activedocs/processors
+## IOProcessor Patterns
 
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    input: [tokenCounter],
-    output: [tokenCounter]
-  }
-})
+### Request-Response Pattern
 
-document.on('tokens:counted', (event) => {
-  console.log('Input tokens:', event.input)
-  console.log('Output tokens:', event.output)
-})
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-### Content Filter
+  <datamodel>
+    <data id="requestId" expr="''" />
+  </datamodel>
 
-\`\`\`typescript
-import: activedocs/core
-import: activedocs/processors
+  <state id="request">
+    <onentry>
+      <assign location="requestId" expr="'req_' + Date.now()" />
 
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    input: [contentFilter({
-      blockProfanity: true,
-      blockPII: true
-    })]
-  }
-})
-\`\`\`
+      <send event="api.request"
+            target="https://api.example.com/query">
+        <param name="requestId" expr="requestId" />
+        <param name="query" expr="userQuery" />
+      </send>
+    </onentry>
 
-### Rate Limiter
+    <!-- Match response by requestId -->
+    <transition event="api.response"
+                cond="_event.data.requestId === requestId"
+                target="process_response">
+      <assign location="responseData" expr="_event.data" />
+    </transition>
 
-\`\`\`typescript
-import: activedocs/core
-import: activedocs/processors
+    <transition event="api.response" target="request">
+      <!-- Ignore responses for other requests -->
+      <log expr="'Ignoring response for different request'" />
+    </transition>
+  </state>
+</agent>
+```
 
-const document = createDocument({
-  namespace: 'myapp',
-  processors: {
-    input: [rateLimiter({
-      maxRequests: 10,
-      windowMs: 60000
-    })]
-  }
-})
-\`\`\`
+### Pub/Sub Pattern
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <state id="subscribe">
+    <onentry>
+      <!-- Subscribe to topic -->
+      <send event="pubsub.subscribe"
+            target="wss://pubsub.example.com/topics/notifications"
+            type="github.com/agentflare-ai/agentml/ioprocessor/websocket">
+        <param name="topic" expr="'notifications'" />
+        <param name="userId" expr="currentUser.id" />
+      </send>
+    </onentry>
+
+    <transition event="pubsub.subscribed" target="listening" />
+  </state>
+
+  <state id="listening">
+    <!-- Receive published messages -->
+    <transition event="notification.received" target="handle_notification">
+      <assign location="notification" expr="_event.data" />
+    </transition>
+  </state>
+
+  <state id="publish">
+    <onentry>
+      <!-- Publish to topic -->
+      <send event="notification.new"
+            target="wss://pubsub.example.com/topics/notifications"
+            type="github.com/agentflare-ai/agentml/ioprocessor/websocket">
+        <param name="topic" expr="'notifications'" />
+        <param name="message" expr="notificationMessage" />
+      </send>
+    </onentry>
+  </state>
+</agent>
+```
+
+### Webhook Pattern
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <!-- Receive webhook events from external services -->
+  <state id="webhook_listener">
+    <!-- Events arrive from IOProcessor automatically -->
+    <transition event="github.push" target="handle_push">
+      <assign location="pushData" expr="_event.data" />
+    </transition>
+
+    <transition event="stripe.payment_succeeded" target="handle_payment">
+      <assign location="paymentData" expr="_event.data" />
+    </transition>
+  </state>
+
+  <state id="handle_push">
+    <onentry>
+      <log expr="'Received push to: ' + pushData.repository.full_name" />
+
+      <!-- Trigger CI/CD -->
+      <send event="ci.trigger"
+            target="https://ci.example.com/build">
+        <param name="repo" expr="pushData.repository.full_name" />
+        <param name="branch" expr="pushData.ref" />
+      </send>
+    </onentry>
+  </state>
+</agent>
+```
 
 ## Best Practices
 
-1. **Keep processors focused** - Each should do one thing
-2. **Handle errors gracefully** - Don't let processors crash
-3. **Use async when needed** - For I/O operations
-4. **Chain processors logically** - Order matters
-5. **Test processors independently** - Unit test each one
+1. **Handle errors gracefully**: Always add error transitions for `<send>`
+2. **Use request IDs**: Track request-response pairs with unique IDs
+3. **Set timeouts**: Don't wait indefinitely for responses
+4. **Retry with backoff**: Implement exponential backoff for retries
+5. **Validate responses**: Use `event:schema` for response validation
+6. **Log communications**: Track all external interactions
+7. **Secure endpoints**: Use HTTPS/WSS for production
+8. **Rate limit**: Avoid overwhelming external services
+9. **Monitor health**: Check IOProcessor connection status
+10. **Test isolation**: Mock IOProcessors for unit tests
+
+## Configuration
+
+### HTTP IOProcessor Settings
+
+```bash
+# Set HTTP timeout
+export AGENTML_HTTP_TIMEOUT=30s
+
+# Set max retries
+export AGENTML_HTTP_RETRIES=3
+
+# Set retry backoff
+export AGENTML_HTTP_BACKOFF=exponential
+```
+
+### WebSocket IOProcessor Settings
+
+```bash
+# Set reconnection interval
+export AGENTML_WS_RECONNECT_INTERVAL=5s
+
+# Set ping interval
+export AGENTML_WS_PING_INTERVAL=30s
+```
 
 ## Next Steps
 
-- Learn about [Document Structure](/architecture/document-structure)
-- Explore [Namespace System](/architecture/namespace-system)
-- Understand [Interpreter](/architecture/interpreter)
-\`\`\`
+- Learn about [Namespace System](/architecture/namespace-system) for extending functionality
+- Explore [Interpreter](/architecture/interpreter) to understand event processing
+- Read [Document Structure](/architecture/document-structure) for `<send>` syntax
+- See [Deployment](/deployment/overview) for distributed agent systems
+- Understand [Error Handling](/best-practices/error-handling) for robust communication

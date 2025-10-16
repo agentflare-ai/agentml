@@ -1,394 +1,517 @@
 ---
 title: "Custom Extensions"
-description: "Build your own ActiveDocs extensions"
+description: "Build custom AgentML namespaces to extend functionality"
 ---
 
 # Custom Extensions
 
-Learn how to build custom extensions to add new functionality to ActiveDocs.
+Learn how to build custom namespaces to extend AgentML with domain-specific actions and integrations.
+
+## Overview
+
+Custom namespaces allow you to:
+- Add new XML actions to AgentML
+- Integrate with external APIs and services
+- Implement specialized business logic
+- Create reusable components
 
 ## Extension Structure
 
-An extension is an object with specific properties:
+A namespace is a Go package that registers custom actions:
 
-\`\`\`typescript
-import: activedocs/core
+```go
+package myextension
 
-interface Extension {
-  name: string
-  version: string
-  init: (document: Document) => void
-  destroy?: () => void
+import (
+    "github.com/agentflare-ai/agentmlx/pkg/scxml"
+)
+
+// Action struct defines attributes
+type MyAction struct {
+    Model    string `xml:"model,attr"`
+    Location string `xml:"location,attr"`
+    Input    string `xml:"inputexpr,attr"`
 }
-\`\`\`
 
-## Basic Extension
+// Execute runs when action is invoked
+func (a *MyAction) Execute(ctx *scxml.Context) error {
+    // Your logic here
+    return nil
+}
 
-Create a simple logging extension:
-
-\`\`\`typescript
-import: activedocs/core
-
-const loggerExtension = () => ({
-  name: 'logger',
-  version: '1.0.0',
-  
-  init: (document) => {
-    console.log(`Logger initialized for ${document.namespace}`)
-    
-    // Log all events
-    document.on('*', (event) => {
-      console.log(`[${document.namespace}]`, event.type, event.data)
+// Register the namespace
+func Register() {
+    scxml.RegisterNamespace("github.com/example/myextension", map[string]interface{}{
+        "myaction": &MyAction{},
     })
-  },
-  
-  destroy: () => {
-    console.log('Logger destroyed')
-  }
-})
+}
+```
 
-// Use it
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [loggerExtension()]
-})
-\`\`\`
+## Basic Example
 
-## Extension with Configuration
+Create a simple HTTP request extension:
 
-Add configuration options:
+**httpext/actions.go:**
+```go
+package httpext
 
-\`\`\`typescript
-import: activedocs/core
+import (
+    "encoding/json"
+    "io"
+    "net/http"
+    "github.com/agentflare-ai/agentmlx/pkg/scxml"
+)
 
-interface LoggerOptions {
-  level?: 'debug' | 'info' | 'warn' | 'error'
-  prefix?: string
-  timestamp?: boolean
+type FetchAction struct {
+    URL      string `xml:"url,attr"`
+    Location string `xml:"location,attr"`
 }
 
-const loggerExtension = (options: LoggerOptions = {}) => {
-  const config = {
-    level: 'info',
-    prefix: '',
-    timestamp: true,
-    ...options
-  }
-  
-  return {
-    name: 'logger',
-    version: '1.0.0',
-    
-    init: (document) => {
-      const log = (level: string, ...args: any[]) => {
-        if (shouldLog(level, config.level)) {
-          const prefix = config.prefix ? `[${config.prefix}]` : ''
-          const timestamp = config.timestamp ? new Date().toISOString() : ''
-          console.log(timestamp, prefix, ...args)
-        }
-      }
-      
-      document.on('*', (event) => {
-        log(config.level, event.type, event.data)
-      })
-    }
-  }
-}
-
-// Use with config
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    loggerExtension({
-      level: 'debug',
-      prefix: 'MyApp',
-      timestamp: true
-    })
-  ]
-})
-\`\`\`
-
-## Extension with State
-
-Maintain extension-specific state:
-
-\`\`\`typescript
-import: activedocs/core
-
-const analyticsExtension = (apiKey: string) => {
-  let eventCount = 0
-  let sessionId = generateSessionId()
-  
-  return {
-    name: 'analytics',
-    version: '1.0.0',
-    
-    init: (document) => {
-      // Track events
-      document.on('llm:complete', async (event) => {
-        eventCount++
-        
-        await fetch('https://analytics.example.com/track', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            sessionId,
-            eventCount,
-            namespace: document.namespace,
-            event: event.type,
-            data: event.data
-          })
+func (a *FetchAction) Execute(ctx *scxml.Context) error {
+    // Make HTTP request
+    resp, err := http.Get(a.URL)
+    if err != nil {
+        ctx.RaiseEvent("http.error", map[string]interface{}{
+            "error": err.Error(),
         })
-      })
-      
-      // Add methods to document
-      document.analytics = {
-        getEventCount: () => eventCount,
-        getSessionId: () => sessionId
-      }
-    },
-    
-    destroy: () => {
-      // Send final analytics
-      console.log(`Session ${sessionId} ended with ${eventCount} events`)
+        return nil
     }
-  }
-}
-\`\`\`
+    defer resp.Body.Close()
 
-## Extension with Async Initialization
-
-Handle async setup:
-
-\`\`\`typescript
-import: activedocs/core
-
-const databaseExtension = (connectionString: string) => {
-  let db: Database | null = null
-  
-  return {
-    name: 'database',
-    version: '1.0.0',
-    
-    init: async (document) => {
-      // Async initialization
-      db = await connectToDatabase(connectionString)
-      
-      // Add database methods
-      document.db = {
-        query: async (sql: string) => {
-          return await db.query(sql)
-        },
-        
-        save: async (data: any) => {
-          return await db.insert('documents', {
-            namespace: document.namespace,
-            data: JSON.stringify(data),
-            timestamp: Date.now()
-          })
-        }
-      }
-      
-      // Auto-save on state change
-      document.on('state:change', async (event) => {
-        await document.db.save(event.newState)
-      })
-    },
-    
-    destroy: async () => {
-      if (db) {
-        await db.close()
-      }
+    // Read response
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        ctx.RaiseEvent("http.error", map[string]interface{}{
+            "error": err.Error(),
+        })
+        return nil
     }
-  }
-}
-\`\`\`
 
-## Extension Communication
+    // Parse JSON
+    var data interface{}
+    json.Unmarshal(body, &data)
 
-Extensions can communicate with each other:
+    // Store in datamodel
+    ctx.SetVariable(a.Location, data)
 
-\`\`\`typescript
-import: activedocs/core
-
-const cacheExtension = () => ({
-  name: 'cache',
-  version: '1.0.0',
-  
-  init: (document) => {
-    const cache = new Map()
-    
-    document.cache = {
-      get: (key: string) => cache.get(key),
-      set: (key: string, value: any) => cache.set(key, value),
-      has: (key: string) => cache.has(key)
-    }
-    
-    // Emit ready event
-    document.emit('cache:ready')
-  }
-})
-
-const apiExtension = () => ({
-  name: 'api',
-  version: '1.0.0',
-  
-  init: (document) => {
-    // Wait for cache to be ready
-    document.once('cache:ready', () => {
-      document.api = {
-        fetch: async (url: string) => {
-          // Check cache first
-          if (document.cache.has(url)) {
-            return document.cache.get(url)
-          }
-          
-          // Fetch and cache
-          const response = await fetch(url)
-          const data = await response.json()
-          document.cache.set(url, data)
-          return data
-        }
-      }
+    // Raise completion event
+    ctx.RaiseEvent("http.complete", map[string]interface{}{
+        "url": a.URL,
+        "data": data,
     })
-  }
-})
 
-// Use both extensions
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    cacheExtension(),
-    apiExtension()
-  ]
-})
-\`\`\`
-
-## Extension Hooks
-
-Provide hooks for customization:
-
-\`\`\`typescript
-import: activedocs/core
-
-interface HookOptions {
-  beforeSave?: (data: any) => any
-  afterSave?: (data: any) => void
-  onError?: (error: Error) => void
+    return nil
 }
 
-const storageExtension = (options: HookOptions = {}) => ({
-  name: 'storage',
-  version: '1.0.0',
-  
-  init: (document) => {
-    document.storage = {
-      save: async (data: any) => {
-        try {
-          // Before save hook
-          if (options.beforeSave) {
-            data = await options.beforeSave(data)
-          }
-          
-          // Save
-          await saveToStorage(data)
-          
-          // After save hook
-          if (options.afterSave) {
-            await options.afterSave(data)
-          }
-        } catch (error) {
-          // Error hook
-          if (options.onError) {
-            options.onError(error)
-          } else {
-            throw error
-          }
-        }
-      }
-    }
-  }
-})
-
-// Use with hooks
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    storageExtension({
-      beforeSave: (data) => {
-        console.log('Before save:', data)
-        return { ...data, timestamp: Date.now() }
-      },
-      afterSave: (data) => {
-        console.log('After save:', data)
-      },
-      onError: (error) => {
-        console.error('Save error:', error)
-      }
+func Register() {
+    scxml.RegisterNamespace("github.com/example/httpext", map[string]interface{}{
+        "fetch": &FetchAction{},
     })
-  ]
-})
-\`\`\`
+}
+```
+
+**Usage:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:http="github.com/example/httpext">
+
+  <state id="fetch_data">
+    <onentry>
+      <http:fetch
+        url="https://api.example.com/data"
+        location="apiData" />
+    </onentry>
+
+    <transition event="http.complete" target="process_data">
+      <log expr="'Fetched: ' + JSON.stringify(apiData)" />
+    </transition>
+
+    <transition event="http.error" target="handle_error" />
+  </state>
+</agent>
+```
+
+## Expression Evaluation
+
+Evaluate ECMAScript expressions from attributes:
+
+```go
+type ComputeAction struct {
+    Expression string `xml:"expr,attr"`
+    Location   string `xml:"location,attr"`
+}
+
+func (a *ComputeAction) Execute(ctx *scxml.Context) error {
+    // Evaluate expression
+    result := ctx.EvalExpression(a.Expression)
+
+    // Store result
+    ctx.SetVariable(a.Location, result)
+
+    return nil
+}
+```
+
+**Usage:**
+```xml
+<custom:compute
+  expr="count + 10"
+  location="newCount" />
+```
+
+## Accessing Datamodel
+
+Read and write variables:
+
+```go
+func (a *MyAction) Execute(ctx *scxml.Context) error {
+    // Get variable
+    userInput := ctx.GetVariable("userInput")
+
+    // Process
+    result := process(userInput)
+
+    // Set variable
+    ctx.SetVariable("result", result)
+
+    return nil
+}
+```
+
+## Raising Events
+
+Communicate results back to the agent:
+
+```go
+func (a *ProcessAction) Execute(ctx *scxml.Context) error {
+    // Do work
+    result, err := doWork()
+
+    if err != nil {
+        // Raise error event
+        ctx.RaiseEvent("custom.error", map[string]interface{}{
+            "error": err.Error(),
+            "code": "PROCESS_FAILED",
+        })
+        return nil
+    }
+
+    // Raise success event
+    ctx.RaiseEvent("custom.complete", map[string]interface{}{
+        "result": result,
+        "timestamp": time.Now().Unix(),
+    })
+
+    return nil
+}
+```
+
+## Advanced Example: Slack Integration
+
+Create a Slack notification extension:
+
+**slackext/actions.go:**
+```go
+package slackext
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+    "github.com/agentflare-ai/agentmlx/pkg/scxml"
+)
+
+type SendMessageAction struct {
+    Channel string `xml:"channel,attr"`
+    Text    string `xml:"textexpr,attr"`
+    Token   string `xml:"token,attr"`
+}
+
+func (a *SendMessageAction) Execute(ctx *scxml.Context) error {
+    // Evaluate text expression
+    text := ctx.EvalExpression(a.Text)
+
+    // Prepare request
+    payload := map[string]interface{}{
+        "channel": a.Channel,
+        "text":    text,
+    }
+
+    body, _ := json.Marshal(payload)
+
+    // Send to Slack API
+    req, _ := http.NewRequest("POST", "https://slack.com/api/chat.postMessage", bytes.NewBuffer(body))
+    req.Header.Set("Authorization", "Bearer "+a.Token)
+    req.Header.Set("Content-Type", "application/json")
+
+    resp, err := http.DefaultClient.Do(req)
+    if err != nil {
+        ctx.RaiseEvent("slack.error", map[string]interface{}{
+            "error": err.Error(),
+        })
+        return nil
+    }
+    defer resp.Body.Close()
+
+    // Parse response
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+
+    if ok, _ := result["ok"].(bool); ok {
+        ctx.RaiseEvent("slack.sent", map[string]interface{}{
+            "channel": a.Channel,
+            "ts":      result["ts"],
+        })
+    } else {
+        ctx.RaiseEvent("slack.error", map[string]interface{}{
+            "error": result["error"],
+        })
+    }
+
+    return nil
+}
+
+func Register() {
+    scxml.RegisterNamespace("github.com/example/slack", map[string]interface{}{
+        "send": &SendMessageAction{},
+    })
+}
+```
+
+**Usage:**
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:slack="github.com/example/slack">
+
+  <datamodel>
+    <data id="slackToken" expr="'xoxb-your-token'" />
+  </datamodel>
+
+  <state id="notify_team">
+    <onentry>
+      <slack:send
+        channel="#deployments"
+        textexpr="'Deployment v' + version + ' completed successfully'"
+        token="slackToken" />
+    </onentry>
+
+    <transition event="slack.sent" target="complete">
+      <log expr="'Notification sent to Slack'" />
+    </transition>
+
+    <transition event="slack.error" target="notification_failed" />
+  </state>
+</agent>
+```
+
+## Async Operations
+
+Handle long-running operations:
+
+```go
+type LongProcessAction struct {
+    Data     string `xml:"dataexpr,attr"`
+    Location string `xml:"location,attr"`
+}
+
+func (a *LongProcessAction) Execute(ctx *scxml.Context) error {
+    data := ctx.EvalExpression(a.Data)
+
+    // Start async operation
+    go func() {
+        // Do long-running work
+        result := processAsync(data)
+
+        // Raise event when complete
+        ctx.RaiseEvent("async.complete", map[string]interface{}{
+            "result": result,
+        })
+    }()
+
+    // Return immediately
+    ctx.RaiseEvent("async.started", nil)
+    return nil
+}
+```
+
+## Error Handling
+
+Always handle errors gracefully:
+
+```go
+func (a *MyAction) Execute(ctx *scxml.Context) error {
+    // Validate inputs
+    if a.Required == "" {
+        ctx.RaiseEvent("error.execution", map[string]interface{}{
+            "error": "Required attribute is missing",
+            "action": "myaction",
+        })
+        return nil
+    }
+
+    // Try operation
+    result, err := tryOperation()
+    if err != nil {
+        ctx.RaiseEvent("myext.error", map[string]interface{}{
+            "error": err.Error(),
+            "recoverable": true,
+        })
+        return nil
+    }
+
+    // Success
+    ctx.RaiseEvent("myext.success", map[string]interface{}{
+        "result": result,
+    })
+
+    return nil
+}
+```
+
+## Configuration via Environment
+
+Use environment variables for configuration:
+
+```go
+import "os"
+
+type APIAction struct {
+    Endpoint string `xml:"endpoint,attr"`
+    Location string `xml:"location,attr"`
+}
+
+func (a *APIAction) Execute(ctx *scxml.Context) error {
+    // Get API key from environment
+    apiKey := os.Getenv("MY_API_KEY")
+    if apiKey == "" {
+        ctx.RaiseEvent("error.execution", map[string]interface{}{
+            "error": "MY_API_KEY environment variable not set",
+        })
+        return nil
+    }
+
+    // Use API key
+    result := callAPI(a.Endpoint, apiKey)
+    ctx.SetVariable(a.Location, result)
+
+    return nil
+}
+```
 
 ## Testing Extensions
 
-Test your extensions:
+Write tests for your actions:
 
-\`\`\`typescript
-import: activedocs/core
+```go
+package myextension_test
 
-describe('loggerExtension', () => {
-  it('should log events', () => {
-    const logs: any[] = []
-    const mockConsole = {
-      log: (...args: any[]) => logs.push(args)
+import (
+    "testing"
+    "github.com/agentflare-ai/agentmlx/pkg/scxml"
+    "myextension"
+)
+
+func TestMyAction(t *testing.T) {
+    // Create test context
+    ctx := scxml.NewTestContext()
+    ctx.SetVariable("input", "test data")
+
+    // Create action
+    action := &myextension.MyAction{
+        Input:    "input",
+        Location: "output",
     }
-    
-    const document = createDocument({
-      namespace: 'test',
-      extensions: [loggerExtension()]
-    })
-    
-    document.emit('test:event', { data: 'value' })
-    
-    expect(logs).toHaveLength(1)
-    expect(logs[0]).toContain('test:event')
-  })
-})
-\`\`\`
 
-## Publishing Extensions
+    // Execute
+    err := action.Execute(ctx)
+    if err != nil {
+        t.Fatalf("Action failed: %v", err)
+    }
 
-Publish your extension as an npm package:
+    // Verify result
+    output := ctx.GetVariable("output")
+    if output != "expected result" {
+        t.Errorf("Expected 'expected result', got %v", output)
+    }
 
-\`\`\`json
-{
-  "name": "@myorg/activedocs-extension-myextension",
-  "version": "1.0.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "peerDependencies": {
-    "@activedocs/core": "^1.0.0"
-  }
+    // Verify events
+    events := ctx.GetRaisedEvents()
+    if len(events) != 1 || events[0].Name != "myext.complete" {
+        t.Error("Expected myext.complete event")
+    }
 }
-\`\`\`
+```
 
 ## Best Practices
 
-1. **Follow naming conventions** - Use descriptive names
-2. **Version properly** - Use semantic versioning
-3. **Document thoroughly** - Provide clear documentation
-4. **Handle errors** - Don't crash the host document
-5. **Clean up resources** - Implement destroy method
-6. **Test extensively** - Write comprehensive tests
-7. **Type everything** - Use TypeScript for better DX
+1. **Namespace URIs**: Use descriptive, versioned URIs (e.g., `github.com/org/project/v1`)
+2. **Error handling**: Always raise events for errors, never panic
+3. **Expression evaluation**: Use `ctx.EvalExpression()` for dynamic values
+4. **Event naming**: Follow dot-separated convention (`namespace.action.status`)
+5. **Documentation**: Provide clear docs with examples
+6. **Testing**: Write comprehensive unit tests
+7. **Dependencies**: Minimize external dependencies
+8. **Configuration**: Use environment variables for secrets
+9. **Async operations**: Return immediately, raise events when done
+10. **Validation**: Validate inputs before processing
+
+## WASM Extensions (Future)
+
+Future support for WebAssembly extensions:
+
+```rust
+// Rust implementation with wit-bindgen
+use wit_bindgen::generate;
+
+generate!({
+    path: "agentml.wit",
+});
+
+struct MyExtension;
+
+impl Namespace for MyExtension {
+    fn execute_action(params: ActionParams) -> ActionResult {
+        // Process action
+        ActionResult {
+            success: true,
+            events: vec![("custom.complete", "result")],
+            datamodel_updates: vec![],
+            error: None,
+        }
+    }
+}
+```
+
+Load WASM extensions via URL:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:custom="https://cdn.example.com/extension.wasm">
+
+  <state id="use_wasm">
+    <onentry>
+      <custom:action param="value" />
+    </onentry>
+  </state>
+</agent>
+```
+
+## Publishing Extensions
+
+Share your extension:
+
+1. **Create repository**: Host on GitHub/GitLab
+2. **Document thoroughly**: README with examples
+3. **Version properly**: Use semantic versioning
+4. **Tag releases**: Git tags for versions
+5. **Provide examples**: Sample agents using your extension
+6. **Test extensively**: CI/CD with tests
+7. **License clearly**: Choose open-source license
 
 ## Next Steps
 
-- Explore [Gemini Extension](/extensions/gemini)
-- Learn about [Memory Extension](/extensions/memory)
-- Try [Ollama Extension](/extensions/ollama)
-\`\`\`
+- Review [Gemini Extension](/extensions/gemini) source code for examples
+- Explore [Ollama Extension](/extensions/ollama) implementation patterns
+- Study [Memory Extension](/extensions/memory) for complex integrations
+- Read [Namespace System](/architecture/namespace-system) for technical details
+- See [Contributing](/contributing/guidelines) for contribution guidelines

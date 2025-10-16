@@ -1,267 +1,310 @@
 ---
 title: "Gemini Extension"
-description: "Integrate Google's Gemini models with ActiveDocs"
+description: "Integrate Google's Gemini models into AgentML agents"
 ---
 
 # Gemini Extension
 
-The Gemini extension enables ActiveDocs to use Google's Gemini models for LLM operations.
+The Gemini namespace (`github.com/agentflare-ai/agentml/gemini`) integrates Google's Gemini models into AgentML agents, providing powerful cloud-based LLM capabilities.
 
-## Installation
+## Setup
 
-\`\`\`bash
-npm install @activedocs/extension-gemini
-\`\`\`
+```bash
+# Set API key
+export GEMINI_API_KEY=your_api_key_here
+
+# Run agent
+agentmlx run agent.aml
+```
 
 ## Basic Usage
 
-\`\`\`typescript
-import: activedocs/core
-import: activedocs/extensions/gemini
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    geminiExtension({
-      apiKey: process.env.GEMINI_API_KEY
-    })
-  ]
-})
+  <datamodel>
+    <data id="userInput" expr="''" />
+    <data id="response" expr="''" />
+  </datamodel>
 
-// Use Gemini for prompts
-const response = await document.prompt('Explain quantum computing')
-\`\`\`
+  <state id="process">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'You are a helpful assistant. User: ' + userInput" />
+    </onentry>
 
-## Configuration
+    <transition event="action.response" target="complete">
+      <assign location="response" expr="_event.data.message" />
+    </transition>
 
-Configure the Gemini extension with various options:
+    <transition event="action.error" target="error_handler" />
+  </state>
+</agent>
+```
 
-\`\`\`typescript
-import: activedocs/extensions/gemini
+## Actions
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    geminiExtension({
-      // Required: Your Gemini API key
-      apiKey: process.env.GEMINI_API_KEY,
-      
-      // Optional: Model to use
-      model: 'gemini-pro', // or 'gemini-pro-vision'
-      
-      // Optional: Generation config
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024
-      },
-      
-      // Optional: Safety settings
-      safetySettings: [
-        {
-          category: 'HARM_CATEGORY_HARASSMENT',
-          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-        }
-      ]
-    })
-  ]
-})
-\`\`\`
+### `<gemini:generate>`
 
-## Models
+Generate text with Gemini models:
 
-### Gemini Pro
+**Attributes:**
+- `model` (required) - Model identifier (e.g., "gemini-2.0-flash-exp", "gemini-2.0-exp")
+- `location` (required) - Variable to store event  reference
+- `promptexpr` (required) - ECMAScript expression for the prompt
+- `max-output-tokens` (optional) - Maximum response tokens
+- `temperature` (optional) - Sampling temperature (0.0-1.0)
 
-Text-only model for general tasks:
+**Events raised:**
+- `action.response` - Generation completed successfully
+  - `_event.data.message` - Generated text
+  - `_event.data.usage` - Token usage information
+- `action.error` - Generation failed
+  - `_event.data.error` - Error details
 
-\`\`\`typescript
-import: activedocs/extensions/gemini
+## Available Models
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    geminiExtension({
-      apiKey: process.env.GEMINI_API_KEY,
-      model: 'gemini-pro'
-    })
-  ]
-})
+### Gemini 2.0 Flash Experimental
 
-const response = await document.prompt('Write a haiku about coding')
-\`\`\`
+Fast, efficient model for most tasks:
 
-### Gemini Pro Vision
+```xml
+<gemini:generate
+  model="gemini-2.0-flash-exp"
+  location="_event"
+  promptexpr="userQuery" />
+```
 
-Multimodal model for text and images:
+### Gemini 2.0 Experimental
 
-\`\`\`typescript
-import: activedocs/extensions/gemini
+Most capable model:
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    geminiExtension({
-      apiKey: process.env.GEMINI_API_KEY,
-      model: 'gemini-pro-vision'
-    })
-  ]
-})
-
-const response = await document.prompt({
-  text: 'What is in this image?',
-  image: {
-    data: imageBuffer,
-    mimeType: 'image/jpeg'
-  }
-})
-\`\`\`
-
-## Streaming
-
-Stream responses from Gemini:
-
-\`\`\`typescript
-import: activedocs/extensions/gemini
-
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [geminiExtension({ apiKey: process.env.GEMINI_API_KEY })]
-})
-
-document.stream('Write a story about a robot', {
-  onToken: (token) => {
-    process.stdout.write(token)
-  },
-  onComplete: (content) => {
-    console.log('\n\nComplete:', content)
-  }
-})
-\`\`\`
+```xml
+<gemini:generate
+  model="gemini-2.0-exp"
+  location="_event"
+  promptexpr="complexQuery"
+  max-output-tokens="2048" />
+```
 
 ## Generation Parameters
 
-Control generation with parameters:
+Control generation behavior:
 
-\`\`\`typescript
-import: activedocs/extensions/gemini
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    geminiExtension({
-      apiKey: process.env.GEMINI_API_KEY,
-      generationConfig: {
-        // Temperature: 0.0 to 1.0
-        // Lower = more deterministic
-        temperature: 0.9,
-        
-        // Top-K: Number of tokens to consider
-        topK: 40,
-        
-        // Top-P: Cumulative probability threshold
-        topP: 0.95,
-        
-        // Maximum tokens to generate
-        maxOutputTokens: 2048,
-        
-        // Stop sequences
-        stopSequences: ['END', 'STOP']
-      }
-    })
-  ]
-})
-\`\`\`
+  <state id="generate">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="userPrompt"
+        temperature="0.7"
+        max-output-tokens="1024" />
+    </onentry>
 
-## Safety Settings
+    <transition event="action.response" target="success" />
+  </state>
+</agent>
+```
 
-Configure content safety:
+## Schema-Guided Generation
 
-\`\`\`typescript
-import: activedocs/extensions/gemini
+Combine with `event:schema` for structured outputs:
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [
-    geminiExtension({
-      apiKey: process.env.GEMINI_API_KEY,
-      safetySettings: [
-        {
-          category: 'HARM_CATEGORY_HARASSMENT',
-          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-        },
-        {
-          category: 'HARM_CATEGORY_HATE_SPEECH',
-          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-        },
-        {
-          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-        },
-        {
-          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-        }
-      ]
-    })
-  ]
-})
-\`\`\`
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <state id="extract_info">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Extract flight information from: ' + userMessage" />
+    </onentry>
+
+    <transition event="action.response"
+                event:schema='{
+                  "type": "object",
+                  "properties": {
+                    "from": {"type": "string"},
+                    "to": {"type": "string"},
+                    "date": {"type": "string", "format": "date"}
+                  },
+                  "required": ["from", "to", "date"]
+                }'
+                target="book_flight">
+      <assign location="flightData" expr="_event.data" />
+    </transition>
+
+    <transition event="error.execution.validation" target="retry_extraction" />
+  </state>
+</agent>
+```
+
+## Multi-Turn Conversations
+
+Build conversation history in datamodel:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <datamodel>
+    <data id="conversationHistory" expr="[]" />
+  </datamodel>
+
+  <state id="chat">
+    <onentry>
+      <!-- Add user message to history -->
+      <assign location="conversationHistory"
+              expr="conversationHistory.concat([{role: 'user', content: userInput}])" />
+
+      <!-- Generate with conversation context -->
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="conversationHistory.map(m => m.role + ': ' + m.content).join('\n')" />
+    </onentry>
+
+    <transition event="action.response" target="respond">
+      <!-- Add assistant message to history -->
+      <assign location="conversationHistory"
+              expr="conversationHistory.concat([{role: 'assistant', content: _event.data.message}])" />
+    </transition>
+  </state>
+</agent>
+```
 
 ## Error Handling
 
 Handle Gemini-specific errors:
 
-\`\`\`typescript
-import: activedocs/extensions/gemini
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [geminiExtension({ apiKey: process.env.GEMINI_API_KEY })]
-})
+  <datamodel>
+    <data id="retryCount" expr="0" />
+  </datamodel>
 
-document.on('gemini:error', (event) => {
-  if (event.error.code === 'RATE_LIMIT_EXCEEDED') {
-    console.log('Rate limit hit, retrying in 60s')
-    setTimeout(() => document.retry(), 60000)
-  } else if (event.error.code === 'SAFETY_BLOCKED') {
-    console.log('Content blocked by safety filters')
-  } else {
-    console.error('Gemini error:', event.error)
-  }
-})
-\`\`\`
+  <state id="generate">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="userQuery" />
+    </onentry>
 
-## Token Usage
+    <!-- Success -->
+    <transition event="action.response" target="success">
+      <assign location="result" expr="_event.data.message" />
+    </transition>
 
-Track token usage:
+    <!-- Rate limit error -->
+    <transition event="action.error"
+                cond="_event.data.error.type === 'rate_limit'"
+                target="rate_limited">
+      <log expr="'Rate limited, waiting...'" />
+    </transition>
 
-\`\`\`typescript
-import: activedocs/extensions/gemini
+    <!-- Other errors with retry -->
+    <transition event="action.error"
+                cond="retryCount < 3"
+                target="generate">
+      <assign location="retryCount" expr="retryCount + 1" />
+      <log expr="'Retry attempt ' + retryCount" />
+    </transition>
 
-const document = createDocument({
-  namespace: 'myapp',
-  extensions: [geminiExtension({ apiKey: process.env.GEMINI_API_KEY })]
-})
+    <!-- Max retries exceeded -->
+    <transition event="action.error" target="failed">
+      <assign location="error" expr="_event.data.error" />
+    </transition>
+  </state>
 
-document.on('gemini:complete', (event) => {
-  console.log('Prompt tokens:', event.usage.promptTokens)
-  console.log('Completion tokens:', event.usage.completionTokens)
-  console.log('Total tokens:', event.usage.totalTokens)
-})
-\`\`\`
+  <state id="rate_limited">
+    <onentry>
+      <!-- Wait 60 seconds -->
+      <send event="retry" target="#_internal" delay="60s" />
+    </onentry>
+
+    <transition event="retry" target="generate">
+      <assign location="retryCount" expr="0" />
+    </transition>
+  </state>
+</agent>
+```
+
+## Token Usage Tracking
+
+Monitor token consumption:
+
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
+
+  <datamodel>
+    <data id="totalTokens" expr="0" />
+  </datamodel>
+
+  <state id="generate">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="query" />
+    </onentry>
+
+    <transition event="action.response" target="log_usage">
+      <assign location="totalTokens" expr="totalTokens + (_event.data.usage?.total || 0)" />
+      <log expr="'Tokens used: ' + _event.data.usage.total" />
+      <log expr="'Total session tokens: ' + totalTokens" />
+    </transition>
+  </state>
+</agent>
+```
 
 ## Best Practices
 
-1. **Secure API keys** - Never commit keys to version control
-2. **Handle rate limits** - Implement retry logic
-3. **Monitor token usage** - Track costs
-4. **Use appropriate models** - Choose based on task
-5. **Configure safety** - Set appropriate safety thresholds
+1. **Secure API keys**: Use environment variables, never hardcode
+2. **Handle rate limits**: Implement exponential backoff
+3. **Monitor token usage**: Track costs with usage logging
+4. **Use schemas**: Guide output structure with `event:schema`
+5. **Validate responses**: Add schema validation for critical data
+6. **Set token limits**: Use `max-output-tokens` to control costs
+7. **Handle errors gracefully**: Add error transitions for all calls
+8. **Choose appropriate models**: Balance capability and cost
+9. **Cache when possible**: Store repeated queries in datamodel
+10. **Test thoroughly**: Validate behavior across all states
+
+## Command-Line Options
+
+```bash
+# Set API key via environment
+export GEMINI_API_KEY=your_key
+agentmlx run agent.aml
+
+# Or pass directly (not recommended for production)
+agentmlx run agent.aml --env GEMINI_API_KEY=your_key
+
+# Enable verbose logging
+agentmlx run agent.aml --verbose
+
+# Log token usage
+agentmlx run agent.aml --log-tokens
+```
 
 ## Next Steps
 
-- Explore [Memory Extension](/extensions/memory)
-- Try [Ollama Extension](/extensions/ollama)
-- Build [Custom Extensions](/extensions/custom)
-\`\`\`
+- Learn about [Ollama Extension](/extensions/ollama) for local models
+- Explore [Memory Extension](/extensions/memory) for context augmentation
+- Read [Token Efficiency](/concepts/token-efficiency) for optimization strategies
+- See [Error Handling](/best-practices/error-handling) for robust agents

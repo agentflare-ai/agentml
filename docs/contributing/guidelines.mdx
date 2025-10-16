@@ -1,138 +1,418 @@
 ---
 title: "Contributing Guidelines"
-description: "How to contribute to ActiveFlow"
+description: "How to contribute to AgentML"
 ---
 
 # Contributing Guidelines
 
-We welcome contributions to ActiveFlow! This guide will help you get started.
+We welcome contributions to AgentML! Help us build the universal language for AI agents.
 
 ## Code of Conduct
 
-Be respectful, inclusive, and constructive. We're building a welcoming community.
+Be respectful, inclusive, and constructive. We're building a welcoming community around open agent standards.
+
+## Ways to Contribute
+
+1. **Report bugs**: Help us improve stability
+2. **Request features**: Propose new capabilities
+3. **Write documentation**: Improve guides and examples
+4. **Create extensions**: Build custom namespaces
+5. **Fix issues**: Submit bug fixes and improvements
+6. **Share examples**: Contribute agent templates
+7. **Test conformance**: Validate SCXML compliance
 
 ## Getting Started
 
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/yourusername/activeflow.git`
-3. Create a branch: `git checkout -b feature/your-feature`
-4. Make your changes
-5. Run tests: `npm test`
-6. Commit: `git commit -m "Add your feature"`
-7. Push: `git push origin feature/your-feature`
-8. Open a Pull Request
+### Fork and Clone
+
+```bash
+# Fork the repository on GitHub
+# Clone your fork
+git clone https://github.com/yourusername/agentml.git
+cd agentml
+
+# Or for runtime development
+git clone https://github.com/yourusername/agentmlx.git
+cd agentmlx
+```
+
+### Create a Branch
+
+```bash
+git checkout -b feature/your-feature-name
+```
+
+### Make Changes
+
+Follow the development guide for setup instructions.
+
+### Commit Changes
+
+Use conventional commit messages:
+
+```bash
+git commit -m "feat: Add streaming support to Gemini extension"
+git commit -m "fix: Resolve state transition bug in parallel states"
+git commit -m "docs: Update quick-start guide with new examples"
+git commit -m "test: Add SCXML conformance tests for datamodel"
+```
+
+### Push and Create PR
+
+```bash
+git push origin feature/your-feature-name
+```
+
+Open a Pull Request on GitHub with:
+- Clear description of changes
+- Link to related issues
+- Screenshots/examples if applicable
+- Test results
 
 ## Development Setup
 
-Install dependencies:
+### For AgentML Specification
 
-\`\`\`bash
+Documentation and examples:
+
+```bash
+cd agentml
 npm install
-\`\`\`
+npm run docs:dev
+```
 
-Run tests:
+### For agentmlx Runtime
 
-\`\`\`bash
-npm test
-npm run test:watch
-npm run test:coverage
-\`\`\`
+Go development environment:
 
-Build the project:
+```bash
+cd agentmlx
 
-\`\`\`bash
-npm run build
-\`\`\`
+# Install dependencies
+go mod download
 
-## Code Style
+# Run tests
+go test ./...
 
-We use ESLint and Prettier for code formatting:
+# Build runtime
+go build -o agentmlx cmd/agentmlx/main.go
 
-\`\`\`bash
-npm run lint
-npm run format
-\`\`\`
-
-Follow these conventions:
-
-- Use TypeScript for all new code
-- Write tests for new features
-- Document public APIs with JSDoc
-- Use meaningful variable names
-- Keep functions small and focused
-
-## Commit Messages
-
-Follow conventional commits:
-
-\`\`\`
-feat: Add new extension system
-fix: Resolve parsing error in namespaces
-docs: Update installation guide
-test: Add tests for state machine
-refactor: Simplify interpreter logic
-\`\`\`
-
-## Pull Request Process
-
-1. Update documentation for new features
-2. Add tests for bug fixes and features
-3. Ensure all tests pass
-4. Update CHANGELOG.md
-5. Request review from maintainers
+# Run agent
+./agentmlx run examples/chatbot.aml
+```
 
 ## Testing Requirements
 
 All contributions must include tests:
 
-- Unit tests for new functions
-- Integration tests for features
-- E2E tests for user-facing changes
+### Runtime Tests (Go)
 
-Maintain test coverage above 80%.
+```bash
+# Unit tests
+go test ./pkg/scxml/...
+go test ./pkg/namespaces/...
 
-## Documentation
+# Integration tests
+go test ./tests/integration/...
+
+# SCXML conformance tests
+go test ./tests/conformance/...
+```
+
+### Agent Tests (AgentML)
+
+```bash
+# Validate agent syntax
+agentmlx validate agent.aml
+
+# Run agent tests
+agentmlx run tests/test-agent.aml
+```
+
+### Documentation Tests
+
+```bash
+# Test all code examples in docs
+npm run test:docs
+```
+
+## Code Style
+
+### Go Code
+
+Follow Go conventions:
+
+```bash
+# Format code
+go fmt ./...
+
+# Lint code
+golangci-lint run
+
+# Vet code
+go vet ./...
+```
+
+**Conventions:**
+- Use `gofmt` for formatting
+- Follow [Effective Go](https://golang.org/doc/effective_go.html)
+- Write clear, concise comments
+- Keep functions focused and testable
+- Use meaningful variable names
+
+### AgentML Files
+
+Follow SCXML/XML best practices:
+
+```xml
+<!-- Good: Clear structure, proper indentation -->
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
+
+  <datamodel>
+    <data id="count" expr="0" />
+  </datamodel>
+
+  <state id="idle">
+    <transition event="start" target="processing" />
+  </state>
+</agent>
+```
+
+**Conventions:**
+- Use 2-space indentation
+- Close all tags properly
+- Use meaningful state IDs
+- Add comments for complex logic
+- Follow W3C SCXML specification
+
+## Documentation Guidelines
 
 Update documentation for:
 
-- New features
-- API changes
-- Breaking changes
-- Configuration options
+- **New features**: Add examples and API docs
+- **Extensions**: Document all actions and attributes
+- **Breaking changes**: Update migration guide
+- **Configuration**: Document environment variables
+- **Examples**: Provide real-world use cases
 
-Documentation lives in `/docs` as MDX files.
+Documentation format (MDX):
+
+```mdx
+---
+title: "Feature Name"
+description: "Brief description"
+---
+
+# Feature Name
+
+Introduction paragraph.
+
+## Usage
+
+```xml
+<agent xmlns="...">
+  <!-- Example -->
+</agent>
+```
+
+## Best Practices
+
+1. Practice one
+2. Practice two
+```
+
+## SCXML Conformance
+
+AgentML aims for W3C SCXML conformance. When contributing:
+
+1. **Check specification**: Reference [W3C SCXML spec](https://www.w3.org/TR/scxml/)
+2. **Run conformance tests**: `go test ./tests/conformance/...`
+3. **Document deviations**: Explain any non-conformant behavior
+4. **Add tests**: Include conformance tests for new features
+
+Current conformance: **185/193 tests passing (95.9%)**
+
+## Creating Extensions
+
+Contribute custom namespaces:
+
+**Structure:**
+
+```
+my-extension/
+├── README.md
+├── go.mod
+├── extension.go
+├── actions.go
+├── examples/
+│   └── usage.aml
+└── tests/
+    └── extension_test.go
+```
+
+**Implementation:**
+
+```go
+package myextension
+
+import "github.com/agentflare-ai/agentmlx/pkg/scxml"
+
+type MyAction struct {
+    Param string `xml:"param,attr"`
+}
+
+func (a *MyAction) Execute(ctx *scxml.Context) error {
+    // Implementation
+    return nil
+}
+
+func Register() {
+    scxml.RegisterNamespace("github.com/example/myextension", map[string]interface{}{
+        "myaction": &MyAction{},
+    })
+}
+```
+
+See [Custom Extensions](/extensions/custom) guide.
 
 ## Issue Reporting
 
 When reporting issues, include:
 
-- ActiveFlow version
-- Node.js version
-- Operating system
-- Minimal reproduction example
+**Bug Reports:**
+- agentmlx version: `agentmlx --version`
+- Operating system and architecture
+- Agent file (or minimal reproduction)
 - Expected vs actual behavior
 - Error messages and stack traces
+- Steps to reproduce
+
+**Example:**
+
+```
+**Bug**: State transition fails in parallel states
+
+**agentmlx version**: 0.1.0
+**OS**: Ubuntu 22.04 (amd64)
+
+**Agent file**:
+[Attach minimal reproduction]
+
+**Expected**: Both parallel states complete
+**Actual**: Only first state completes
+
+**Error**:
+[Paste error output]
+
+**Steps**:
+1. Run `agentmlx run agent.aml`
+2. Send event: `{"name": "start"}`
+3. Observe output
+```
 
 ## Feature Requests
 
 For feature requests, describe:
 
-- Use case and motivation
-- Proposed API or interface
-- Alternative solutions considered
-- Willingness to implement
+1. **Use case**: What problem does this solve?
+2. **Motivation**: Why is this important?
+3. **Proposed solution**: How should it work?
+4. **Example**: Show expected usage
+5. **Alternatives**: Other approaches considered
+6. **Willingness**: Can you implement this?
+
+**Example:**
+
+```markdown
+## Feature: WebSocket IOProcessor
+
+**Use case**: Real-time bidirectional communication for agents
+
+**Motivation**: HTTP is request-response only. WebSocket enables
+long-lived connections for chat, notifications, and streaming.
+
+**Proposed solution**:
+```xml
+<send target="ws://server.com/events" type="websocket">
+  <content expr="message" />
+</send>
+```
+
+**Alternatives**: Server-sent events, long polling
+
+**Willingness**: I can implement this with guidance
+```
+
+## Pull Request Process
+
+1. **Update documentation**: Add/update relevant docs
+2. **Add tests**: Include unit and integration tests
+3. **Run tests**: Ensure all tests pass
+4. **Update CHANGELOG.md**: Document changes
+5. **Request review**: Tag relevant maintainers
+6. **Address feedback**: Be responsive to review comments
+
+**PR Template:**
+
+```markdown
+## Description
+Brief description of changes
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
+
+## Testing
+- [ ] Unit tests added
+- [ ] Integration tests added
+- [ ] SCXML conformance tests pass
+- [ ] Manual testing completed
+
+## Documentation
+- [ ] Documentation updated
+- [ ] Examples added/updated
+- [ ] CHANGELOG.md updated
+
+## Checklist
+- [ ] Code follows style guidelines
+- [ ] Self-review completed
+- [ ] Comments added for complex logic
+- [ ] No new warnings introduced
+```
 
 ## Review Process
 
-Maintainers will review your PR and may request changes. Be patient and responsive to feedback.
+Maintainers will review your PR:
+
+1. **Initial review**: Within 1 week
+2. **Feedback**: Constructive suggestions
+3. **Iteration**: Work together to refine
+4. **Approval**: When ready, PR is approved
+5. **Merge**: Maintainer merges to main
+
+Be patient and responsive to feedback.
+
+## Community
+
+Join the community:
+
+- **GitHub Discussions**: Ask questions, share ideas
+- **Issues**: Report bugs, request features
+- **Discord**: Real-time chat (coming soon)
+- **Twitter**: [@agentflareai](https://twitter.com/agentflareai)
 
 ## License
 
 By contributing, you agree that your contributions will be licensed under the MIT License.
 
-## Questions?
+## Recognition
 
-Join our Discord community or open a discussion on GitHub.
+Contributors are recognized in:
+- CONTRIBUTORS.md file
+- Release notes
+- Documentation credits
 
-Thank you for contributing to ActiveFlow!
-\`\`\`
+Thank you for contributing to AgentML! Together we're building the universal language for AI agents.
