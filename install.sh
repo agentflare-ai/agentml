@@ -225,7 +225,7 @@ setup_path() {
     echo "# agentmlx" >> "$shell_profile"
     echo "export PATH=\"\$PATH:$BIN_DIR\"" >> "$shell_profile"
 
-    info "Please run: ${BOLD}source $shell_profile${RESET} or restart your shell"
+    printf "${GREEN}==>${RESET} Please run: ${BOLD}source %s${RESET} or restart your shell\n" "$shell_profile"
 }
 
 # Main installation
@@ -357,26 +357,26 @@ main() {
     # Show installed version
     local installed_version
     if [ -n "$version" ]; then
-        info "${GREEN}✓${RESET} agentmlx v${version} installed successfully!"
+        printf "${GREEN}==>${RESET} ${GREEN}✓${RESET} agentmlx v%s installed successfully!\n" "$version"
     else
         # Try to get version from binary
         installed_version=$("$BIN_DIR/agentmlx" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?' || echo "")
         if [ -n "$installed_version" ]; then
-            info "${GREEN}✓${RESET} agentmlx v${installed_version} installed successfully!"
+            printf "${GREEN}==>${RESET} ${GREEN}✓${RESET} agentmlx v%s installed successfully!\n" "$installed_version"
         else
-            info "${GREEN}✓${RESET} agentmlx installed successfully!"
+            printf "${GREEN}==>${RESET} ${GREEN}✓${RESET} agentmlx installed successfully!\n"
         fi
     fi
 
     echo ""
     echo "To get started, run:"
-    echo "  ${BOLD}agentmlx --help${RESET}"
-    echo "  ${BOLD}amlx --help${RESET}"
+    printf "  ${BOLD}agentmlx --help${RESET}\n"
+    printf "  ${BOLD}amlx --help${RESET}\n"
     echo ""
 
     if [ $no_modify_path -eq 0 ] && ! echo "$PATH" | grep -q "$BIN_DIR"; then
         echo "Note: You may need to restart your shell or run:"
-        echo "  ${BOLD}export PATH=\"\$PATH:$BIN_DIR\"${RESET}"
+        printf "  ${BOLD}export PATH=\"\\\$PATH:%s\"${RESET}\n" "$BIN_DIR"
     fi
 }
 
