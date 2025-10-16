@@ -179,7 +179,7 @@ type IOProcessor interface {
 	// This is used to populate the _ioprocessors system variable
 	Location(ctx context.Context) (string, error)
 
-	// Type returns the I/O processor type URI (e.g., "http://www.w3.org/TR/scxml/#SCXMLEventProcessor")
+	// Type returns the I/O processor type URI (e.g., "github.com/agentflare-ai/agentml/ioprocessor/scxml")
 	Type() string
 
 	// Shutdown cleans up resources used by this I/O processor

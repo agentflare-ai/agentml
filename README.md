@@ -82,6 +82,22 @@ AgentML uses SCXML state machines to define **deterministic behavior**, moving b
 
 4.  **Decomposition**: Complex agents can be broken down into smaller, reusable state machines using the `<invoke>` tag. This is ideal for managing complexity and sharing components like authentication or payment processing.
 
+5.  **Compiler-Inspired Validation**: To ensure reliability, especially when agents are building other agents, AgentML includes a powerful validation system. Inspired by the Rust compiler (`rustc`), it provides detailed, actionable error messages that help developers (and other agents) pinpoint issues quickly and achieve a high success rate when generating AgentML documents.
+
+    Here is an example of the validator's output:
+    ```bash
+    ./agentml/examples/customer_support/customer_support.aml:89:5: WARNING[W340] State 'await_user_input' has only conditional transitions and may deadlock if no events match
+          88 |     <!-- Await User Input and Classify Intent (Combined State) -->
+          89 |     <state id="await_user_input">
+                   ^
+          90 |       <onentry>
+      hint: Add an unconditional fallback transition (without 'event' or 'cond' attributes)
+      hint: Or ensure all possible events are handled
+      hint: Example: <transition target="fallback_state" />
+
+    summary: 0 error(s), 1 warning(s), 1 total
+    ```
+
 ### Schema References with `import`
 
 To keep agent files clean and promote reuse, schemas can be defined in external JSON or YAML files (including OpenAPI specs) and loaded with an `import` directive. The runtime intelligently detects the file type.
@@ -111,7 +127,6 @@ This enables schema reuse via **JSON Pointer (RFC 6901)** references with namesp
 
 **agent.aml:**
 ```xml
-<?xml version="1.0" encoding="UTF-8"?>
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        import:events="./schemas/events.json">
 
@@ -142,7 +157,8 @@ This unified `import` directive is designed to work for schemas, namespace imple
 
 ## Architecture
 
-- **Document Structure**: AgentML files use an `<agent>` root element, which is a compatible extension of SCXML's `<scxml>` element.
+- **Document Structure**: AgentML files use an `<agent>` root element, which is a compatible extension of SCXML's `<scxml>` element. The `datamodel` attribute specifies the scripting language used for data manipulation and expressions.
+- **Supported Datamodels**: AgentML supports `ecmascript`, `starlark`, and `xpath`. Support for using `wasm` components as a datamodel is planned for the future.
 - **Namespace System**: Functionality is extended through namespaces (e.g., for Gemini, Ollama, Memory) declared with the `import:prefix="uri"` directive.
 - **Runtime Snapshot**: At each step, the runtime creates an XML snapshot containing the active states, datamodel, and available events. This, combined with the SCXML document, gives the LLM complete and current context.
 
@@ -227,11 +243,11 @@ AgentML is designed for distributed agent communication using the W3C SCXML `IOP
     <!-- Send an event to a remote agent via HTTP -->
     <send event="task.assigned"
           target="https://agent.example.com/events"
-          type="http://www.w3.org/TR/scxml/#HTTPEventProcessor">
+          type="github.com/agentflare-ai/agentml/ioprocessor/http">
       <param name="task_id" expr="task.id" />
     </send>
   </onentry>
-  
+
   <!-- Wait for a response -->
   <transition event="task.acknowledged" target="confirmed" />
 </state>
@@ -286,7 +302,6 @@ We are building AgentML in the open. Your feedback is critical.
 ### Basic Agent Example
 
 ```xml
-<?xml version="1.0" encoding="UTF-8"?>
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
        import:gemini="github.com/agentflare-ai/agentml/gemini">
@@ -331,43 +346,7 @@ We are building AgentML in the open. Your feedback is critical.
 </agent>
 ```
 
-### For Runtime Developers (Embedding the Interpreter)
 
-If you're building a custom runtime or embedding the AgentML interpreter in a Go application, you can use the Go package directly:
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/agentflare-ai/agentml"
-    "github.com/agentflare-ai/agentml/agent"
-)
-
-func main() {
-    ctx := context.Background()
-
-    // Load agent document
-    doc, err := xmldom.ParseFile("agent.aml")
-    if err != nil {
-        panic(err)
-    }
-
-    // Create interpreter
-    interp, err := agentml.NewInterpreter(ctx, doc)
-    if err != nil {
-        panic(err)
-    }
-
-    // Start the agent
-    if err := interp.Start(ctx); err != nil {
-        panic(err)
-    }
-
-    // Agent runs until completion
-    <-interp.Done()
-}
-```
 
 **For most users:** Just write `.aml` files and run them with `agentmlx` - no Go code needed!
 
@@ -380,7 +359,7 @@ AgentML's functionality is extended through namespaces. Here are the currently a
 - **Agent (`.../agentml/agent`)**: Core namespace for `<agent>` root element and `event:schema` validation.
 - **Gemini (`.../agentml/gemini`)**: Google Gemini LLM integration.
 - **Ollama (`.../agentml/ollama`)**: Local LLM integration via Ollama.
-- **Memory (`github.com/agentflare-ai/agentml/memory`)**: High-performance memory with SQLite, vector search, and graph database capabilities.
+- **Memory (`github.com/agentflare-ai/agentml/memory`)**: High-performance memory with vector search and graph database capabilities. This is powered by `sqlite-graph`, our custom extension that provides a complete, local, filesystem-based memory framework within a single SQLite file.
 
 ```xml
 <agent import:memory="github.com/agentflare-ai/agentml/memory">
@@ -422,4 +401,4 @@ Custom namespaces can be implemented in Go, or in the future, any language that 
 - **Use meaningful state IDs**: `handle_flight_request` is better than `state_5`.
 - **Validate with schemas**: Always use `event:schema` and provide detailed `description` fields to guide the LLM.
 - **Use external schemas**: Define schemas in `.json`/`.yaml` files and load them with `import:` for reuse and maintainability.
-- **Prefer external scripts**: Use `<script src="./utils.js" />` over large inline scripts. If you must use inline scripts, wrap them in `<![CDATA[...]]>` to avoid XML escaping issues.
+- **Handle Scripts Carefully**: For complex logic, prefer external scripts (`<script src="./utils.js" />`). When writing scripts inline, remember that standard XML escaping rules apply for characters like `<` and `&`. To avoid this, it is highly recommended to wrap your script content in a `<![CDATA[...]]>` section.
