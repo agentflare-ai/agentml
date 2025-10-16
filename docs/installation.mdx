@@ -1,256 +1,247 @@
 ---
 title: "Installation"
-description: "Install and set up Agentic Flow Documents in your project"
+description: "Install and set up agentmlx runtime to run AgentML agents"
 ---
 
 # Installation
 
-Get started with Agentic Flow Documents in minutes. This guide covers installation for Node.js, Python, and browser environments.
+Get started with AgentML by installing the `agentmlx` runtime. AgentML is a language specification—you write `.aml` files that define your agent's behavior, and `agentmlx` executes them.
 
 ## Prerequisites
 
-Before installing Agentic Flow, ensure you have:
+- Linux or macOS (Windows support planned)
+- Architecture: amd64 or arm64
+- Internet connection for installation
 
-- **Node.js** 18+ or **Python** 3.9+ (depending on your runtime)
-- A package manager (npm, yarn, pnpm, or pip)
-- Basic understanding of event-driven programming
+## Quick Install (Recommended)
 
-## Node.js Installation
+Install the latest version with a single command:
 
-### Using npm
+```bash
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+```
 
-\`\`\`bash
-npm install agentic-flow
-\`\`\`
+This will:
+- Automatically detect your platform (Linux/macOS, amd64/arm64)
+- Download the latest release
+- Verify checksums for security
+- Install to `~/.agentmlx/bin`
+- Add to your PATH
 
-### Using yarn
+## Installation Channels
 
-\`\`\`bash
-yarn add agentic-flow
-\`\`\`
+Install from different release channels:
 
-### Using pnpm
+```bash
+# Latest stable release (default)
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
 
-\`\`\`bash
-pnpm add agentic-flow
-\`\`\`
+# Next (release candidate)
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --channel next
 
-## Python Installation
+# Beta releases
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --channel beta
+```
 
-\`\`\`bash
-pip install agentic-flow
-\`\`\`
+**Release Channels:**
+- `latest` - Stable releases (v1.0.0) - **Default**
+- `next` - Release candidates (v1.0.0-rc.1)
+- `beta` - Beta releases (v1.0.0-beta.1)
+
+The installer automatically falls back if a channel is empty: `latest` → `next` → `beta`
+
+## Install Specific Version
+
+Install a specific version by providing the `--version` flag:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --version 1.0.0-rc.1
+```
+
+## Custom Installation Directory
+
+By default, agentmlx installs to `~/.agentmlx/bin`. To install elsewhere:
+
+```bash
+export AGENTMLX_INSTALL_DIR=/usr/local
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+```
 
 ## Verify Installation
 
-### Node.js
+After installation, verify that agentmlx is working:
 
-Create a test file `test.js`:
+```bash
+agentmlx --version
+```
 
-\`\`\`javascript
-import { AgenticFlow } from 'agentic-flow';
+You should see output like:
 
-const af = new AgenticFlow();
-console.log('Agentic Flow version:', af.version);
-\`\`\`
+```
+agentmlx version 1.0.0-rc.1
+```
 
-Run it:
+## Manual Installation
 
-\`\`\`bash
-node test.js
-\`\`\`
+If you prefer to install manually, download the appropriate binary for your platform from [GitHub Releases](https://github.com/agentflare-ai/agentmlx/releases):
 
-### Python
+### Linux (amd64)
 
-Create a test file `test.py`:
+```bash
+curl -L https://amlx.agentml.dev/agentmlx/v1.0.0/agentmlx_1.0.0_linux_amd64 -o agentmlx
+chmod +x agentmlx
+sudo mv agentmlx /usr/local/bin/
+```
 
-\`\`\`python
-from agentic_flow import AgenticFlow
+### macOS (amd64)
 
-af = AgenticFlow()
-print(f'Agentic Flow version: {af.version}')
-\`\`\`
+```bash
+curl -L https://amlx.agentml.dev/agentmlx/v1.0.0/agentmlx_1.0.0_darwin_amd64 -o agentmlx
+chmod +x agentmlx
+sudo mv agentmlx /usr/local/bin/
+```
 
-Run it:
+### macOS (arm64 / Apple Silicon)
 
-\`\`\`bash
-python test.py
-\`\`\`
+```bash
+curl -L https://amlx.agentml.dev/agentmlx/v1.0.0/agentmlx_1.0.0_darwin_arm64 -o agentmlx
+chmod +x agentmlx
+sudo mv agentmlx /usr/local/bin/
+```
 
-## Project Setup
+## Environment Setup
 
-### Initialize a New Project
+### API Keys
 
-\`\`\`bash
-# Create project directory
-mkdir my-agentic-app
-cd my-agentic-app
+If you're using LLM namespaces like Gemini or Ollama, set up your API keys:
 
-# Initialize package.json (Node.js)
-npm init -y
+```bash
+# For Gemini
+export GEMINI_API_KEY=your_key_here
 
-# Install Agentic Flow
-npm install agentic-flow
-\`\`\`
+# For OpenAI (if using custom namespaces)
+export OPENAI_API_KEY=your_key_here
+
+# For Anthropic (if using custom namespaces)
+export ANTHROPIC_API_KEY=your_key_here
+```
+
+Add these to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.) to persist them:
+
+```bash
+echo 'export GEMINI_API_KEY=your_key_here' >> ~/.zshrc
+```
 
 ### Project Structure
 
-We recommend the following structure:
+We recommend the following project structure for AgentML projects:
 
-\`\`\`
-my-agentic-app/
-├── docs/              # Your AF documents
-│   ├── main.af
-│   ├── chatbot.af
+```
+my-agent-project/
+├── agents/              # Your AgentML files
+│   ├── main.aml
+│   ├── customer-support.aml
 │   └── workflows/
-├── src/               # Application code
-│   └── index.js
-├── tests/             # Test files
-└── package.json
-\`\`\`
+│       └── onboarding.aml
+├── schemas/             # JSON Schema definitions
+│   └── events.json
+├── scripts/             # External scripts for <script src="">
+│   └── utils.js
+├── tests/               # Test files
+└── .env                 # Environment variables
+```
 
-## Configuration
+## Updating agentmlx
 
-### Basic Configuration
+To update to the latest version, simply run the installer again:
 
-Create `agentic.config.js`:
+```bash
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+```
 
-\`\`\`javascript
-export default {
-  // Document directories
-  documentPaths: ['./docs'],
-  
-  // Namespace configuration
-  namespaces: {
-    std: 'builtin',
-    custom: './namespaces'
-  },
-  
-  // Runtime options
-  runtime: {
-    maxEventQueueSize: 1000,
-    enableDebugMode: false
-  }
-};
-\`\`\`
+Or update to a specific version:
 
-### Environment Variables
+```bash
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --version 1.1.0
+```
 
-Create `.env`:
+## Uninstalling
 
-\`\`\`bash
-# LLM API Keys
-OPENAI_API_KEY=your_key_here
-ANTHROPIC_API_KEY=your_key_here
+To uninstall agentmlx, remove the installation directory:
 
-# Agentic Flow Settings
-AF_DEBUG=false
-AF_LOG_LEVEL=info
-\`\`\`
+```bash
+rm -rf ~/.agentmlx
+```
 
-## IDE Setup
+Then remove the PATH entry from your shell profile:
 
-### VS Code Extension
-
-Install the Agentic Flow extension for syntax highlighting and IntelliSense:
-
-1. Open VS Code
-2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "Agentic Flow"
-4. Click Install
-
-### Syntax Highlighting
-
-The extension provides:
-
-- Syntax highlighting for `.af` files
-- Auto-completion for namespaces
-- Inline documentation
-- Error detection
-
-## Optional Dependencies
-
-### For LLM Integration
-
-\`\`\`bash
-npm install openai anthropic
-\`\`\`
-
-### For Memory/Storage
-
-\`\`\`bash
-npm install redis ioredis
-\`\`\`
-
-### For Advanced Features
-
-\`\`\`bash
-npm install @agentic-flow/extensions
-\`\`\`
-
-## Docker Installation
-
-Run Agentic Flow in a container:
-
-\`\`\`dockerfile
-FROM node:18-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-
-CMD ["node", "src/index.js"]
-\`\`\`
-
-Build and run:
-
-\`\`\`bash
-docker build -t my-agentic-app .
-docker run -p 3000:3000 my-agentic-app
-\`\`\`
+```bash
+# Edit ~/.bashrc, ~/.zshrc, or your shell profile
+# Remove the line: export PATH="$PATH:$HOME/.agentmlx/bin"
+```
 
 ## Troubleshooting
 
-### Common Issues
+### Command not found
 
-**Module not found error**
+If you get `command not found` after installation:
 
-\`\`\`bash
-# Clear cache and reinstall
-rm -rf node_modules package-lock.json
-npm install
-\`\`\`
+1. Reload your shell configuration:
+```bash
+source ~/.bashrc  # or ~/.zshrc
+```
 
-**Permission errors**
+2. Or manually add to PATH:
+```bash
+export PATH="$PATH:$HOME/.agentmlx/bin"
+```
 
-\`\`\`bash
-# Use sudo (not recommended) or fix npm permissions
-npm config set prefix ~/.npm-global
-export PATH=~/.npm-global/bin:$PATH
-\`\`\`
+### Permission denied
 
-**Version conflicts**
+If you encounter permission errors during installation:
 
-\`\`\`bash
-# Check installed version
-npm list agentic-flow
+```bash
+# Ensure the installation directory is writable
+mkdir -p ~/.agentmlx/bin
+chmod u+w ~/.agentmlx/bin
+```
 
-# Update to latest
-npm update agentic-flow
-\`\`\`
+### Checksum verification failed
+
+If checksum verification fails:
+
+1. Check your internet connection
+2. Try downloading again
+3. Report the issue if it persists: [GitHub Issues](https://github.com/agentflare-ai/agentml/issues)
+
+### Apple Silicon / Rosetta 2
+
+The installer automatically detects if you're running on Apple Silicon via Rosetta 2 and downloads the appropriate arm64 binary. If you encounter issues, manually specify:
+
+```bash
+AGENTMLX_PLATFORM=darwin_arm64 curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+```
+
+## Build from Source
+
+For development or contribution, you can build agentmlx from source:
+
+```bash
+git clone https://github.com/agentflare-ai/agentmlx.git
+cd agentmlx
+go build -o agentmlx main.go
+```
+
+See the [Development Guide](/contributing/development) for more details.
 
 ## Next Steps
 
-Now that you have Agentic Flow installed:
+Now that you have agentmlx installed:
 
-1. Follow the [Quick Start Guide](/quick-start) to build your first application
-2. Learn about [Core Concepts](/concepts/state-machines)
-3. Explore [Example Projects](https://github.com/agentic-flow/examples)
+1. Follow the [Quick Start Guide](/quick-start) to build your first agent
+2. Learn about [Core Concepts](/concepts/event-driven-llm)
+3. Explore [Example Projects](https://github.com/agentflare-ai/agentml/tree/main/examples)
 
 ---
 
-**Need Help?** Join our [Discord community](https://discord.gg/agentic-flow) or check the [GitHub issues](https://github.com/agentic-flow/core/issues).
-\`\`\`
+**Need Help?** Join the [GitHub Discussions](https://github.com/agentflare-ai/agentml/discussions) or report issues on [GitHub](https://github.com/agentflare-ai/agentml/issues).

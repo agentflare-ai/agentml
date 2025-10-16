@@ -1,148 +1,151 @@
 ---
 title: "Overview"
-description: "Introduction to Agentic Flow Documents - A revolutionary approach to LLM orchestration"
+description: "Introduction to AgentML - A universal language for AI agents built on W3C SCXML"
 ---
 
-# Agentic Flow Documents
+# AgentML
 
-**Agentic Flow Documents** is a revolutionary framework for building LLM-powered applications using a document-centric, event-driven architecture. Instead of writing imperative code, you define your application's behavior in structured documents that the system interprets and executes.
+**AgentML is the universal language for AI agents, built on the battle-tested W3C SCXML standard.**
 
-## Why Agentic Flow?
+Just as HTML lets you write content once and have it render in any browser, AgentML lets you define your agent's behavior once and run it anywhere. By building on SCXML—a formal model for state machines proven for over 20 years in complex industrial systems—AgentML provides deterministic, auditable agent behavior that outlives framework trends.
 
-Traditional LLM applications suffer from several critical problems:
+## The Problem
 
+The AI agent landscape is fragmented and accelerating, with new frameworks appearing weekly. This creates:
+
+- **Vendor Lock-in**: Tied to frameworks that may become limiting or unmaintained
+- **Costly Rewrites**: Forced to rebuild when switching frameworks
 - **Token Waste**: Sending entire conversation histories on every request
-- **Tight Coupling**: Hard-coded prompts mixed with business logic
-- **Poor Scalability**: Monolithic architectures that don't scale
-- **Limited Reusability**: Can't share components across projects
+- **Non-Deterministic Behavior**: Unpredictable agent responses
+- **Poor Auditability**: Difficult to trace and verify agent decisions
 
-Agentic Flow solves these problems with a fundamentally different approach.
+## The AgentML Solution
+
+AgentML solves these problems by separating agent behavior from runtime execution:
+
+```
+AgentML : Agent Frameworks  =  HTML : Web Browsers
+```
+
+### Write Once, Run Anywhere
+
+1. **Native Execution (Recommended)**: Run agents with **agentmlx**, the reference runtime built in Go/WASM for high performance and portability.
+2. **Transformation (Planned)**: Convert AgentML into other popular frameworks like LangGraph, CrewAI, n8n, and more.
 
 ## Core Philosophy
 
-### Document-Centric Architecture
+### Deterministic Behavior via State Machines
 
-Everything in Agentic Flow is a document. Your application logic, state machines, prompts, and configurations all live in structured documents that can be:
+AgentML uses W3C SCXML state machines to define **deterministic behavior**, moving beyond prompt-only approaches where behavior is emergent and unpredictable.
 
-- Version controlled
-- Shared across projects
-- Composed and extended
-- Validated and tested
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript">
 
-### Event-Driven Execution
+  <state id="idle">
+    <transition event="user.message" target="processing">
+      <assign location="userInput" expr="_event.data.message" />
+    </transition>
+  </state>
 
-Instead of imperative function calls, your application responds to events:
+  <state id="processing">
+    <!-- Agent logic here -->
+    <transition event="task.complete" target="idle" />
+  </state>
+</agent>
+```
 
-\`\`\`
-import: std/llm
+### Schema-Guided Events
 
-on: user.message
-  llm.chat:
-    model: gpt-4
-    prompt: "You are a helpful assistant"
-    input: event.content
-\`\`\`
+LLM outputs are constrained to structured JSON events validated against schemas using the `event:schema` attribute. This ensures reliability and type safety.
 
-### Token Efficiency First
+```xml
+<transition event="intent.flight"
+            event:schema='{"type": "object", "properties": {"action": {"type": "string", "enum": ["search", "book", "cancel"]}}}'
+            target="handle_flight" />
+```
 
-Agentic Flow is designed from the ground up to minimize token usage:
+### Token Efficiency
 
-- **Incremental Context**: Only send what changed
-- **Smart Caching**: Reuse previous responses
-- **Selective Loading**: Load only relevant document sections
+The runtime provides the LLM with a "snapshot" of the current state, datamodel, and available events. This context allows prompts to be minimal, and the static parts (the agent's definition) can be cached by the LLM provider, reducing token consumption dramatically.
 
 ## Key Features
 
-### State Machines
-
-Define complex workflows as declarative state machines:
-
-\`\`\`
-import: std/state
-
-state: greeting
-  on: user.message
-    transition: processing
-
-state: processing
-  on: llm.response
-    transition: complete
-\`\`\`
-
-### Namespace System
-
-Organize functionality into reusable namespaces:
-
-\`\`\`
-import: std/llm as ai
-import: custom/memory as mem
-
-on: user.query
-  mem.store: event.content
-  ai.chat: "Answer based on context"
-\`\`\`
-
-### Schema Validation
-
-Ensure data integrity with built-in schemas:
-
-\`\`\`
-schema: UserMessage
-  content: string
-  timestamp: number
-  userId: string
-
-on: user.message
-  validate: UserMessage
-\`\`\`
+- 🎯 **Deterministic Execution**: Same inputs always produce same outputs
+- 📝 **Schema-Guided Events**: `event:schema` attributes validate LLM-generated events
+- 🔄 **Runtime Snapshots**: Efficiently provide LLM context, minimizing token usage
+- 📦 **Modular Design**: Decompose complex agents with `<invoke>`
+- 🔌 **Extensible Namespaces**: Plug in custom functionality (LLMs, memory, I/O)
+- 📊 **Observable**: OpenTelemetry tracing and logging built-in
+- 🌐 **Universal Standard**: Write once, deploy anywhere
+- 🔗 **Remote Communication**: Built-in distributed agent communication via IOProcessors
+- ✅ **W3C Conformant**: 185/193 conformance tests passing (95.9%)
+- 🛡️ **Compiler-Inspired Validation**: Detailed, actionable error messages
 
 ## Quick Example
 
-Here's a complete chatbot in Agentic Flow:
+Here's a simple customer support agent:
 
-\`\`\`
-import: std/llm
-import: std/state
+```xml
+<agent xmlns="github.com/agentflare-ai/agentml/agent"
+       datamodel="ecmascript"
+       import:gemini="github.com/agentflare-ai/agentml/gemini">
 
-state: idle
-  on: user.message
-    llm.chat:
-      model: gpt-4
-      system: "You are a helpful assistant"
-      message: event.content
-    transition: responding
+  <datamodel>
+    <data id="user_input" expr="''" />
+    <data id="response" expr="''" />
+  </datamodel>
 
-state: responding
-  on: llm.response
-    emit: bot.message
-      content: event.text
-    transition: idle
-\`\`\`
+  <state id="awaiting_input">
+    <transition event="user.message" target="processing">
+      <assign location="user_input" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <state id="processing">
+    <onentry>
+      <gemini:generate
+        model="gemini-2.0-flash-exp"
+        location="_event"
+        promptexpr="'Help the user: ' + user_input" />
+    </onentry>
+
+    <transition event="action.response" target="responding" />
+  </state>
+
+  <state id="responding">
+    <onentry>
+      <assign location="response" expr="_event.data.message" />
+      <log expr="'Response: ' + response" />
+    </onentry>
+    <transition target="awaiting_input" />
+  </state>
+</agent>
+```
 
 ## Architecture Overview
 
-Agentic Flow consists of four main components:
+AgentML consists of four main components:
 
-1. **Document Parser**: Parses and validates AF documents
-2. **Interpreter**: Executes document logic in response to events
-3. **Namespace System**: Provides built-in and custom functionality
-4. **I/O Processors**: Handles external integrations
+1. **Document Structure**: AgentML files (`.aml`) use an `<agent>` root element, which extends SCXML's `<scxml>` element.
+2. **Namespace System**: Functionality is extended through namespaces declared with the `import:prefix="uri"` directive.
+3. **Runtime (agentmlx)**: The Go/WASM interpreter executes AgentML files with full W3C SCXML conformance.
+4. **I/O Processors**: Handle external communications via HTTP, WebSocket, and other protocols.
 
 ## Getting Started
 
-Ready to build your first Agentic Flow application?
+Ready to build your first AgentML agent?
 
-1. [Install Agentic Flow](/installation)
-2. Follow the [Quick Start Guide](/quick-start)
-3. Learn about [Core Concepts](/concepts/state-machines)
+1. [Install agentmlx](/installation) - Get the runtime installed
+2. Follow the [Quick Start Guide](/quick-start) - Build your first agent
+3. Learn about [Core Concepts](/concepts/event-driven-llm) - Understand the fundamentals
 
 ## Community & Support
 
-- **GitHub**: [github.com/agentic-flow/core](https://github.com/agentic-flow/core)
-- **Discord**: Join our community
-- **Documentation**: You're reading it!
+- **GitHub**: [github.com/agentflare-ai/agentml](https://github.com/agentflare-ai/agentml)
+- **Issues**: [Report bugs or request features](https://github.com/agentflare-ai/agentml/issues)
+- **Discussions**: [Share your use cases](https://github.com/agentflare-ai/agentml/discussions)
 
 ---
 
 **Next Steps**: Start with [Installation](/installation) to set up your development environment.
-\`\`\`

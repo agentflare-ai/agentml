@@ -30,6 +30,7 @@ By separating behavior from runtime, your agents outlive framework trends.
 ---
 ## Table of Contents
 
+- [Installation](#installation)
 - [Core Concepts](#core-concepts)
 - [Key Features](#key-features)
 - [Architecture](#architecture)
@@ -40,6 +41,62 @@ By separating behavior from runtime, your agents outlive framework trends.
 - [Getting Started](#getting-started)
 - [Namespaces](#namespaces)
 - [Best Practices](#best-practices)
+
+---
+
+## Installation
+
+### Installing agentmlx Runtime
+
+To run AgentML files (`.aml`), you need the `agentmlx` runtime. Install it with a single command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+```
+
+This will:
+- Automatically detect your platform (Linux/macOS, amd64/arm64)
+- Download the latest release
+- Verify checksums for security
+- Install to `~/.agentmlx/bin`
+- Add to your PATH
+
+**Install from different channels:**
+```bash
+# Latest stable release
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+
+# Next (release candidate)
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --channel next
+
+# Beta releases
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --channel beta
+```
+
+**Install specific version:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --version 1.0.0-rc.1
+```
+
+**Install to custom directory:**
+```bash
+export AGENTMLX_INSTALL_DIR=/usr/local
+curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+```
+
+**Release Channels:**
+- `latest` - Stable releases (v1.0.0) - **Default**
+- `next` - Release candidates (v1.0.0-rc.1)
+- `beta` - Beta releases (v1.0.0-beta.1)
+
+The installer automatically falls back if a channel is empty: `latest` → `next` → `beta`
+
+**Verify installation:**
+```bash
+agentmlx --version
+```
+
+For more installation options and manual downloads, see the [agentmlx documentation](https://github.com/agentflare-ai/agentmlx#installation).
 
 ---
 
