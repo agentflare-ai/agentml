@@ -1,5 +1,7 @@
 # API Reference
 
+**Part of the AgentFlare AI ecosystem**
+
 This document provides comprehensive documentation for the SQLite Graph Database Extension API, including the Cypher query language implementation and native SQLite functions.
 
 ## Table of Contents

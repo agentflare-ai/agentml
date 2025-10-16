@@ -1,5 +1,7 @@
 # SQLite Graph Extension Performance Tuning Guide
 
+**Part of the AgentFlare AI ecosystem**
+
 ## Table of Contents
 
 1. [Introduction](#introduction)

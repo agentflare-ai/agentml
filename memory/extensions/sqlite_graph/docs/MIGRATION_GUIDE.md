@@ -1,5 +1,7 @@
 # SQLite Graph Extension Migration Guide
 
+**Part of the AgentFlare AI ecosystem**
+
 ## Table of Contents
 
 1. [Overview](#overview)

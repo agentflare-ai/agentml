@@ -1,29 +1,71 @@
 # AgentML
 
-**AgentML** is an agentic workflow framework built on [W3C SCXML](https://www.w3.org/TR/scxml/) that provides deterministic, event-driven state machines for building LLM-powered agents. By combining SCXML's formal state machine semantics with modern LLM capabilities, AgentML enables highly composable, maintainable, and predictable agent behaviors.
+> **🚧 Early Alpha - Building in Public**
+> 
+> AgentML is in early alpha and being built openly with the community. The vision is ambitious, the foundation is solid, but many features are still in development. Join us in shaping the future of agent standards.
 
-**The Universal Agent Standard**: Define your agent once in AgentML and deploy anywhere. Transform to LangGraph, CrewAI, n8n, OpenAI Agent Builder, or run natively with the agentmlx WASM runtime. AgentML unifies the fractured agentic ecosystem, establishing the W3C standard language for agents.
+## What We're Building
+
+**AgentML** is an agentic workflow framework built on [W3C SCXML](https://www.w3.org/TR/scxml/) that aims to provide deterministic, event-driven state machines for building LLM-powered agents. By combining SCXML's formal state machine semantics with modern LLM capabilities, AgentML will enable highly composable, maintainable, and predictable agent behaviors.
+
+**Our Vision - The Universal Agent Standard**: Define your agent once in AgentML and deploy anywhere. Transform to LangGraph, CrewAI, n8n, OpenAI Agent Builder, or run natively with the agentmlx WASM runtime. AgentML aims to unify the fractured agentic ecosystem by establishing W3C SCXML as the standard language for agents.
 
 ---
 
-## ⚠️ Work in Progress
+## 🌱 Current Status & Building in Public
 
-**AgentML is in initial release and under heavy development.** We're building what we believe will become the universal language for agent frameworks—the Babel of the agentic ecosystem. However, we're not doing this alone.
+**Where we are today:** We have a working Go implementation of the SCXML interpreter with support for the Gemini LLM namespace and basic event-driven agent workflows. The core concepts work, and we're actively developing the ecosystem around it.
 
-**Our vision:** Just as HTML became the universal language of the web, enabling any browser to render any website, **AgentML aims to be the universal language for agents**—enabling any runtime to execute any agent, and any agent to communicate with any other agent, regardless of the framework they were built with.
+**What's working now:**
+- ✅ Core SCXML interpreter (Go implementation)
+- ✅ Gemini LLM integration namespace
+- ✅ Event-driven agent workflows
+- ✅ Basic state machine semantics
+- ✅ OpenTelemetry tracing foundation
 
-**This is an early release:** Core features like event schema validation, external schema loading (`use:*` pattern), and framework transformations are actively being developed. APIs and capabilities will evolve based on real-world usage and community input.
+**What's in active development:**
+- 🚧 Event schema validation (`event:schema` attribute)
+- 🚧 External schema loading (`use:*` pattern for JSON/OpenAPI specs)
+- 🚧 Framework transformers (LangGraph, CrewAI, n8n, etc.)
+- 🚧 Memory namespace (vector search, graph database)
+- 🚧 agentmlx WASM runtime
+- 🚧 IOProcessor implementations (HTTP, WebSocket)
 
-**We need your help.** The agent community's diverse perspectives, use cases, and expertise are essential to shaping a standard that truly serves everyone. Whether you're working with LangGraph, CrewAI, n8n, Autogen, or building your own framework, your input matters.
+**What's planned:**
+- 🔮 Complete transformer ecosystem
+- 🔮 Visual editor
+- 🔮 Agent marketplace
+- 🔮 Additional LLM provider namespaces
 
-**How to contribute:**
-- Share your use cases and pain points in [GitHub Discussions](https://github.com/agentflare-ai/agentml/discussions)
-- Propose language features via [GitHub Issues](https://github.com/agentflare-ai/agentml/issues)
-- Submit pull requests for improvements
-- Join our [Discord](#) community for real-time collaboration
-- Build and share example agents
+### Why Build in Public?
 
-Together, we can establish AgentML as the W3C-based standard that unifies the fractured agent framework landscape.
+**We need your help.** The vision of a universal agent standard can only succeed if it serves the real needs of the community. We're building this openly because:
+
+1. **Community-driven design**: Your use cases and pain points should shape the standard
+2. **Transparency**: See exactly what works, what doesn't, and what's coming
+3. **Collaboration**: Build together rather than in isolation
+4. **Avoid mistakes**: Learn from the community before APIs are set in stone
+5. **Real-world testing**: Get feedback on actual implementations, not theoretical designs
+
+**How to participate:**
+- **🗣️ Share your use cases** in [GitHub Discussions](https://github.com/agentflare-ai/agentml/discussions) - what problems are you trying to solve?
+- **💡 Propose features** via [GitHub Issues](https://github.com/agentflare-ai/agentml/issues) - what's missing?
+- **🔧 Contribute code** through pull requests - help build the features
+- **🧪 Test and report** - try it out, break it, tell us what doesn't work
+- **📚 Improve docs** - help others understand and use AgentML
+- **🏗️ Build example agents** - show what's possible
+
+### Our Goals
+
+**Just as HTML became the universal language of the web**, enabling any browser to render any website, **we're working to make AgentML the universal language for agents**—enabling any runtime to execute any agent, and any agent to communicate with any other agent, regardless of the framework.
+
+**Why this matters:**
+- **For developers**: Learn one standard instead of multiple frameworks
+- **For organizations**: Avoid vendor lock-in, standardize on one language
+- **For the ecosystem**: Enable true interoperability between frameworks
+- **For the future**: Build on W3C standards that will outlive current trends
+
+**The foundation is W3C SCXML** - a mature, battle-tested specification with 20+ years of research behind it. We're extending it with agent-specific capabilities while maintaining full compatibility.
 
 ---
 
@@ -46,24 +88,26 @@ Together, we can establish AgentML as the W3C-based standard that unifies the fr
 
 AgentML extends SCXML with agent-specific capabilities:
 
-- **Deterministic Behavior**: State machines provide predictable, auditable agent behavior
-- **Event-Driven Architecture**: LLMs generate structured events validated by JSON schemas
-- **Efficient Token Usage**: Runtime snapshots and model caching minimize token consumption
-- **Composability**: Invoked services enable modular, reusable agent components
-- **Namespace Extensibility**: Plug in custom functionality through SCXML namespaces
+- **Deterministic Behavior**: State machines provide predictable, auditable agent behavior ✅
+- **Event-Driven Architecture**: LLMs generate structured events validated by JSON schemas 🚧
+- **Efficient Token Usage**: Runtime snapshots and model caching minimize token consumption ✅
+- **Composability**: Invoked services enable modular, reusable agent components ✅
+- **Namespace Extensibility**: Plug in custom functionality through SCXML namespaces ✅
 
 ### Key Features
 
-- 🎯 **Schema-Guided Events**: `event:schema` attributes validate LLM-generated events
-- 📝 **Description-Driven**: Schema `description` fields guide LLMs to generate correct events ⭐
-- 🔄 **Runtime Snapshots**: Current state + datamodel provided to LLM for context
-- 📦 **Modular Design**: Decompose complex agents into reusable services
-- 🔌 **Extensible**: Custom namespaces for memory, LLM providers, I/O, and more
-- 📊 **Observable**: Built-in OpenTelemetry tracing and logging
-- 🌐 **Universal Standard**: Write once, deploy anywhere - transform to any framework or runtime ⭐
-- 🔗 **Remote Communication**: Built-in distributed agent communication via IOProcessors ⭐
+- 🎯 **Schema-Guided Events**: `event:schema` attributes validate LLM-generated events 🚧
+- 📝 **Description-Driven**: Schema `description` fields guide LLMs to generate correct events 🚧
+- 🔄 **Runtime Snapshots**: Current state + datamodel provided to LLM for context ✅
+- 📦 **Modular Design**: Decompose complex agents into reusable services ✅
+- 🔌 **Extensible**: Custom namespaces for memory, LLM providers, I/O, and more ✅
+- 📊 **Observable**: Built-in OpenTelemetry tracing and logging ✅
+- 🌐 **Universal Standard**: Write once, deploy anywhere - transform to any framework or runtime 🔮
+- 🔗 **Remote Communication**: Built-in distributed agent communication via IOProcessors 🚧
 
-> **💡 Critical Success Factor**: Always include detailed `description` fields in your `event:schema` JSON schemas. These descriptions are the primary mechanism for guiding LLMs to generate correct, well-structured events. Both schema-level and property-level descriptions are essential.
+**Legend:** ✅ Working | 🚧 In Development | 🔮 Planned
+
+> **💡 Note on Schema Validation**: While the documentation describes our vision for schema-guided events, this feature is still in active development. The concepts are proven and the API design is stable, but implementation is ongoing. Follow along in [GitHub Issues](https://github.com/agentflare-ai/agentml/issues) to see progress.
 
 ## Core Concepts
 
@@ -585,13 +629,15 @@ The runtime snapshot is an XML document containing:
 
 This snapshot, combined with the SCXML document, gives the LLM complete context.
 
-## Write Once, Deploy Anywhere
+## Write Once, Deploy Anywhere 🔮
 
-AgentML addresses a critical problem in the agentic ecosystem: **framework fragmentation**. Today, agents built for LangGraph won't run on CrewAI, n8n workflows can't be used in OpenAI's Agent Builder, and each framework has its own learning curve and limitations.
+> **🚧 Vision Statement**: This section describes our goal for AgentML. Framework transformers are in active development and not yet available. This is where we're heading, and we're building it in public.
 
-### The AgentML Solution
+AgentML aims to address a critical problem in the agentic ecosystem: **framework fragmentation**. Today, agents built for LangGraph won't run on CrewAI, n8n workflows can't be used in OpenAI's Agent Builder, and each framework has its own learning curve and limitations.
 
-**Define once, deploy everywhere:**
+### The AgentML Solution (In Development)
+
+**Our goal - Define once, deploy everywhere:**
 
 ```
         AgentML (.aml)
@@ -722,9 +768,11 @@ AgentML extends SCXML with agent-specific capabilities while maintaining full co
 - Cross-industry standardization enables broad ecosystem
 - **True interoperability**: Just as HTML enabled the web, AgentML enables the agentic ecosystem
 
-## Remote Agent Communication
+## Remote Agent Communication 🚧
 
-AgentML includes **built-in support for distributed agent communication** using the W3C SCXML IOProcessor interface. This enables agents to communicate across processes, machines, and networks using standard protocols.
+> **🚧 In Development**: The IOProcessor interface is designed and documented here, but implementations are still being built. The architecture follows W3C SCXML standards and will enable distributed agent communication.
+
+AgentML is designed to support **distributed agent communication** using the W3C SCXML IOProcessor interface. This will enable agents to communicate across processes, machines, and networks using standard protocols.
 
 ### IOProcessor Architecture
 
@@ -1116,13 +1164,18 @@ All agents use the same event schemas and IOProcessor protocols, enabling true p
 
 ## Getting Started
 
+> **⚠️ Alpha Software**: AgentML is in early alpha. APIs may change, features may be incomplete, and you may encounter bugs. We welcome feedback and contributions!
+
 ### Installation
 
 ```bash
+# Note: Package structure is still being finalized
 go get github.com/agentflare-ai/agentml
 ```
 
 ### Basic Agent Example
+
+This example shows the core concepts. Note that some features (like `event:schema` validation) are still in development.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -2016,41 +2069,58 @@ Example:
 
 ## Roadmap
 
-### Current (v0.x)
+> **📅 Timeline Transparency**: These are our goals, not promises. As an early-stage project being built in public, timelines may shift based on community feedback, priorities, and contributions. We'll keep this updated as we learn and adapt.
 
-- ✅ Core SCXML interpreter
-- ✅ Agent namespace with event schemas
-- ✅ Gemini, Ollama, Memory, Stdin namespaces
-- ✅ Runtime snapshots for LLM context
-- ✅ Go implementation
+### ✅ What's Working Now (Early Alpha)
 
-### Phase 1: Transformers (Q2 2025)
+- Core SCXML interpreter (Go implementation)
+- Basic state machine semantics
+- Gemini LLM namespace integration
+- OpenTelemetry tracing foundation
+- Datamodel and event handling
 
-- 🚧 LangGraph transformer
-- 🚧 CrewAI transformer
-- 🚧 n8n transformer
-- 🚧 OpenAI Agent Builder transformer
-- 🚧 CLI tooling for transformations
+### 🚧 Active Development (Next Few Months)
 
-### Phase 2: Native Runtime (Q3 2025)
+**Foundation:**
+- Event schema validation system (`event:schema` attribute)
+- External schema loading (`use:*` pattern)
+- Complete W3C SCXML compliance
+- Runtime snapshot generation
+- IOProcessor interface implementation
 
-- 🔮 agentmlx WASM runtime
-- 🔮 Browser support
-- 🔮 Edge deployment capabilities
-- 🔮 Performance optimizations
+**Namespaces:**
+- Memory namespace (SQLite, vector search, graph)
+- Additional LLM providers (Ollama, Anthropic, OpenAI)
+- Stdin/stdout I/O namespace
+- HTTP client namespace
 
-### Phase 3: Ecosystem (Q4 2025)
+### 🔮 Near-Term Goals (6-12 Months)
 
-- 🔮 Visual AgentML editor
-- 🔮 Agent marketplace
-- 🔮 Framework integration SDKs
-- 🔮 Enterprise features
+**Transformers:** The key differentiator for AgentML
+- LangGraph transformer (Python)
+- CrewAI transformer (Python)
+- n8n transformer (JSON workflows)
+- OpenAI Agent Builder transformer
 
-### Phase 4: Additional Transformers (2026)
+**Runtime:**
+- agentmlx WASM runtime
+- Browser and edge deployment
+- Performance optimizations
 
-- 🔮 Langflow, Flowise, Dify
-- 🔮 Haystack, Semantic Kernel
-- 🔮 Custom transformer SDK
+**Tooling:**
+- CLI for transformations and validation
+- Development tools and debugging
+
+### 🌟 Long-Term Vision (12+ Months)
+
+**Ecosystem:**
+- Visual AgentML editor
+- Agent marketplace and sharing
+- Additional framework transformers
+- Enterprise features and support
+- Community governance model
+
+**Philosophy:** We're prioritizing getting the core right before expanding too quickly. Better to have solid foundations than rushed features.
 
 ## License
 
@@ -2058,22 +2128,114 @@ AgentML is part of the AgentFlare ecosystem.
 
 ## Contributing
 
-Contributions welcome! Please see CONTRIBUTING.md for guidelines.
+**We're building this in public and contributions are not just welcome—they're essential!**
 
-We're particularly interested in:
-- Framework transformer implementations
-- Additional namespace providers
-- Runtime optimizations
-- Documentation improvements
-- Example agents and use cases
+This is early-stage software with lots of opportunity to shape the direction. Whether you're fixing a typo, proposing a feature, or building a transformer, your input matters.
+
+### How to Contribute
+
+**🐛 Found a bug?** [Open an issue](https://github.com/agentflare-ai/agentml/issues/new) - the more details the better
+
+**💡 Have an idea?** [Start a discussion](https://github.com/agentflare-ai/agentml/discussions/new) - let's talk about it before building
+
+**📝 Improving docs?** PRs welcome - documentation is code too
+
+**🔧 Want to code?** Check out [good first issues](https://github.com/agentflare-ai/agentml/labels/good%20first%20issue)
+
+### What We Need Help With
+
+**High Priority:**
+- 🧪 Testing and bug reports - use it, break it, report it
+- 📚 Documentation improvements and examples
+- 🤔 Use case validation - tell us what you're trying to build
+- 🔍 API feedback - what feels right, what feels wrong?
+
+**Exciting Challenges:**
+- 🔄 Framework transformer implementations (LangGraph, CrewAI, n8n)
+- 🧩 Additional namespace providers (more LLMs, vector DBs, tools)
+- ⚡ Runtime optimizations and performance
+- 🎨 Developer tooling and CLI utilities
+- 📦 Example agents and use cases
+
+**Building Transformers?** We'd love help with:
+- LangGraph (Python) transformer
+- CrewAI (Python) transformer  
+- n8n (JSON workflow) transformer
+- Your favorite framework transformer
+
+### Development Philosophy
+
+We value:
+- **Transparency** over perfection - show the work in progress
+- **Simplicity** over features - keep it focused
+- **Standards** over innovation - W3C SCXML is our foundation
+- **Community** over speed - get input before building
+- **Documentation** as important as code
+
+### Getting Started Contributing
+
+1. **Explore**: Read the docs, try the examples
+2. **Discuss**: Share your ideas in Discussions first
+3. **Code**: Fork, branch, implement, test
+4. **PR**: Submit with clear description and context
+5. **Iterate**: Work with maintainers to refine
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines (coming soon).
 
 ## Community
 
-- **GitHub**: [github.com/agentflare-ai/agentml](https://github.com/agentflare-ai/agentml)
-- **Discord**: [Join our community](#)
-- **Documentation**: [docs.agentflare.ai](https://docs.agentflare.ai)
-- **Transformers**: [github.com/agentflare-ai/agentml-transformers](https://github.com/agentflare-ai/agentml-transformers)
-- **agentmlx Runtime**: [github.com/agentflare-ai/agentmlx](https://github.com/agentflare-ai/agentmlx)
+**Join us in building the universal agent standard!**
+
+We're building in public and would love to have you involved:
+
+- **📢 GitHub Discussions**: [Share ideas, ask questions, show your work](https://github.com/agentflare-ai/agentml/discussions)
+- **🐙 GitHub**: [github.com/agentflare-ai/agentml](https://github.com/agentflare-ai/agentml) - Stars appreciated!
+- **💬 Discord**: [Join our community](#) - Real-time chat (coming soon)
+- **📖 Documentation**: [docs.agentflare.ai](https://docs.agentflare.ai) - Evolving with the project
+- **🔄 Transformers**: [github.com/agentflare-ai/agentml-transformers](https://github.com/agentflare-ai/agentml-transformers) - Framework converters
+- **⚡ agentmlx Runtime**: [github.com/agentflare-ai/agentmlx](https://github.com/agentflare-ai/agentmlx) - WASM runtime
+
+### Building in Public Updates
+
+Follow our progress:
+- Weekly updates in GitHub Discussions
+- Roadmap changes announced in Issues
+- Breaking changes clearly communicated
+- RFCs for major decisions
+
+We believe in **transparent development** - you'll see the good, the bad, and the bugs. This helps us build something that actually serves the community's needs.
+
+---
+
+## What to Expect
+
+**As an early alpha project**, here's what you should know:
+
+### ✅ What We Promise
+
+- **Honest communication** about what works and what doesn't
+- **Responsive to feedback** - your input shapes the project
+- **Clear documentation** of current state vs. future vision
+- **W3C standards compliance** - building on solid foundations
+- **Breaking changes clearly communicated** with migration guides
+
+### ⚠️ What to Expect
+
+- **APIs will change** - we're still finding the best designs
+- **Bugs exist** - it's alpha software, expect rough edges
+- **Features incomplete** - many things are partially implemented
+- **Documentation ahead of code** - we document vision and iterate toward it
+- **Timelines are flexible** - priorities shift based on feedback
+
+### 💪 How You Can Help
+
+- **Use it** and tell us what breaks
+- **Share your use case** so we can prioritize features
+- **Contribute fixes** - even small PRs help
+- **Spread the word** - help us find more contributors
+- **Be patient** - we're building something ambitious
+
+**This is a marathon, not a sprint.** We're committed to building AgentML right, not just fast.
 
 ## Acknowledgments
 

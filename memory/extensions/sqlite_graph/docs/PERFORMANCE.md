@@ -1,5 +1,7 @@
 # Performance Optimization Guide
 
+**Part of the AgentFlare AI ecosystem**
+
 This document describes the performance optimization features implemented in the SQLite Graph Extension.
 
 ## Overview

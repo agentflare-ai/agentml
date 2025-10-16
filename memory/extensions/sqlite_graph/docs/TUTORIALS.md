@@ -1,5 +1,7 @@
 # SQLite Graph Extension Tutorials
 
+**Part of the AgentFlare AI ecosystem**
+
 ## Table of Contents
 
 1. [Getting Started](#getting-started)

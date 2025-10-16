@@ -167,9 +167,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Reporting Issues
 
 Please report bugs and feature requests through:
-- [GitHub Issues](https://github.com/yourusername/sqlite-graph/issues)
-- [Security Issues](mailto:security@yourproject.com) (for security vulnerabilities)
+- [GitHub Issues](https://github.com/agentflare-ai/sqlite-graph/issues)
+- [Security Issues](mailto:security@agentflare.ai) (for security vulnerabilities)
 
 ## Release Notes
 
-Detailed release notes for each version are available in the [GitHub Releases](https://github.com/yourusername/sqlite-graph/releases) section.
+Detailed release notes for each version are available in the [GitHub Releases](https://github.com/agentflare-ai/sqlite-graph/releases) section.

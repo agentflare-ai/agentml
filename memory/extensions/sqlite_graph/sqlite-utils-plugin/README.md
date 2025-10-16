@@ -1,6 +1,6 @@
 # sqlite-utils-sqlite-graph
 
-A [sqlite-utils](https://sqlite-utils.datasette.io/) plugin that adds graph database capabilities to SQLite using the SQLite Graph extension.
+A [sqlite-utils](https://sqlite-utils.datasette.io/) plugin that adds graph database capabilities to SQLite using the AgentFlare AI SQLite Graph extension.
 
 ## Installation
 
@@ -13,7 +13,7 @@ sqlite-utils install sqlite-utils-sqlite-graph
 Or install from source:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/sqlite-graph.git
+git clone https://github.com/agentflare-ai/sqlite-graph.git
 cd sqlite-graph/sqlite-utils-plugin
 sqlite-utils install -e .
 ```
@@ -112,3 +112,7 @@ Make sure the extension is built and available in one of these paths.
 ## License
 
 MIT License
+
+---
+
+**Part of the AgentFlare AI ecosystem**

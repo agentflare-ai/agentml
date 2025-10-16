@@ -27,7 +27,7 @@ We welcome contributions to the SQLite Graph Database Extension! This guide will
 1. **Fork the repository** on GitHub
 2. **Clone your fork**:
    ```bash
-   git clone https://github.com/yourusername/sqlite-graph.git
+   git clone https://github.com/agentflare-ai/sqlite-graph.git
    cd sqlite-graph
    ```
 
@@ -444,4 +444,4 @@ By contributing to this project, you agree that your contributions will be licen
 
 ---
 
-**Thank you for contributing to the SQLite Graph Database Extension!**
+**Thank you for contributing to the AgentFlare AI SQLite Graph Database Extension!**

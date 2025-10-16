@@ -1,3 +1,6 @@
 [submodule "extensions/sqlite_vec"]
 	path = extensions/sqlite_vec
 	url = https://github.com/asg017/sqlite-vec.git
+[submodule "extensions/sqlite_graph"]
+	path = extensions/sqlite_graph
+	url = https://github.com/agentflare-ai/sqlite-graph.git

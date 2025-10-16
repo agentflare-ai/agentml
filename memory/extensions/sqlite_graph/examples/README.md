@@ -1,6 +1,6 @@
 # SQLite Graph Extension - Python Examples
 
-This directory contains comprehensive Python examples demonstrating how to use the SQLite Graph Database Extension from Python applications.
+This directory contains comprehensive Python examples demonstrating how to use the AgentFlare AI SQLite Graph Database Extension from Python applications.
 
 ## Prerequisites
 
@@ -269,4 +269,8 @@ conn = sqlite3.connect("large_graph.db")  # instead of ":memory:"
 
 ## License
 
-These examples are provided under the same license as the main SQLite Graph Extension project.
+These examples are provided under the same license as the main AgentFlare AI SQLite Graph Extension project.
+
+---
+
+**Part of the AgentFlare AI ecosystem**

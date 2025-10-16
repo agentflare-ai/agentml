@@ -29,7 +29,7 @@ This guide provides detailed instructions for building and installing the SQLite
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/sqlite-graph.git
+git clone https://github.com/agentflare-ai/sqlite-graph.git
 cd sqlite-graph
 
 # Build the extension
@@ -60,7 +60,7 @@ make test
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/sqlite-graph.git
+git clone https://github.com/agentflare-ai/sqlite-graph.git
 cd sqlite-graph
 ```
 
@@ -367,7 +367,7 @@ make clean && make  # Uses bundled SQLite automatically
 
 If you encounter issues:
 
-1. Check the [GitHub Issues](https://github.com/yourusername/sqlite-graph/issues)
+1. Check the [GitHub Issues](https://github.com/agentflare-ai/sqlite-graph/issues)
 2. Search existing discussions
 3. Create a new issue with:
    - Your operating system and version
@@ -415,4 +415,6 @@ For development work, see the [Contributing Guide](CONTRIBUTING.md) for addition
 
 ---
 
-**Need help?** Check our [GitHub Issues](https://github.com/yourusername/sqlite-graph/issues) or [Discussions](https://github.com/yourusername/sqlite-graph/discussions).
+**Need help?** Check our [GitHub Issues](https://github.com/agentflare-ai/sqlite-graph/issues) or [Discussions](https://github.com/agentflare-ai/sqlite-graph/discussions).
+
+**Part of the AgentFlare AI ecosystem**

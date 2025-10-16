@@ -5,11 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sqlite-utils-sqlite-graph"
 version = "0.1.0"
-description = "SQLite graph database extension plugin for sqlite-utils"
+description = "AgentFlare AI SQLite graph database extension plugin for sqlite-utils"
 readme = "README.md"
 requires-python = ">=3.8"
 authors = [
-    {name = "SQLite Graph Team"}
+    {name = "AgentFlare AI", email = "info@agentflare.ai"}
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -34,8 +34,10 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/YOUR_USERNAME/sqlite-graph"
-"Bug Tracker" = "https://github.com/YOUR_USERNAME/sqlite-graph/issues"
+Homepage = "https://github.com/agentflare-ai/sqlite-graph"
+"Bug Tracker" = "https://github.com/agentflare-ai/sqlite-graph/issues"
+Documentation = "https://github.com/agentflare-ai/sqlite-graph/wiki"
+Repository = "https://github.com/agentflare-ai/sqlite-graph"
 
 [project.entry-points.sqlite_utils]
 graph = "sqlite_utils_sqlite_graph"

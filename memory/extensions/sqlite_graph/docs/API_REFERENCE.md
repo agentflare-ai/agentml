@@ -1,5 +1,7 @@
 # SQLite Graph Extension API Reference
 
+**Part of the AgentFlare AI ecosystem**
+
 ## Table of Contents
 
 1. [Overview](#overview)

@@ -1,6 +1,6 @@
 # SQLite Graph Database Extension
 
-A powerful SQLite extension that adds graph database capabilities with full Cypher query support. Build sophisticated graph applications with the reliability of SQLite and the expressiveness of Cypher.
+A powerful SQLite extension that adds graph database capabilities with full Cypher query support. Part of the AgentFlare AI ecosystem. Build sophisticated graph applications with the reliability of SQLite and the expressiveness of Cypher.
 
 ## Features
 
@@ -18,7 +18,7 @@ A powerful SQLite extension that adds graph database capabilities with full Cyph
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/sqlite-graph.git
+git clone https://github.com/agentflare-ai/sqlite-graph.git
 cd sqlite-graph
 
 # Build the extension
@@ -155,9 +155,9 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/sqlite-graph/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/YOUR_USERNAME/sqlite-graph/discussions)
-- **Documentation**: [Wiki](https://github.com/YOUR_USERNAME/sqlite-graph/wiki)
+- **Issues**: [GitHub Issues](https://github.com/agentflare-ai/sqlite-graph/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/agentflare-ai/sqlite-graph/discussions)
+- **Documentation**: [Wiki](https://github.com/agentflare-ai/sqlite-graph/wiki)
 
 ## Roadmap
 
@@ -169,4 +169,4 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ---
 
-**Built with ❤️ using SQLite and openCypher**
+**Part of the AgentFlare AI ecosystem • Built with SQLite and openCypher**
