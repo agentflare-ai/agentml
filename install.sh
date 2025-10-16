@@ -90,7 +90,7 @@ get_binary_url_with_fallback() {
     local checksums_url
 
     # Try requested channel
-    info "Checking ${channel} channel..."
+    info "Checking ${channel} channel..." >&2
     binary_url="${RELEASES_BASE_URL}/${channel}/agentmlx_${platform}"
     checksums_url="${RELEASES_BASE_URL}/${channel}/checksums.txt"
 
