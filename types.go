@@ -9,6 +9,8 @@ import (
 	"github.com/agentflare-ai/go-xmldom"
 )
 
+const NamespaceURI = "github.com/agentflare-ai/agentml/agent"
+
 // Data represents a data element defined in the SCXML document.
 type Data struct {
 	xmldom.Element

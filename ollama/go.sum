@@ -1,3 +1,7 @@
+github.com/agentflare-ai/agentml/prompt v0.0.0-20251016013916-3aaadb906bd0 h1:9WO07AnOYqAFKrD4ZFVb2MKjdFJ7i0JYNTH1OB2uX74=
+github.com/agentflare-ai/go-jsonpatch v0.0.0-20251007202521-03a28775fba1 h1:NJgrQGDcEVqv8zj6npC1WWD3jCZlOgImUI50mSoPefA=
+github.com/agentflare-ai/go-jsonpointer v0.0.0-20251007202556-e629e396a034 h1:FAvkNmOVhgn1pn97RiFk8B4OY9p/7czdsQDAiP96ChE=
+github.com/agentflare-ai/go-jsonschema v0.0.0-20251007203233-ad868cee4fcf h1:eHv7m93YzspIc5XoNIpmSqG+pfog3PHBst88ELDLF6s=
 github.com/agentflare-ai/go-xmldom v0.0.0-20251007203554-7447af628498 h1:Y6OdDVFhCBEa3XZKk5PPLz1OBIwG58JSRjSqzCxpTHU=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/go-logr/logr v1.4.3 h1:CjnDlHq8ikf6E492q6eKboGOC0T8CDaOvkHCIg8idEI=

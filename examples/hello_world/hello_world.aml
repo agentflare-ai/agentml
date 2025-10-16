@@ -4,11 +4,11 @@
 
   <state id="main">
     <onentry>
-      <log expr="'hello-world'" />
+      <log label="hello-world" expr="Hello, world!" />
     </onentry>
-    <transition target="end" />
+    <transition target="done" />
   </state>
 
-  <final id="end" />
+  <final id="done" />
 
 </agent>

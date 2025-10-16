@@ -29,31 +29,20 @@ func (n *Namespace) Handle(ctx context.Context, el xmldom.Element) (bool, error)
 	local := strings.ToLower(string(el.LocalName()))
 	switch local {
 	case "get":
-		exe := &getExec{Element: el}
-		return true, exe.Execute(ctx, n.itp)
+		return true, n.execGet(ctx, el)
 	case "set":
-		exe := &setExec{Element: el}
-		return true, exe.Execute(ctx, n.itp)
+		return true, n.execSet(ctx, el)
 	default:
 		return false, nil
 	}
 }
 
-var _ agentml.Namespace = (*Namespace)(nil)
-
-// getExec implements the <env:get> executable element
-// Usage: <env:get name="HOME" location="home_dir" />
-// Or with default: <env:get name="PORT" location="port" default="8080" />
-type getExec struct {
-	xmldom.Element
-}
-
-func (e *getExec) Execute(ctx context.Context, interp agentml.Interpreter) error {
+func (n *Namespace) execGet(ctx context.Context, el xmldom.Element) error {
 	tr := otel.Tracer("env")
 	ctx, span := tr.Start(ctx, "env.get")
 	defer span.End()
 
-	dm := interp.DataModel()
+	dm := n.itp.DataModel()
 	if dm == nil {
 		return &agentml.PlatformError{
 			EventName: "error.execution",
@@ -64,10 +53,10 @@ func (e *getExec) Execute(ctx context.Context, interp agentml.Interpreter) error
 	}
 
 	// Get the name attribute (required)
-	name := strings.TrimSpace(string(e.Element.GetAttribute("name")))
+	name := strings.TrimSpace(string(el.GetAttribute("name")))
 	if name == "" {
 		// Try nameexpr if name is not provided
-		nameExpr := strings.TrimSpace(string(e.Element.GetAttribute("nameexpr")))
+		nameExpr := strings.TrimSpace(string(el.GetAttribute("nameexpr")))
 		if nameExpr != "" {
 			val, err := dm.EvaluateValue(ctx, nameExpr)
 			if err != nil {
@@ -96,7 +85,7 @@ func (e *getExec) Execute(ctx context.Context, interp agentml.Interpreter) error
 	span.SetAttributes(attribute.String("env.name", name))
 
 	// Get the location attribute where we should store the result (required)
-	loc := strings.TrimSpace(string(e.Element.GetAttribute("location")))
+	loc := strings.TrimSpace(string(el.GetAttribute("location")))
 	if loc == "" {
 		return &agentml.PlatformError{
 			EventName: "error.execution",
@@ -107,7 +96,7 @@ func (e *getExec) Execute(ctx context.Context, interp agentml.Interpreter) error
 	}
 
 	// Get optional default value
-	defaultVal := string(e.Element.GetAttribute("default"))
+	defaultVal := string(el.GetAttribute("default"))
 
 	// Read environment variable
 	value, exists := os.LookupEnv(name)
@@ -134,19 +123,12 @@ func (e *getExec) Execute(ctx context.Context, interp agentml.Interpreter) error
 	return nil
 }
 
-// setExec implements the <env:set> executable element
-// Usage: <env:set name="MY_VAR" value="hello" />
-// Or with expr: <env:set name="PORT" expr="server_port" />
-type setExec struct {
-	xmldom.Element
-}
-
-func (e *setExec) Execute(ctx context.Context, interp agentml.Interpreter) error {
+func (n *Namespace) execSet(ctx context.Context, el xmldom.Element) error {
 	tr := otel.Tracer("env")
 	ctx, span := tr.Start(ctx, "env.set")
 	defer span.End()
 
-	dm := interp.DataModel()
+	dm := n.itp.DataModel()
 	if dm == nil {
 		return &agentml.PlatformError{
 			EventName: "error.execution",
@@ -157,10 +139,10 @@ func (e *setExec) Execute(ctx context.Context, interp agentml.Interpreter) error
 	}
 
 	// Get the name attribute (required)
-	name := strings.TrimSpace(string(e.Element.GetAttribute("name")))
+	name := strings.TrimSpace(string(el.GetAttribute("name")))
 	if name == "" {
 		// Try nameexpr if name is not provided
-		nameExpr := strings.TrimSpace(string(e.Element.GetAttribute("nameexpr")))
+		nameExpr := strings.TrimSpace(string(el.GetAttribute("nameexpr")))
 		if nameExpr != "" {
 			val, err := dm.EvaluateValue(ctx, nameExpr)
 			if err != nil {
@@ -190,8 +172,8 @@ func (e *setExec) Execute(ctx context.Context, interp agentml.Interpreter) error
 
 	// Get the value - either from 'value' attribute or 'expr' attribute
 	var value string
-	valueAttr := string(e.Element.GetAttribute("value"))
-	exprAttr := string(e.Element.GetAttribute("expr"))
+	valueAttr := string(el.GetAttribute("value"))
+	exprAttr := string(el.GetAttribute("expr"))
 
 	if valueAttr != "" && exprAttr != "" {
 		return &agentml.PlatformError{
@@ -240,3 +222,5 @@ func (e *setExec) Execute(ctx context.Context, interp agentml.Interpreter) error
 
 	return nil
 }
+
+var _ agentml.Namespace = (*Namespace)(nil)

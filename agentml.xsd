@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
-<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.w3.org/2005/07/scxml"
-  xmlns:block="http://gogo-agent.com/block/1.0"
-  targetNamespace="http://www.w3.org/2005/07/scxml" elementFormDefault="qualified">
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns="github.com/agentflare-ai/agentml/agent"
+  targetNamespace="github.com/agentflare-ai/agentml/agent" elementFormDefault="qualified">
   <xsd:import namespace="http://www.w3.org/XML/1998/namespace"
     schemaLocation="http://www.w3.org/2001/xml.xsd">
     <xsd:annotation>
@@ -11,17 +11,17 @@
     </xsd:annotation>
   </xsd:import>
   <xsd:annotation>
-    <xsd:documentation> This is the XML Schema driver for SCXML 1.0. Please use this namespace for
-      SCXML 1.0 elements: "http://www.w3.org/2005/07/scxml" </xsd:documentation>
-    <xsd:documentation source="scxml-copyright.xsd" />
+    <xsd:documentation> This is the XML Schema driver for AgentML 1.0. Please use this namespace for
+      AgentML 1.0 elements: "github.com/agentflare-ai/agentml/agent" </xsd:documentation>
+    <xsd:documentation source="agentml/agentml-copyright.xsd" />
   </xsd:annotation>
   <xsd:annotation>
-    <xsd:documentation> This is the XML Schema driver file for SCXML 1.0. This schema: + sets the
-      namespace for SCXML 1.0 + imports external schemas (xml.xsd) + imports SCXML common datatypes,
-      attributes and content models + imports modular schemas SCXML 1.0 includes: + SCXML core
-      constructs + SCXML executable content + SCXML data model and manipulation + SCXML external
-      communications This schema is permissive such that it accomodates all datamodels, but
-      validating documents may contain markup that is ignored in certain datamodels. </xsd:documentation>
+    <xsd:documentation> This is the XML Schema driver file for AgentML 1.0. This schema: + sets the
+      namespace for AgentML 1.0 + imports external schemas (xml.xsd) + imports AgentML common
+      datatypes, attributes and content models + imports modular schemas AgentML 1.0 includes: +
+      AgentML core constructs + AgentML executable content + AgentML data model and manipulation +
+      AgentML external communications This schema is permissive such that it accomodates all
+      datamodels, but validating documents may contain markup that is ignored in certain datamodels. </xsd:documentation>
   </xsd:annotation>
 
   <xsd:import namespace="http://www.w3.org/XML/1998/namespace"
@@ -33,16 +33,16 @@
   </xsd:import>
 
   <xsd:annotation>
-    <xsd:documentation> This is the XML Schema core module for SCXML * scxml * state * initial *
+    <xsd:documentation> This is the XML Schema core module for AgentML * AgentML * state * initial *
       onexit * onentry * transition * parallel * final * history * donedata * if * elsif * else *
       foreach * raise * log The core module defines these elements and the attributes. </xsd:documentation>
-    <xsd:documentation source="scxml-copyright.xsd" />
+    <xsd:documentation source="AgentML-copyright.xsd" />
   </xsd:annotation>
 
   <xsd:annotation>
-    <xsd:documentation> XML Schema datatypes for SCXML Defines containers for the SCXML datatypes,
-      many of these imported from other specifications and standards. </xsd:documentation>
-    <xsd:documentation source="scxml-copyright.xsd" />
+    <xsd:documentation> XML Schema datatypes for AgentML Defines containers for the AgentML
+      datatypes, many of these imported from other specifications and standards. </xsd:documentation>
+    <xsd:documentation source="AgentML-copyright.xsd" />
   </xsd:annotation>
 
   <xsd:simpleType name="Exmode.datatype">
@@ -58,7 +58,7 @@
 
   <xsd:simpleType name="Binding.datatype">
     <xsd:annotation>
-      <xsd:documentation> The binding type in use for the SCXML document. </xsd:documentation>
+      <xsd:documentation> The binding type in use for the AgentML document. </xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:NMTOKEN">
       <xsd:enumeration value="early" />
@@ -114,9 +114,9 @@
 
   <xsd:simpleType name="URI.datatype">
     <xsd:annotation>
-      <xsd:documentation> The xsd:anyURI type and thus URI references in SCXML documents may contain
-        a wide array of international characters. Implementers should reference RFC 3987 and the
-        "Character Model for the World Wide Web 1.0: Resource Identifiers" in order to provide
+      <xsd:documentation> The xsd:anyURI type and thus URI references in AgentML documents may
+        contain a wide array of international characters. Implementers should reference RFC 3987 and
+        the "Character Model for the World Wide Web 1.0: Resource Identifiers" in order to provide
         appropriate support for these characters in VoiceXML documents and when processing values of
         this type or mapping them to URIs. </xsd:documentation>
     </xsd:annotation>
@@ -152,7 +152,7 @@
 
   <xsd:simpleType name="EventTypes.datatype">
     <xsd:annotation>
-      <xsd:documentation> Custom datatype for the event attribute in SCXML based on xsd:token.
+      <xsd:documentation> Custom datatype for the event attribute in AgentML based on xsd:token.
         Example legal values: * foo foo.bar foo.* foo.bar.* foo bar baz foo.bar bar.* baz.foo.* </xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:token">
@@ -186,8 +186,8 @@
     <xsd:restriction base="xsd:string" />
   </xsd:simpleType>
   <xsd:annotation>
-    <xsd:documentation> This is the XML Schema common attributes for SCXML </xsd:documentation>
-    <xsd:documentation source="scxml-copyright.xsd" />
+    <xsd:documentation> This is the XML Schema common attributes for AgentML </xsd:documentation>
+    <xsd:documentation source="AgentML-copyright.xsd" />
   </xsd:annotation>
 
   <xsd:attributeGroup name="Fetchtimeout.attrib">
@@ -218,19 +218,19 @@
     <xsd:attributeGroup ref="Maxstale.attrib" />
   </xsd:attributeGroup>
   <xsd:annotation>
-    <xsd:documentation> XML Schema content models for SCXML * scxml.extra.content * content *
-      scxml.extra.attribs Defines SCXML shared content models. </xsd:documentation>
-    <xsd:documentation source="scxml-copyright.xsd" />
+    <xsd:documentation> XML Schema content models for AgentML * agentml.extra.content * content *
+      agentml.extra.attribs Defines AgentML shared content models. </xsd:documentation>
+    <xsd:documentation source="AgentML-copyright.xsd" />
   </xsd:annotation>
 
-  <xsd:attributeGroup name="scxml.extra.attribs">
+  <xsd:attributeGroup name="agentml.extra.attribs">
     <xsd:annotation>
       <xsd:documentation>group allowing attributes from other namespaces</xsd:documentation>
     </xsd:annotation>
     <xsd:anyAttribute namespace="##other" processContents="lax" />
   </xsd:attributeGroup>
 
-  <xsd:group name="scxml.extra.content">
+  <xsd:group name="agentml.extra.content">
     <xsd:annotation>
       <xsd:documentation> group allowing elements from other namespaces </xsd:documentation>
     </xsd:annotation>
@@ -239,43 +239,48 @@
     </xsd:sequence>
   </xsd:group>
 
-  <!-- scxml -->
-  <xsd:attributeGroup name="scxml.scxml.attlist">
+  <!-- AgentML -->
+  <xsd:attributeGroup name="agentml.agentml.attlist">
     <xsd:attribute name="initial" type="xsd:IDREFS" />
     <xsd:attribute name="name" type="xsd:NMTOKEN" />
     <xsd:attribute name="version" type="xsd:decimal" use="required" fixed="1.0" />
     <xsd:attribute name="datamodel" type="xsd:NMTOKEN" default="null" use="optional" />
     <xsd:attribute name="binding" type="Binding.datatype" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attribute name="import" type="xsd:string" use="optional">
+      <xsd:annotation>
+        <xsd:documentation>Namespace import alias (equivalent to xmlns declaration)</xsd:documentation>
+      </xsd:annotation>
+    </xsd:attribute>
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.scxml.mix">
+  <xsd:group name="agentml.agentml.mix">
     <xsd:choice>
       <xsd:element ref="state" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="parallel" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="final" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="datamodel" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="script" minOccurs="0" maxOccurs="unbounded" />
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
-  <xsd:group name="scxml.scxml.content">
+  <xsd:group name="agentml.agentml.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.scxml.mix" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.agentml.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.scxml.type">
-    <xsd:group ref="scxml.scxml.content" />
-    <xsd:attributeGroup ref="scxml.scxml.attlist" />
+  <xsd:complexType name="agentml.agentml.type">
+    <xsd:group ref="agentml.agentml.content" />
+    <xsd:attributeGroup ref="agentml.agentml.attlist" />
   </xsd:complexType>
-  <xsd:element name="scxml" type="scxml.scxml.type" block:alias="statemachine" />
+  <xsd:element name="AgentML" type="agentml.agentml.type" />
 
   <!-- state -->
-  <xsd:attributeGroup name="scxml.state.attlist">
+  <xsd:attributeGroup name="agentml.state.attlist">
     <xsd:attribute name="id" type="xsd:ID" />
     <xsd:attribute name="initial" type="xsd:IDREFS" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.state.mix">
+  <xsd:group name="agentml.state.mix">
     <xsd:choice>
       <xsd:element ref="onentry" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="onexit" minOccurs="0" maxOccurs="unbounded" />
@@ -287,94 +292,94 @@
       <xsd:element ref="history" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="datamodel" minOccurs="0" maxOccurs="1" />
       <xsd:element ref="invoke" minOccurs="0" maxOccurs="unbounded" />
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
-  <xsd:group name="scxml.state.content">
+  <xsd:group name="agentml.state.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.state.mix" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.state.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.state.type">
+  <xsd:complexType name="agentml.state.type">
     <xsd:sequence>
-      <xsd:group ref="scxml.state.content" />
+      <xsd:group ref="agentml.state.content" />
     </xsd:sequence>
-    <xsd:attributeGroup ref="scxml.state.attlist" />
+    <xsd:attributeGroup ref="agentml.state.attlist" />
   </xsd:complexType>
-  <xsd:element name="state" type="scxml.state.type" />
+  <xsd:element name="state" type="agentml.state.type" />
 
   <!-- initial -->
-  <xsd:attributeGroup name="scxml.initial.attlist">
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+  <xsd:attributeGroup name="agentml.initial.attlist">
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.initial.content">
+  <xsd:group name="agentml.initial.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="transition" minOccurs="1" maxOccurs="1" />
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.initial.type">
-    <xsd:group ref="scxml.initial.content" />
-    <xsd:attributeGroup ref="scxml.initial.attlist" />
+  <xsd:complexType name="agentml.initial.type">
+    <xsd:group ref="agentml.initial.content" />
+    <xsd:attributeGroup ref="agentml.initial.attlist" />
   </xsd:complexType>
-  <xsd:element name="initial" type="scxml.initial.type" />
+  <xsd:element name="initial" type="agentml.initial.type" />
 
   <!-- onentry -->
-  <xsd:attributeGroup name="scxml.onentry.attlist">
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+  <xsd:attributeGroup name="agentml.onentry.attlist">
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.onentry.content">
+  <xsd:group name="agentml.onentry.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.onentry.type">
-    <xsd:group ref="scxml.onentry.content" />
-    <xsd:attributeGroup ref="scxml.onentry.attlist" />
+  <xsd:complexType name="agentml.onentry.type">
+    <xsd:group ref="agentml.onentry.content" />
+    <xsd:attributeGroup ref="agentml.onentry.attlist" />
   </xsd:complexType>
-  <xsd:element name="onentry" type="scxml.onentry.type" />
+  <xsd:element name="onentry" type="agentml.onentry.type" />
 
   <!-- onexit -->
-  <xsd:attributeGroup name="scxml.onexit.attlist">
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+  <xsd:attributeGroup name="agentml.onexit.attlist">
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.onexit.content">
+  <xsd:group name="agentml.onexit.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.onexit.type">
-    <xsd:group ref="scxml.onexit.content" />
-    <xsd:attributeGroup ref="scxml.onexit.attlist" />
+  <xsd:complexType name="agentml.onexit.type">
+    <xsd:group ref="agentml.onexit.content" />
+    <xsd:attributeGroup ref="agentml.onexit.attlist" />
   </xsd:complexType>
-  <xsd:element name="onexit" type="scxml.onexit.type" />
+  <xsd:element name="onexit" type="agentml.onexit.type" />
 
   <!-- transition -->
-  <xsd:attributeGroup name="scxml.transition.attlist">
+  <xsd:attributeGroup name="agentml.transition.attlist">
     <xsd:attribute name="event" type="EventTypes.datatype" />
     <xsd:attribute name="cond" type="CondLang.datatype" />
     <xsd:attribute name="target" type="xsd:IDREFS" />
     <xsd:attribute name="type" type="TransitionType.datatype" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.transition.content">
+  <xsd:group name="agentml.transition.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.transition.type">
-    <xsd:group ref="scxml.transition.content" />
-    <xsd:attributeGroup ref="scxml.transition.attlist" />
+  <xsd:complexType name="agentml.transition.type">
+    <xsd:group ref="agentml.transition.content" />
+    <xsd:attributeGroup ref="agentml.transition.attlist" />
   </xsd:complexType>
-  <xsd:element name="transition" type="scxml.transition.type" />
+  <xsd:element name="transition" type="agentml.transition.type" />
 
   <!-- parallel -->
-  <xsd:attributeGroup name="scxml.parallel.attlist">
+  <xsd:attributeGroup name="agentml.parallel.attlist">
     <xsd:attribute name="id" type="xsd:ID" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.parallel.mix">
+  <xsd:group name="agentml.parallel.mix">
     <xsd:choice>
       <xsd:element ref="onentry" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="onexit" minOccurs="0" maxOccurs="unbounded" />
@@ -384,384 +389,384 @@
       <xsd:element ref="history" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="datamodel" minOccurs="0" maxOccurs="1" />
       <xsd:element ref="invoke" minOccurs="0" maxOccurs="unbounded" />
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
-  <xsd:group name="scxml.parallel.content">
+  <xsd:group name="agentml.parallel.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.parallel.mix" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.parallel.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.parallel.type">
-    <xsd:group ref="scxml.parallel.content" />
-    <xsd:attributeGroup ref="scxml.parallel.attlist" />
+  <xsd:complexType name="agentml.parallel.type">
+    <xsd:group ref="agentml.parallel.content" />
+    <xsd:attributeGroup ref="agentml.parallel.attlist" />
   </xsd:complexType>
-  <xsd:element name="parallel" type="scxml.parallel.type" />
+  <xsd:element name="parallel" type="agentml.parallel.type" />
 
   <!-- final -->
-  <xsd:attributeGroup name="scxml.final.attlist">
+  <xsd:attributeGroup name="agentml.final.attlist">
     <xsd:attribute name="id" type="xsd:ID" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.final.mix">
+  <xsd:group name="agentml.final.mix">
     <xsd:choice>
       <xsd:element ref="onentry" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="onexit" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="donedata" minOccurs="0" maxOccurs="1" />
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
-  <xsd:group name="scxml.final.content">
+  <xsd:group name="agentml.final.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.final.mix" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.final.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.final.type">
-    <xsd:group ref="scxml.final.content" />
-    <xsd:attributeGroup ref="scxml.final.attlist" />
+  <xsd:complexType name="agentml.final.type">
+    <xsd:group ref="agentml.final.content" />
+    <xsd:attributeGroup ref="agentml.final.attlist" />
   </xsd:complexType>
-  <xsd:element name="final" type="scxml.final.type" />
+  <xsd:element name="final" type="agentml.final.type" />
 
   <!-- history -->
-  <xsd:attributeGroup name="scxml.history.attlist">
+  <xsd:attributeGroup name="agentml.history.attlist">
     <xsd:attribute name="id" type="xsd:ID" />
     <xsd:attribute name="type" type="HistoryType.datatype" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.history.content">
+  <xsd:group name="agentml.history.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="transition" minOccurs="1" maxOccurs="1" />
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.history.type">
-    <xsd:group ref="scxml.history.content" />
-    <xsd:attributeGroup ref="scxml.history.attlist" />
+  <xsd:complexType name="agentml.history.type">
+    <xsd:group ref="agentml.history.content" />
+    <xsd:attributeGroup ref="agentml.history.attlist" />
   </xsd:complexType>
-  <xsd:element name="history" type="scxml.history.type" />
+  <xsd:element name="history" type="agentml.history.type" />
 
 
   <!-- donedata -->
-  <xsd:attributeGroup name="scxml.donedata.attlist">
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+  <xsd:attributeGroup name="agentml.donedata.attlist">
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.donedata.content">
+  <xsd:group name="agentml.donedata.content">
     <xsd:choice>
       <xsd:element ref="content" minOccurs="0" maxOccurs="1" />
       <xsd:element ref="param" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
-  <xsd:complexType name="scxml.donedata.type">
-    <xsd:group ref="scxml.donedata.content" />
-    <xsd:attributeGroup ref="scxml.donedata.attlist" />
+  <xsd:complexType name="agentml.donedata.type">
+    <xsd:group ref="agentml.donedata.content" />
+    <xsd:attributeGroup ref="agentml.donedata.attlist" />
   </xsd:complexType>
-  <xsd:element name="donedata" type="scxml.donedata.type" />
+  <xsd:element name="donedata" type="agentml.donedata.type" />
 
   <!-- if -->
-  <xsd:attributeGroup name="scxml.if.attlist">
+  <xsd:attributeGroup name="agentml.if.attlist">
     <xsd:attribute name="cond" type="CondLang.datatype" use="required" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.if.elseif.mix">
+  <xsd:group name="agentml.if.elseif.mix">
     <xsd:sequence>
       <xsd:element ref="elseif" />
-      <xsd:group ref="scxml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:group name="scxml.if.else.mix">
+  <xsd:group name="agentml.if.else.mix">
     <xsd:sequence>
       <xsd:element ref="else" />
-      <xsd:group ref="scxml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:group name="scxml.if.content">
+  <xsd:group name="agentml.if.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
-      <xsd:group ref="scxml.if.elseif.mix" minOccurs="0" maxOccurs="1" />
-      <xsd:group ref="scxml.if.else.mix" minOccurs="0" maxOccurs="1" />
+      <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.if.elseif.mix" minOccurs="0" maxOccurs="1" />
+      <xsd:group ref="agentml.if.else.mix" minOccurs="0" maxOccurs="1" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.if.type">
-    <xsd:group ref="scxml.if.content" />
-    <xsd:attributeGroup ref="scxml.if.attlist" />
+  <xsd:complexType name="agentml.if.type">
+    <xsd:group ref="agentml.if.content" />
+    <xsd:attributeGroup ref="agentml.if.attlist" />
   </xsd:complexType>
-  <xsd:element name="if" type="scxml.if.type" />
+  <xsd:element name="if" type="agentml.if.type" />
 
   <!-- elseif -->
-  <xsd:attributeGroup name="scxml.elseif.attlist">
+  <xsd:attributeGroup name="agentml.elseif.attlist">
     <xsd:attribute name="cond" type="CondLang.datatype" use="required" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.elseif.mix">
+  <xsd:group name="agentml.elseif.mix">
     <xsd:choice>
       <!-- No content for this element -->
     </xsd:choice>
   </xsd:group>
-  <xsd:group name="scxml.elseif.content">
+  <xsd:group name="agentml.elseif.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.elseif.mix" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.elseif.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.elseif.type">
-    <xsd:group ref="scxml.elseif.content" />
-    <xsd:attributeGroup ref="scxml.elseif.attlist" />
+  <xsd:complexType name="agentml.elseif.type">
+    <xsd:group ref="agentml.elseif.content" />
+    <xsd:attributeGroup ref="agentml.elseif.attlist" />
   </xsd:complexType>
-  <xsd:element name="elseif" type="scxml.elseif.type" />
+  <xsd:element name="elseif" type="agentml.elseif.type" />
 
   <!-- else -->
-  <xsd:attributeGroup name="scxml.else.attlist">
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+  <xsd:attributeGroup name="agentml.else.attlist">
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.else.mix">
+  <xsd:group name="agentml.else.mix">
     <xsd:choice>
       <!-- No content for this element -->
     </xsd:choice>
   </xsd:group>
-  <xsd:group name="scxml.else.content">
+  <xsd:group name="agentml.else.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.else.mix" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.else.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.else.type">
-    <xsd:group ref="scxml.else.content" />
-    <xsd:attributeGroup ref="scxml.else.attlist" />
+  <xsd:complexType name="agentml.else.type">
+    <xsd:group ref="agentml.else.content" />
+    <xsd:attributeGroup ref="agentml.else.attlist" />
   </xsd:complexType>
-  <xsd:element name="else" type="scxml.else.type" />
+  <xsd:element name="else" type="agentml.else.type" />
 
   <!-- foreach -->
-  <xsd:attributeGroup name="scxml.foreach.attlist">
+  <xsd:attributeGroup name="agentml.foreach.attlist">
     <xsd:attribute name="array" type="ValueLang.datatype" use="required" />
     <xsd:attribute name="item" type="xsd:string" use="required" />
     <xsd:attribute name="index" type="xsd:string" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.foreach.content">
+  <xsd:group name="agentml.foreach.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.foreach.type">
-    <xsd:group ref="scxml.foreach.content" />
-    <xsd:attributeGroup ref="scxml.foreach.attlist" />
+  <xsd:complexType name="agentml.foreach.type">
+    <xsd:group ref="agentml.foreach.content" />
+    <xsd:attributeGroup ref="agentml.foreach.attlist" />
   </xsd:complexType>
-  <xsd:element name="foreach" type="scxml.foreach.type" />
+  <xsd:element name="foreach" type="agentml.foreach.type" />
 
   <!-- raise -->
-  <xsd:attributeGroup name="scxml.raise.attlist">
+  <xsd:attributeGroup name="agentml.raise.attlist">
     <xsd:attribute name="event" type="xsd:NMTOKEN" use="required" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.raise.mix">
+  <xsd:group name="agentml.raise.mix">
     <xsd:choice>
       <!-- No content for this element -->
     </xsd:choice>
   </xsd:group>
-  <xsd:group name="scxml.raise.content">
+  <xsd:group name="agentml.raise.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.raise.mix" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.raise.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.raise.type">
-    <xsd:group ref="scxml.raise.content" />
-    <xsd:attributeGroup ref="scxml.raise.attlist" />
+  <xsd:complexType name="agentml.raise.type">
+    <xsd:group ref="agentml.raise.content" />
+    <xsd:attributeGroup ref="agentml.raise.attlist" />
   </xsd:complexType>
-  <xsd:element name="raise" type="scxml.raise.type" />
+  <xsd:element name="raise" type="agentml.raise.type" />
 
   <!-- log -->
-  <xsd:attributeGroup name="scxml.log.attlist">
+  <xsd:attributeGroup name="agentml.log.attlist">
     <xsd:attribute name="label" type="xsd:string" />
     <xsd:attribute name="expr" type="ValueLang.datatype" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.log.content">
+  <xsd:group name="agentml.log.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.log.type">
-    <xsd:group ref="scxml.log.content" />
-    <xsd:attributeGroup ref="scxml.log.attlist" />
+  <xsd:complexType name="agentml.log.type">
+    <xsd:group ref="agentml.log.content" />
+    <xsd:attributeGroup ref="agentml.log.attlist" />
   </xsd:complexType>
-  <xsd:element name="log" type="scxml.log.type" />
+  <xsd:element name="log" type="agentml.log.type" />
 
 
   <xsd:annotation>
-    <xsd:documentation> This is the XML Schema data module for SCXML * datamodel * data * assign *
+    <xsd:documentation> This is the XML Schema data module for AgentML * datamodel * data * assign *
       param * script * content The data module defines these elements and their attributes. </xsd:documentation>
-    <xsd:documentation source="scxml-copyright.xsd" />
+    <xsd:documentation source="AgentML-copyright.xsd" />
   </xsd:annotation>
 
   <!-- datamodel -->
-  <xsd:attributeGroup name="scxml.datamodel.attlist">
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+  <xsd:attributeGroup name="agentml.datamodel.attlist">
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.datamodel.content">
+  <xsd:group name="agentml.datamodel.content">
     <xsd:sequence>
       <xsd:element ref="data" minOccurs="0" maxOccurs="unbounded" />
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.datamodel.type">
-    <xsd:group ref="scxml.datamodel.content" />
-    <xsd:attributeGroup ref="scxml.datamodel.attlist" />
+  <xsd:complexType name="agentml.datamodel.type">
+    <xsd:group ref="agentml.datamodel.content" />
+    <xsd:attributeGroup ref="agentml.datamodel.attlist" />
   </xsd:complexType>
-  <xsd:element name="datamodel" type="scxml.datamodel.type" />
+  <xsd:element name="datamodel" type="agentml.datamodel.type" />
 
   <!-- data -->
-  <xsd:attributeGroup name="scxml.data.attlist">
+  <xsd:attributeGroup name="agentml.data.attlist">
     <xsd:attribute name="id" type="xsd:ID" use="required" />
     <xsd:attribute name="src" type="URI.datatype" />
     <xsd:attribute name="expr" type="ValueLang.datatype" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.data.content">
+  <xsd:group name="agentml.data.content">
     <xsd:sequence>
       <xsd:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.data.type" mixed="true">
-    <xsd:group ref="scxml.data.content" />
-    <xsd:attributeGroup ref="scxml.data.attlist" />
+  <xsd:complexType name="agentml.data.type" mixed="true">
+    <xsd:group ref="agentml.data.content" />
+    <xsd:attributeGroup ref="agentml.data.attlist" />
   </xsd:complexType>
-  <xsd:element name="data" type="scxml.data.type" />
+  <xsd:element name="data" type="agentml.data.type" />
 
 
   <!-- param -->
-  <xsd:attributeGroup name="scxml.param.attlist">
+  <xsd:attributeGroup name="agentml.param.attlist">
     <xsd:attribute name="name" type="xsd:NMTOKEN" use="required" />
     <xsd:attribute name="expr" type="ValueLang.datatype" />
     <xsd:attribute name="location" type="LocLang.datatype" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.param.content">
+  <xsd:group name="agentml.param.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.param.type">
-    <xsd:group ref="scxml.param.content" />
-    <xsd:attributeGroup ref="scxml.param.attlist" />
+  <xsd:complexType name="agentml.param.type">
+    <xsd:group ref="agentml.param.content" />
+    <xsd:attributeGroup ref="agentml.param.attlist" />
   </xsd:complexType>
-  <xsd:element name="param" type="scxml.param.type" />
+  <xsd:element name="param" type="agentml.param.type" />
 
   <!--  assign  -->
-  <xsd:attributeGroup name="scxml.assign.attlist">
+  <xsd:attributeGroup name="agentml.assign.attlist">
     <xsd:attribute name="location" type="LocLang.datatype" use="required" />
     <xsd:attribute name="expr" type="ValueLang.datatype" />
     <xsd:attribute name="type" type="AssignType.datatype" default="replacechildren" />
     <xsd:attribute name="attr" type="xsd:NMTOKEN" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.assign.content">
+  <xsd:group name="agentml.assign.content">
     <xsd:sequence>
       <xsd:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.assign.type" mixed="true">
-    <xsd:group ref="scxml.assign.content" />
-    <xsd:attributeGroup ref="scxml.assign.attlist" />
+  <xsd:complexType name="agentml.assign.type" mixed="true">
+    <xsd:group ref="agentml.assign.content" />
+    <xsd:attributeGroup ref="agentml.assign.attlist" />
   </xsd:complexType>
-  <xsd:element name="assign" type="scxml.assign.type" />
+  <xsd:element name="assign" type="agentml.assign.type" />
 
 
   <!-- script -->
-  <xsd:attributeGroup name="scxml.script.attlist">
+  <xsd:attributeGroup name="agentml.script.attlist">
     <xsd:attribute name="src" type="URI.datatype" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.script.content">
+  <xsd:group name="agentml.script.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.script.type" mixed="true">
-    <xsd:group ref="scxml.script.content" />
-    <xsd:attributeGroup ref="scxml.script.attlist" />
+  <xsd:complexType name="agentml.script.type" mixed="true">
+    <xsd:group ref="agentml.script.content" />
+    <xsd:attributeGroup ref="agentml.script.attlist" />
   </xsd:complexType>
-  <xsd:element name="script" type="scxml.script.type" />
+  <xsd:element name="script" type="agentml.script.type" />
 
   <!-- content -->
-  <xsd:attributeGroup name="scxml.content.attlist">
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+  <xsd:attributeGroup name="agentml.content.attlist">
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
     <xsd:attribute name="expr" type="ValueLang.datatype" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.content.content">
+  <xsd:group name="agentml.content.content">
     <xsd:sequence>
       <xsd:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.content.type" mixed="true">
-    <xsd:group ref="scxml.content.content" />
-    <xsd:attributeGroup ref="scxml.content.attlist" />
+  <xsd:complexType name="agentml.content.type" mixed="true">
+    <xsd:group ref="agentml.content.content" />
+    <xsd:attributeGroup ref="agentml.content.attlist" />
   </xsd:complexType>
-  <xsd:element name="content" type="scxml.content.type" />
+  <xsd:element name="content" type="agentml.content.type" />
 
   <xsd:annotation>
-    <xsd:documentation> This is the XML Schema external module for SCXML * send * cancel * invoke *
-      finalize The external module defines these elements and their attributes. </xsd:documentation>
-    <xsd:documentation source="scxml-copyright.xsd" />
+    <xsd:documentation> This is the XML Schema external module for AgentML * send * cancel * invoke
+      * finalize The external module defines these elements and their attributes. </xsd:documentation>
+    <xsd:documentation source="AgentML-copyright.xsd" />
   </xsd:annotation>
 
   <!-- send -->
-  <xsd:attributeGroup name="scxml.send.attlist">
+  <xsd:attributeGroup name="agentml.send.attlist">
     <xsd:attribute name="event" type="EventType.datatype" />
     <xsd:attribute name="eventexpr" type="ValueLang.datatype" />
     <xsd:attribute name="target" type="URI.datatype" />
     <xsd:attribute name="targetexpr" type="ValueLang.datatype" />
-    <xsd:attribute name="type" type="xsd:string" default="scxml" />
+    <xsd:attribute name="type" type="xsd:string" default="AgentML" />
     <xsd:attribute name="typeexpr" type="ValueLang.datatype" />
     <xsd:attribute name="id" type="xsd:ID" />
     <xsd:attribute name="idlocation" type="LocLang.datatype" />
     <xsd:attribute name="delay" type="Duration.datatype" default="0s" />
     <xsd:attribute name="delayexpr" type="ValueLang.datatype" />
     <xsd:attribute name="namelist" type="xsd:string" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.send.mix">
+  <xsd:group name="agentml.send.mix">
     <xsd:choice>
       <xsd:element ref="content" minOccurs="0" maxOccurs="1" />
       <xsd:element ref="param" minOccurs="0" maxOccurs="unbounded" />
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
-  <xsd:group name="scxml.send.content">
+  <xsd:group name="agentml.send.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.send.mix" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.send.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.send.type">
-    <xsd:group ref="scxml.send.content" />
-    <xsd:attributeGroup ref="scxml.send.attlist" />
+  <xsd:complexType name="agentml.send.type">
+    <xsd:group ref="agentml.send.content" />
+    <xsd:attributeGroup ref="agentml.send.attlist" />
   </xsd:complexType>
-  <xsd:element name="send" type="scxml.send.type" />
+  <xsd:element name="send" type="agentml.send.type" />
 
   <!-- cancel -->
-  <xsd:attributeGroup name="scxml.cancel.attlist">
+  <xsd:attributeGroup name="agentml.cancel.attlist">
     <xsd:attribute name="sendid" type="xsd:IDREF" />
     <xsd:attribute name="sendidexpr" type="ValueLang.datatype" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.cancel.mix">
+  <xsd:group name="agentml.cancel.mix">
     <xsd:sequence>
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:group name="scxml.cancel.content">
+  <xsd:group name="agentml.cancel.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.cancel.mix" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.cancel.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.cancel.type">
-    <xsd:group ref="scxml.cancel.content" />
-    <xsd:attributeGroup ref="scxml.cancel.attlist" />
+  <xsd:complexType name="agentml.cancel.type">
+    <xsd:group ref="agentml.cancel.content" />
+    <xsd:attributeGroup ref="agentml.cancel.attlist" />
   </xsd:complexType>
-  <xsd:element name="cancel" type="scxml.cancel.type" />
+  <xsd:element name="cancel" type="agentml.cancel.type" />
 
 
   <!-- invoke -->
-  <xsd:attributeGroup name="scxml.invoke.attlist">
-    <xsd:attribute name="type" type="xsd:string" default="scxml" />
+  <xsd:attributeGroup name="agentml.invoke.attlist">
+    <xsd:attribute name="type" type="xsd:string" default="AgentML" />
     <xsd:attribute name="typeexpr" type="ValueLang.datatype" />
     <xsd:attribute name="src" type="URI.datatype" />
     <xsd:attribute name="srcexpr" type="ValueLang.datatype" />
@@ -769,53 +774,53 @@
     <xsd:attribute name="idlocation" type="LocLang.datatype" />
     <xsd:attribute name="namelist" type="xsd:string" />
     <xsd:attribute name="autoforward" type="Boolean.datatype" use="optional" default="false" />
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.invoke.mix">
+  <xsd:group name="agentml.invoke.mix">
     <xsd:sequence>
       <xsd:element ref="content" minOccurs="0" maxOccurs="1" />
       <xsd:element ref="param" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="finalize" minOccurs="0" maxOccurs="1" />
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:group name="scxml.invoke.content">
+  <xsd:group name="agentml.invoke.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.invoke.mix" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.invoke.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.invoke.type">
-    <xsd:group ref="scxml.invoke.content" />
-    <xsd:attributeGroup ref="scxml.invoke.attlist" />
+  <xsd:complexType name="agentml.invoke.type">
+    <xsd:group ref="agentml.invoke.content" />
+    <xsd:attributeGroup ref="agentml.invoke.attlist" />
   </xsd:complexType>
-  <xsd:element name="invoke" type="scxml.invoke.type" />
+  <xsd:element name="invoke" type="agentml.invoke.type" />
 
   <!-- finalize -->
-  <xsd:attributeGroup name="scxml.finalize.attlist">
-    <xsd:attributeGroup ref="scxml.extra.attribs" />
+  <xsd:attributeGroup name="agentml.finalize.attlist">
+    <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
-  <xsd:group name="scxml.finalize.mix">
+  <xsd:group name="agentml.finalize.mix">
     <xsd:sequence>
-      <xsd:group ref="scxml.core.executablecontent" />
+      <xsd:group ref="agentml.core.executablecontent" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:group name="scxml.finalize.content">
+  <xsd:group name="agentml.finalize.content">
     <xsd:sequence>
-      <xsd:group ref="scxml.finalize.mix" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.finalize.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
-  <xsd:complexType name="scxml.finalize.type">
-    <xsd:group ref="scxml.finalize.content" />
-    <xsd:attributeGroup ref="scxml.finalize.attlist" />
+  <xsd:complexType name="agentml.finalize.type">
+    <xsd:group ref="agentml.finalize.content" />
+    <xsd:attributeGroup ref="agentml.finalize.attlist" />
   </xsd:complexType>
-  <xsd:element name="finalize" type="scxml.finalize.type" />
+  <xsd:element name="finalize" type="agentml.finalize.type" />
 
 
   <!-- the various elements of executable content are defined in the relevant modules. 
 This gathers them up into a single type -->
-  <xsd:group name="scxml.core.executablecontent">
+  <xsd:group name="agentml.core.executablecontent">
     <xsd:choice>
-      <xsd:group ref="scxml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="raise" />
       <xsd:element ref="if" />
       <xsd:element ref="foreach" />
