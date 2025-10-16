@@ -51,7 +51,7 @@ By separating behavior from runtime, your agents outlive framework trends.
 To run AgentML files (`.aml`), you need the `agentmlx` runtime. Install it with a single command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+curl -fsSL sh.agentml.dev | sh
 ```
 
 This will:
@@ -64,24 +64,24 @@ This will:
 **Install from different channels:**
 ```bash
 # Latest stable release
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+curl -fsSL sh.agentml.dev | sh
 
 # Next (release candidate)
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --channel next
+curl -fsSL sh.agentml.dev | sh -s -- --channel next
 
 # Beta releases
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --channel beta
+curl -fsSL sh.agentml.dev | sh -s -- --channel beta
 ```
 
 **Install specific version:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --version 1.0.0-rc.1
+curl -fsSL sh.agentml.dev | sh -s -- --version 1.0.0-rc.1
 ```
 
 **Install to custom directory:**
 ```bash
 export AGENTMLX_INSTALL_DIR=/usr/local
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+curl -fsSL sh.agentml.dev | sh
 ```
 
 **Release Channels:**

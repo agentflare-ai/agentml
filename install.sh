@@ -1,13 +1,12 @@
 #!/bin/sh
 # agentmlx installer
 # Installs the latest version of agentmlx from Cloudflare R2
-# Usage: curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+# Usage: curl -fsSL sh.agentml.dev | sh
 
 set -e
 
 # Configuration
 RELEASES_BASE_URL="${AGENTMLX_RELEASES_URL:-https://amlx.agentml.dev/agentmlx}"
-GITHUB_RELEASES_API="https://api.github.com/repos/agentflare-ai/agentmlx/releases"
 INSTALL_DIR="${AGENTMLX_INSTALL_DIR:-$HOME/.agentmlx}"
 BIN_DIR="$INSTALL_DIR/bin"
 
@@ -70,87 +69,64 @@ detect_platform() {
     echo "${os}_${arch}"
 }
 
-# Fetch all releases and extract versions
-fetch_all_releases() {
-    local releases_json
+# Check if a binary exists at the given URL
+check_binary_exists() {
+    local url="$1"
 
     if command -v curl >/dev/null 2>&1; then
-        releases_json=$(curl -sfL "${GITHUB_RELEASES_API}?per_page=100")
+        curl -fsSL --head "$url" >/dev/null 2>&1
     elif command -v wget >/dev/null 2>&1; then
-        releases_json=$(wget -qO- "${GITHUB_RELEASES_API}?per_page=100")
+        wget -q --spider "$url" 2>&1
     else
         error "Neither curl nor wget found. Please install one and try again."
     fi
-
-    # Extract tag names (removes "v" prefix)
-    echo "$releases_json" | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/'
 }
 
-# Get version for specific channel
-get_version_for_channel() {
+# Try to get binary URL for a channel with fallback
+get_binary_url_with_fallback() {
     local channel="$1"
-    local versions
-
-    versions=$(fetch_all_releases)
-
-    case "$channel" in
-        latest)
-            # Stable versions: v1.0.0 (no suffix)
-            echo "$versions" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n1
-            ;;
-        next)
-            # RC versions: v1.0.0-rc.1
-            echo "$versions" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$' | head -n1
-            ;;
-        beta)
-            # Beta versions: v1.0.0-beta.1
-            echo "$versions" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$' | head -n1
-            ;;
-        *)
-            error "Unknown channel: $channel"
-            ;;
-    esac
-}
-
-# Get version with waterfall fallback
-get_version_with_fallback() {
-    local channel="$1"
-    local version
-
-    info "Fetching ${channel} version from GitHub..."
+    local platform="$2"
+    local binary_url
+    local checksums_url
 
     # Try requested channel
-    version=$(get_version_for_channel "$channel")
-    if [ -n "$version" ]; then
-        echo "$version"
+    info "Checking ${channel} channel..."
+    binary_url="${RELEASES_BASE_URL}/${channel}/agentmlx_${platform}"
+    checksums_url="${RELEASES_BASE_URL}/${channel}/checksums.txt"
+
+    if check_binary_exists "$binary_url"; then
+        echo "${binary_url}|${checksums_url}"
         return 0
     fi
 
     # Waterfall logic: latest → next → beta
     case "$channel" in
         latest)
-            warn "No stable releases found, trying next (rc) channel..."
-            version=$(get_version_for_channel "next")
-            if [ -n "$version" ]; then
-                warn "Using next channel: v${version}"
-                echo "$version"
+            warn "No binary found in latest channel, trying next (rc) channel..."
+            binary_url="${RELEASES_BASE_URL}/next/agentmlx_${platform}"
+            checksums_url="${RELEASES_BASE_URL}/next/checksums.txt"
+            if check_binary_exists "$binary_url"; then
+                warn "Using next channel"
+                echo "${binary_url}|${checksums_url}"
                 return 0
             fi
 
-            warn "No rc releases found, trying beta channel..."
-            version=$(get_version_for_channel "beta")
-            if [ -n "$version" ]; then
-                warn "Using beta channel: v${version}"
-                echo "$version"
+            warn "No binary found in next channel, trying beta channel..."
+            binary_url="${RELEASES_BASE_URL}/beta/agentmlx_${platform}"
+            checksums_url="${RELEASES_BASE_URL}/beta/checksums.txt"
+            if check_binary_exists "$binary_url"; then
+                warn "Using beta channel"
+                echo "${binary_url}|${checksums_url}"
                 return 0
             fi
             ;;
         next)
-            warn "No rc releases found, trying beta channel..."
-            version=$(get_version_for_channel "beta")
-            if [ -n "$version" ]; then
-                warn "Using beta channel: v${version}"
-                echo "$version"
+            warn "No binary found in next channel, trying beta channel..."
+            binary_url="${RELEASES_BASE_URL}/beta/agentmlx_${platform}"
+            checksums_url="${RELEASES_BASE_URL}/beta/checksums.txt"
+            if check_binary_exists "$binary_url"; then
+                warn "Using beta channel"
+                echo "${binary_url}|${checksums_url}"
                 return 0
             fi
             ;;
@@ -321,19 +297,24 @@ main() {
     platform=$(detect_platform)
     info "Detected platform: $platform"
 
-    # Get version
-    if [ -z "$version" ]; then
-        version=$(get_version_with_fallback "$channel")
-        if [ -z "$version" ]; then
+    # Get binary URLs (with channel fallback logic)
+    local binary_url checksums_url
+    if [ -n "$version" ]; then
+        # Specific version requested
+        info "Version: $version"
+        local binary_name="agentmlx_${version}_${platform}"
+        binary_url="${RELEASES_BASE_URL}/v${version}/${binary_name}"
+        checksums_url="${RELEASES_BASE_URL}/v${version}/checksums.txt"
+    else
+        # Use channel
+        local urls
+        urls=$(get_binary_url_with_fallback "$channel" "$platform")
+        if [ -z "$urls" ]; then
             error "Failed to find any releases for channel: $channel"
         fi
+        binary_url=$(echo "$urls" | cut -d'|' -f1)
+        checksums_url=$(echo "$urls" | cut -d'|' -f2)
     fi
-    info "Version: $version"
-
-    # Construct download URLs from R2
-    local binary_name="agentmlx_${version}_${platform}"
-    local binary_url="${RELEASES_BASE_URL}/v${version}/${binary_name}"
-    local checksums_url="${RELEASES_BASE_URL}/v${version}/checksums.txt"
 
     # Create temporary directory
     local tmp_dir
@@ -351,6 +332,8 @@ main() {
     # Verify checksum if checksums file was downloaded
     if [ -f "$tmp_dir/checksums.txt" ]; then
         info "Verifying checksum..."
+        local binary_name
+        binary_name=$(basename "$binary_url")
         verify_checksum "$tmp_dir/agentmlx" "$tmp_dir/checksums.txt" "$binary_name"
     fi
 
@@ -371,7 +354,20 @@ main() {
         setup_path
     fi
 
-    info "${GREEN}✓${RESET} agentmlx v${version} installed successfully!"
+    # Show installed version
+    local installed_version
+    if [ -n "$version" ]; then
+        info "${GREEN}✓${RESET} agentmlx v${version} installed successfully!"
+    else
+        # Try to get version from binary
+        installed_version=$("$BIN_DIR/agentmlx" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?' || echo "")
+        if [ -n "$installed_version" ]; then
+            info "${GREEN}✓${RESET} agentmlx v${installed_version} installed successfully!"
+        else
+            info "${GREEN}✓${RESET} agentmlx installed successfully!"
+        fi
+    fi
+
     echo ""
     echo "To get started, run:"
     echo "  ${BOLD}agentmlx --help${RESET}"

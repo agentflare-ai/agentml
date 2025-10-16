@@ -371,7 +371,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install agentmlx
-        run: curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+        run: curl -fsSL sh.agentml.dev | sh
 
       - name: Add to PATH
         run: echo "$HOME/.agentml/bin" >> $GITHUB_PATH

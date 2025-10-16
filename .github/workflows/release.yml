@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  goreleaser:
+  build-and-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,11 +22,94 @@ jobs:
         with:
           go-version: '1.24'
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+      - name: Extract version info
+        id: version
+        run: |
+          # Extract version from tag (removes 'v' prefix)
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Determine channel based on version suffix
+          if [[ "$VERSION" =~ -beta\. ]]; then
+            echo "channel=beta" >> $GITHUB_OUTPUT
+          elif [[ "$VERSION" =~ -rc\. ]]; then
+            echo "channel=next" >> $GITHUB_OUTPUT
+          else
+            echo "channel=latest" >> $GITHUB_OUTPUT
+          fi
+
+          echo "Version: $VERSION"
+          echo "Channel: $(if [[ "$VERSION" =~ -beta\. ]]; then echo "beta"; elif [[ "$VERSION" =~ -rc\. ]]; then echo "next"; else echo "latest"; fi)"
+
+      - name: Build binaries
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Build for each platform
+          GOOS=linux GOARCH=amd64 go build -o "agentmlx_${VERSION}_linux_amd64" -ldflags "-X main.version=${VERSION}" main.go
+          GOOS=darwin GOARCH=amd64 go build -o "agentmlx_${VERSION}_darwin_amd64" -ldflags "-X main.version=${VERSION}" main.go
+          GOOS=darwin GOARCH=arm64 go build -o "agentmlx_${VERSION}_darwin_arm64" -ldflags "-X main.version=${VERSION}" main.go
+
+          # Generate checksums
+          sha256sum agentmlx_${VERSION}_* > checksums.txt
+
+          # List files
+          ls -lh agentmlx_${VERSION}_*
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
         with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean
+          files: |
+            agentmlx_${{ steps.version.outputs.version }}_*
+            checksums.txt
+          draft: false
+          prerelease: ${{ steps.version.outputs.channel != 'latest' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install rclone
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+
+      - name: Configure rclone for R2
+        run: |
+          mkdir -p ~/.config/rclone
+          cat > ~/.config/rclone/rclone.conf << EOF
+          [r2]
+          type = s3
+          provider = Cloudflare
+          access_key_id = ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret_access_key = ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          endpoint = ${{ secrets.R2_ENDPOINT }}
+          acl = public-read
+          EOF
+
+      - name: Upload to R2 (versioned)
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Upload versioned binaries
+          rclone copy agentmlx_${VERSION}_linux_amd64 r2:amlx/agentmlx/v${VERSION}/ --s3-acl=public-read
+          rclone copy agentmlx_${VERSION}_darwin_amd64 r2:amlx/agentmlx/v${VERSION}/ --s3-acl=public-read
+          rclone copy agentmlx_${VERSION}_darwin_arm64 r2:amlx/agentmlx/v${VERSION}/ --s3-acl=public-read
+          rclone copy checksums.txt r2:amlx/agentmlx/v${VERSION}/ --s3-acl=public-read
+
+          echo "✓ Uploaded versioned binaries to v${VERSION}/"
+
+      - name: Upload to R2 (channel)
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          CHANNEL="${{ steps.version.outputs.channel }}"
+
+          # Create channel-specific binaries (without version suffix)
+          cp agentmlx_${VERSION}_linux_amd64 agentmlx_linux_amd64
+          cp agentmlx_${VERSION}_darwin_amd64 agentmlx_darwin_amd64
+          cp agentmlx_${VERSION}_darwin_arm64 agentmlx_darwin_arm64
+
+          # Upload to channel directory
+          rclone copy agentmlx_linux_amd64 r2:amlx/agentmlx/${CHANNEL}/ --s3-acl=public-read
+          rclone copy agentmlx_darwin_amd64 r2:amlx/agentmlx/${CHANNEL}/ --s3-acl=public-read
+          rclone copy agentmlx_darwin_arm64 r2:amlx/agentmlx/${CHANNEL}/ --s3-acl=public-read
+          rclone copy checksums.txt r2:amlx/agentmlx/${CHANNEL}/ --s3-acl=public-read
+
+          echo "✓ Uploaded to ${CHANNEL}/ channel"

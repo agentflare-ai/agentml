@@ -18,7 +18,7 @@ Get started with AgentML by installing the `agentmlx` runtime. AgentML is a lang
 Install the latest version with a single command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+curl -fsSL sh.agentml.dev | sh
 ```
 
 This will:
@@ -34,13 +34,13 @@ Install from different release channels:
 
 ```bash
 # Latest stable release (default)
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+curl -fsSL sh.agentml.dev | sh
 
 # Next (release candidate)
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --channel next
+curl -fsSL sh.agentml.dev | sh -s -- --channel next
 
 # Beta releases
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --channel beta
+curl -fsSL sh.agentml.dev | sh -s -- --channel beta
 ```
 
 **Release Channels:**
@@ -55,7 +55,7 @@ The installer automatically falls back if a channel is empty: `latest` → `next
 Install a specific version by providing the `--version` flag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --version 1.0.0-rc.1
+curl -fsSL sh.agentml.dev | sh -s -- --version 1.0.0-rc.1
 ```
 
 ## Custom Installation Directory
@@ -64,7 +64,7 @@ By default, agentmlx installs to `~/.agentmlx/bin`. To install elsewhere:
 
 ```bash
 export AGENTMLX_INSTALL_DIR=/usr/local
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+curl -fsSL sh.agentml.dev | sh
 ```
 
 ## Verify Installation
@@ -156,13 +156,13 @@ my-agent-project/
 To update to the latest version, simply run the installer again:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+curl -fsSL sh.agentml.dev | sh
 ```
 
 Or update to a specific version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh -s -- --version 1.1.0
+curl -fsSL sh.agentml.dev | sh -s -- --version 1.1.0
 ```
 
 ## Uninstalling
@@ -219,7 +219,7 @@ If checksum verification fails:
 The installer automatically detects if you're running on Apple Silicon via Rosetta 2 and downloads the appropriate arm64 binary. If you encounter issues, manually specify:
 
 ```bash
-AGENTMLX_PLATFORM=darwin_arm64 curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+AGENTMLX_PLATFORM=darwin_arm64 curl -fsSL sh.agentml.dev | sh
 ```
 
 ## Build from Source

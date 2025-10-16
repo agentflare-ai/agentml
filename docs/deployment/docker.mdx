@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install agentmlx
-RUN curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+RUN curl -fsSL sh.agentml.dev | sh
 
 # Create app directory
 WORKDIR /app
@@ -124,7 +124,7 @@ Optimize image size:
 FROM debian:bookworm-slim AS installer
 
 RUN apt-get update && apt-get install -y curl ca-certificates
-RUN curl -fsSL https://raw.githubusercontent.com/agentflare-ai/agentml/main/install.sh | sh
+RUN curl -fsSL sh.agentml.dev | sh
 
 # Stage 2: Runtime
 FROM debian:bookworm-slim
