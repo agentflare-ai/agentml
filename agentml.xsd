@@ -1,7 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-  xmlns="github.com/agentflare-ai/agentml/agent"
-  targetNamespace="github.com/agentflare-ai/agentml/agent" elementFormDefault="qualified">
+  xmlns="github.com/agentflare-ai/agentml"
+  xmlns:agentml="github.com/agentflare-ai/agentml"
+  targetNamespace="github.com/agentflare-ai/agentml" elementFormDefault="qualified">
   <xsd:import namespace="http://www.w3.org/XML/1998/namespace"
     schemaLocation="http://www.w3.org/2001/xml.xsd">
     <xsd:annotation>
@@ -13,7 +14,7 @@
   <xsd:annotation>
     <xsd:documentation> This is the XML Schema driver for AgentML 1.0. Please use this namespace for
       AgentML 1.0 elements: "github.com/agentflare-ai/agentml/agent" </xsd:documentation>
-    <xsd:documentation source="agentml/agentml-copyright.xsd" />
+    <xsd:documentation source="agentml-copyright.xsd" />
   </xsd:annotation>
   <xsd:annotation>
     <xsd:documentation> This is the XML Schema driver file for AgentML 1.0. This schema: + sets the
@@ -24,25 +25,17 @@
       datamodels, but validating documents may contain markup that is ignored in certain datamodels. </xsd:documentation>
   </xsd:annotation>
 
-  <xsd:import namespace="http://www.w3.org/XML/1998/namespace"
-    schemaLocation="http://www.w3.org/2001/xml.xsd">
-    <xsd:annotation>
-      <xsd:documentation> This import brings in the XML namespace attributes The XML attributes are
-        used by various modules. </xsd:documentation>
-    </xsd:annotation>
-  </xsd:import>
-
   <xsd:annotation>
     <xsd:documentation> This is the XML Schema core module for AgentML * AgentML * state * initial *
       onexit * onentry * transition * parallel * final * history * donedata * if * elsif * else *
       foreach * raise * log The core module defines these elements and the attributes. </xsd:documentation>
-    <xsd:documentation source="AgentML-copyright.xsd" />
+    <xsd:documentation source="agentml-copyright.xsd" />
   </xsd:annotation>
 
   <xsd:annotation>
     <xsd:documentation> XML Schema datatypes for AgentML Defines containers for the AgentML
       datatypes, many of these imported from other specifications and standards. </xsd:documentation>
-    <xsd:documentation source="AgentML-copyright.xsd" />
+    <xsd:documentation source="agentml-copyright.xsd" />
   </xsd:annotation>
 
   <xsd:simpleType name="Exmode.datatype">
@@ -187,7 +180,7 @@
   </xsd:simpleType>
   <xsd:annotation>
     <xsd:documentation> This is the XML Schema common attributes for AgentML </xsd:documentation>
-    <xsd:documentation source="AgentML-copyright.xsd" />
+    <xsd:documentation source="agentml-copyright.xsd" />
   </xsd:annotation>
 
   <xsd:attributeGroup name="Fetchtimeout.attrib">
@@ -220,7 +213,7 @@
   <xsd:annotation>
     <xsd:documentation> XML Schema content models for AgentML * agentml.extra.content * content *
       agentml.extra.attribs Defines AgentML shared content models. </xsd:documentation>
-    <xsd:documentation source="AgentML-copyright.xsd" />
+    <xsd:documentation source="agentml-copyright.xsd" />
   </xsd:annotation>
 
   <xsd:attributeGroup name="agentml.extra.attribs">
@@ -239,7 +232,22 @@
     </xsd:sequence>
   </xsd:group>
 
-  <!-- AgentML -->
+  <!-- Substitution group heads for extensibility -->
+  <xsd:element name="executable" abstract="true">
+    <xsd:annotation>
+      <xsd:documentation>Abstract base element for executable content. Custom executable elements
+        should use substitutionGroup="agentml:executable".</xsd:documentation>
+    </xsd:annotation>
+  </xsd:element>
+
+  <xsd:element name="invokable" abstract="true">
+    <xsd:annotation>
+      <xsd:documentation>Abstract base element for invokable elements. Custom invoke elements should
+        use substitutionGroup="agentml:invokable".</xsd:documentation>
+    </xsd:annotation>
+  </xsd:element>
+
+  <!-- aml -->
   <xsd:attributeGroup name="agentml.agentml.attlist">
     <xsd:attribute name="initial" type="xsd:IDREFS" />
     <xsd:attribute name="name" type="xsd:NMTOKEN" />
@@ -272,7 +280,7 @@
     <xsd:group ref="agentml.agentml.content" />
     <xsd:attributeGroup ref="agentml.agentml.attlist" />
   </xsd:complexType>
-  <xsd:element name="AgentML" type="agentml.agentml.type" />
+  <xsd:element name="agent" type="agentml.agentml.type" />
 
   <!-- state -->
   <xsd:attributeGroup name="agentml.state.attlist">
@@ -291,8 +299,7 @@
       <xsd:element ref="final" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="history" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="datamodel" minOccurs="0" maxOccurs="1" />
-      <xsd:element ref="invoke" minOccurs="0" maxOccurs="unbounded" />
-      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element ref="agentml:invokable" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
   <xsd:group name="agentml.state.content">
@@ -388,8 +395,7 @@
       <xsd:element ref="parallel" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="history" minOccurs="0" maxOccurs="unbounded" />
       <xsd:element ref="datamodel" minOccurs="0" maxOccurs="1" />
-      <xsd:element ref="invoke" minOccurs="0" maxOccurs="unbounded" />
-      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
+      <xsd:element ref="agentml:invokable" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
   <xsd:group name="agentml.parallel.content">
@@ -491,7 +497,7 @@
     <xsd:group ref="agentml.if.content" />
     <xsd:attributeGroup ref="agentml.if.attlist" />
   </xsd:complexType>
-  <xsd:element name="if" type="agentml.if.type" />
+  <xsd:element name="if" type="agentml.if.type" substitutionGroup="agentml:executable" />
 
   <!-- elseif -->
   <xsd:attributeGroup name="agentml.elseif.attlist">
@@ -550,7 +556,7 @@
     <xsd:group ref="agentml.foreach.content" />
     <xsd:attributeGroup ref="agentml.foreach.attlist" />
   </xsd:complexType>
-  <xsd:element name="foreach" type="agentml.foreach.type" />
+  <xsd:element name="foreach" type="agentml.foreach.type" substitutionGroup="agentml:executable" />
 
   <!-- raise -->
   <xsd:attributeGroup name="agentml.raise.attlist">
@@ -571,7 +577,7 @@
     <xsd:group ref="agentml.raise.content" />
     <xsd:attributeGroup ref="agentml.raise.attlist" />
   </xsd:complexType>
-  <xsd:element name="raise" type="agentml.raise.type" />
+  <xsd:element name="raise" type="agentml.raise.type" substitutionGroup="agentml:executable" />
 
   <!-- log -->
   <xsd:attributeGroup name="agentml.log.attlist">
@@ -588,13 +594,13 @@
     <xsd:group ref="agentml.log.content" />
     <xsd:attributeGroup ref="agentml.log.attlist" />
   </xsd:complexType>
-  <xsd:element name="log" type="agentml.log.type" />
+  <xsd:element name="log" type="agentml.log.type" substitutionGroup="agentml:executable" />
 
 
   <xsd:annotation>
     <xsd:documentation> This is the XML Schema data module for AgentML * datamodel * data * assign *
       param * script * content The data module defines these elements and their attributes. </xsd:documentation>
-    <xsd:documentation source="AgentML-copyright.xsd" />
+    <xsd:documentation source="agentml-copyright.xsd" />
   </xsd:annotation>
 
   <!-- datamodel -->
@@ -667,7 +673,7 @@
     <xsd:group ref="agentml.assign.content" />
     <xsd:attributeGroup ref="agentml.assign.attlist" />
   </xsd:complexType>
-  <xsd:element name="assign" type="agentml.assign.type" />
+  <xsd:element name="assign" type="agentml.assign.type" substitutionGroup="agentml:executable" />
 
 
   <!-- script -->
@@ -684,7 +690,7 @@
     <xsd:group ref="agentml.script.content" />
     <xsd:attributeGroup ref="agentml.script.attlist" />
   </xsd:complexType>
-  <xsd:element name="script" type="agentml.script.type" />
+  <xsd:element name="script" type="agentml.script.type" substitutionGroup="agentml:executable" />
 
   <!-- content -->
   <xsd:attributeGroup name="agentml.content.attlist">
@@ -705,7 +711,7 @@
   <xsd:annotation>
     <xsd:documentation> This is the XML Schema external module for AgentML * send * cancel * invoke
       * finalize The external module defines these elements and their attributes. </xsd:documentation>
-    <xsd:documentation source="AgentML-copyright.xsd" />
+    <xsd:documentation source="agentml-copyright.xsd" />
   </xsd:annotation>
 
   <!-- send -->
@@ -739,7 +745,7 @@
     <xsd:group ref="agentml.send.content" />
     <xsd:attributeGroup ref="agentml.send.attlist" />
   </xsd:complexType>
-  <xsd:element name="send" type="agentml.send.type" />
+  <xsd:element name="send" type="agentml.send.type" substitutionGroup="agentml:executable" />
 
   <!-- cancel -->
   <xsd:attributeGroup name="agentml.cancel.attlist">
@@ -761,7 +767,7 @@
     <xsd:group ref="agentml.cancel.content" />
     <xsd:attributeGroup ref="agentml.cancel.attlist" />
   </xsd:complexType>
-  <xsd:element name="cancel" type="agentml.cancel.type" />
+  <xsd:element name="cancel" type="agentml.cancel.type" substitutionGroup="agentml:executable" />
 
 
   <!-- invoke -->
@@ -793,7 +799,7 @@
     <xsd:group ref="agentml.invoke.content" />
     <xsd:attributeGroup ref="agentml.invoke.attlist" />
   </xsd:complexType>
-  <xsd:element name="invoke" type="agentml.invoke.type" />
+  <xsd:element name="invoke" type="agentml.invoke.type" substitutionGroup="agentml:invokable" />
 
   <!-- finalize -->
   <xsd:attributeGroup name="agentml.finalize.attlist">
@@ -820,15 +826,7 @@
 This gathers them up into a single type -->
   <xsd:group name="agentml.core.executablecontent">
     <xsd:choice>
-      <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
-      <xsd:element ref="raise" />
-      <xsd:element ref="if" />
-      <xsd:element ref="foreach" />
-      <xsd:element ref="send" />
-      <xsd:element ref="script" />
-      <xsd:element ref="assign" />
-      <xsd:element ref="log" />
-      <xsd:element ref="cancel" />
+      <xsd:element ref="agentml:executable" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
 

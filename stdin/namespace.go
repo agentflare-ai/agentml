@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -15,7 +16,8 @@ import (
 const NamespaceURI = "github.com/agentflare-ai/agentml/stdin"
 
 type Namespace struct {
-	itp agentml.Interpreter
+	itp    agentml.Interpreter
+	reader *bufio.Reader
 }
 
 func (n *Namespace) URI() string { return NamespaceURI }
@@ -82,20 +84,29 @@ func (n *Namespace) execRead(ctx context.Context, el xmldom.Element) error {
 		fmt.Fprint(os.Stderr, prompt)
 	}
 
-	scanner := bufio.NewScanner(os.Stdin)
-	if !scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return &agentml.PlatformError{
-				EventName: "error.execution",
-				Message:   "Failed to read from stdin",
-				Data:      map[string]any{"element": "read"},
-				Cause:     err,
-			}
-		}
-		return dm.SetVariable(ctx, loc, nil)
+	// Create reader on first use and reuse it to avoid buffering issues
+	if n.reader == nil {
+		n.reader = bufio.NewReader(os.Stdin)
 	}
 
-	input := scanner.Text()
+	input, err := n.reader.ReadString('\n')
+
+	if err != nil {
+		if err == io.EOF {
+			// EOF - return nil
+			return dm.SetVariable(ctx, loc, nil)
+		}
+		return &agentml.PlatformError{
+			EventName: "error.execution",
+			Message:   "Failed to read from stdin",
+			Data:      map[string]any{"element": "read"},
+			Cause:     err,
+		}
+	}
+
+	// Remove trailing newline
+	input = strings.TrimSuffix(input, "\n")
+	input = strings.TrimSuffix(input, "\r") // Handle Windows line endings
 
 	return dm.SetVariable(ctx, loc, input)
 }
