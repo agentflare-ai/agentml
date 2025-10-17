@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-  xmlns="xsd.agentml.dev/agentml"
-  xmlns:agentml="xsd.agentml.dev/agentml"
-  targetNamespace="xsd.agentml.dev/agentml" elementFormDefault="qualified">
+  xmlns="https://xsd.agentml.dev/agentml"
+  xmlns:agentml="https://xsd.agentml.dev/agentml"
+  targetNamespace="https://xsd.agentml.dev/agentml" elementFormDefault="qualified">
   <xsd:import namespace="http://www.w3.org/XML/1998/namespace"
     schemaLocation="http://www.w3.org/2001/xml.xsd">
     <xsd:annotation>
@@ -254,11 +254,6 @@
     <xsd:attribute name="version" type="xsd:decimal" use="required" fixed="1.0" />
     <xsd:attribute name="datamodel" type="xsd:NMTOKEN" default="null" use="optional" />
     <xsd:attribute name="binding" type="Binding.datatype" />
-    <xsd:attribute name="import" type="xsd:string" use="optional">
-      <xsd:annotation>
-        <xsd:documentation>Namespace import alias (equivalent to xmlns declaration)</xsd:documentation>
-      </xsd:annotation>
-    </xsd:attribute>
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
   <xsd:group name="agentml.agentml.mix">
