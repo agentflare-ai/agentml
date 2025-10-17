@@ -96,7 +96,17 @@ func (n *Namespace) execRead(ctx context.Context, el xmldom.Element) error {
 		// Remove trailing newline
 		input = strings.TrimSuffix(input, "\n")
 		input = strings.TrimSuffix(input, "\r") // Handle Windows line endings
-		resultCh <- input
+		select {
+		case <-ctx.Done():
+			errCh <- ctx.Err()
+			return
+		case <-errCh:
+			return
+		case <-resultCh:
+			return
+		default:
+			resultCh <- input
+		}
 	}()
 
 	// Select on context cancellation or result
