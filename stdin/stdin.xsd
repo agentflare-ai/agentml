@@ -2,10 +2,10 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
     targetNamespace="github.com/agentflare-ai/agentml/stdin"
     xmlns:stdin="github.com/agentflare-ai/agentml/stdin"
-    xmlns:agent="github.com/agentflare-ai/agentml/agent"
+    xmlns:agentml="github.com/agentflare-ai/agentml"
     elementFormDefault="qualified">
 
-    <xs:import namespace="github.com/agentflare-ai/agentml/agent"
+    <xs:import namespace="github.com/agentflare-ai/agentml"
         schemaLocation="../agentml.xsd">
         <xs:annotation>
             <xs:documentation>Import AgentML schema to access invokable substitution group</xs:documentation>
@@ -13,7 +13,7 @@
     </xs:import>
 
     <!-- Stdin read element - joins invokable substitution group -->
-    <xs:element name="read" substitutionGroup="agent:invokable">
+    <xs:element name="read" substitutionGroup="agentml:invokable">
         <xs:complexType>
             <xs:attribute name="location" type="xs:string" />
             <xs:attribute name="dataid" type="xs:string" />

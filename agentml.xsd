@@ -720,7 +720,7 @@
     <xsd:attribute name="eventexpr" type="ValueLang.datatype" />
     <xsd:attribute name="target" type="URI.datatype" />
     <xsd:attribute name="targetexpr" type="ValueLang.datatype" />
-    <xsd:attribute name="type" type="xsd:string" default="AgentML" />
+    <xsd:attribute name="type" type="xsd:string" default="agentml" />
     <xsd:attribute name="typeexpr" type="ValueLang.datatype" />
     <xsd:attribute name="id" type="xsd:ID" />
     <xsd:attribute name="idlocation" type="LocLang.datatype" />
@@ -772,7 +772,7 @@
 
   <!-- invoke -->
   <xsd:attributeGroup name="agentml.invoke.attlist">
-    <xsd:attribute name="type" type="xsd:string" default="AgentML" />
+    <xsd:attribute name="type" type="xsd:string" default="agentml" />
     <xsd:attribute name="typeexpr" type="ValueLang.datatype" />
     <xsd:attribute name="src" type="URI.datatype" />
     <xsd:attribute name="srcexpr" type="ValueLang.datatype" />
