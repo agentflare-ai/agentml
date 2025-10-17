@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-  xmlns="github.com/agentflare-ai/agentml"
-  xmlns:agentml="github.com/agentflare-ai/agentml"
-  targetNamespace="github.com/agentflare-ai/agentml" elementFormDefault="qualified">
+  xmlns="xsd.agentml.dev/agentml"
+  xmlns:agentml="xsd.agentml.dev/agentml"
+  targetNamespace="xsd.agentml.dev/agentml" elementFormDefault="qualified">
   <xsd:import namespace="http://www.w3.org/XML/1998/namespace"
     schemaLocation="http://www.w3.org/2001/xml.xsd">
     <xsd:annotation>
@@ -280,7 +280,8 @@
     <xsd:group ref="agentml.agentml.content" />
     <xsd:attributeGroup ref="agentml.agentml.attlist" />
   </xsd:complexType>
-  <xsd:element name="agent" type="agentml.agentml.type" />
+  <xsd:element name="agentml" type="agentml.agentml.type" />
+  <xsd:element name="agent" type="agentml.agentml.type" /> <!-- Alias for backwards compatibility -->
 
   <!-- state -->
   <xsd:attributeGroup name="agentml.state.attlist">
