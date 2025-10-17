@@ -12,11 +12,10 @@
         </xs:annotation>
     </xs:import>
 
-    <!-- Stdin read element - joins invokable substitution group -->
+    <!-- Stdin read element - invokable that reads from stdin and sends events -->
     <xs:element name="read" substitutionGroup="agentml:invokable">
         <xs:complexType>
-            <xs:attribute name="location" type="xs:string" />
-            <xs:attribute name="dataid" type="xs:string" />
+            <xs:attribute name="event" type="xs:string" default="stdin.read" />
             <xs:attribute name="prompt" type="xs:string" />
             <xs:attribute name="promptexpr" type="xs:string" />
         </xs:complexType>

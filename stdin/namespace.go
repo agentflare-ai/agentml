@@ -52,19 +52,13 @@ func (n *Namespace) execRead(ctx context.Context, el xmldom.Element) error {
 		}
 	}
 
-	loc := string(el.GetAttribute("location"))
-	if loc == "" {
-		loc = string(el.GetAttribute("dataid"))
-	}
-	if strings.TrimSpace(loc) == "" {
-		return &agentml.PlatformError{
-			EventName: "error.execution",
-			Message:   "stdin:read requires location or dataid attribute",
-			Data:      map[string]any{"element": "read"},
-			Cause:     fmt.Errorf("missing location"),
-		}
+	// Get event name (defaults to "stdin.read")
+	eventName := string(el.GetAttribute("event"))
+	if eventName == "" {
+		eventName = "stdin.read"
 	}
 
+	// Evaluate prompt if present
 	prompt := string(el.GetAttribute("prompt"))
 	if prompt != "" {
 		if promptExpr := string(el.GetAttribute("promptexpr")); promptExpr != "" {
@@ -89,26 +83,60 @@ func (n *Namespace) execRead(ctx context.Context, el xmldom.Element) error {
 		n.reader = bufio.NewReader(os.Stdin)
 	}
 
-	input, err := n.reader.ReadString('\n')
+	// Run stdin read in goroutine, selecting on context cancellation
+	resultCh := make(chan string, 1)
+	errCh := make(chan error, 1)
 
-	if err != nil {
+	go func() {
+		input, err := n.reader.ReadString('\n')
+		if err != nil {
+			errCh <- err
+			return
+		}
+		// Remove trailing newline
+		input = strings.TrimSuffix(input, "\n")
+		input = strings.TrimSuffix(input, "\r") // Handle Windows line endings
+		resultCh <- input
+	}()
+
+	// Select on context cancellation or result
+	select {
+	case <-ctx.Done():
+		// Context cancelled - send error event
+		return n.itp.Send(ctx, &agentml.Event{
+			Name: "error.execution",
+			Type: agentml.EventTypeExternal,
+			Data: map[string]any{
+				"message": "stdin read cancelled",
+				"cause":   ctx.Err().Error(),
+			},
+		})
+	case err := <-errCh:
 		if err == io.EOF {
-			// EOF - return nil
-			return dm.SetVariable(ctx, loc, nil)
+			// EOF - send event with nil data
+			return n.itp.Send(ctx, &agentml.Event{
+				Name: eventName,
+				Type: agentml.EventTypeExternal,
+				Data: nil,
+			})
 		}
-		return &agentml.PlatformError{
-			EventName: "error.execution",
-			Message:   "Failed to read from stdin",
-			Data:      map[string]any{"element": "read"},
-			Cause:     err,
-		}
+		// Read error - send error event
+		return n.itp.Send(ctx, &agentml.Event{
+			Name: "error.execution",
+			Type: agentml.EventTypeExternal,
+			Data: map[string]any{
+				"message": "Failed to read from stdin",
+				"cause":   err.Error(),
+			},
+		})
+	case input := <-resultCh:
+		// Success - send event with input data
+		return n.itp.Send(ctx, &agentml.Event{
+			Name: eventName,
+			Type: agentml.EventTypeExternal,
+			Data: input,
+		})
 	}
-
-	// Remove trailing newline
-	input = strings.TrimSuffix(input, "\n")
-	input = strings.TrimSuffix(input, "\r") // Handle Windows line endings
-
-	return dm.SetVariable(ctx, loc, input)
 }
 
 var _ agentml.Namespace = (*Namespace)(nil)

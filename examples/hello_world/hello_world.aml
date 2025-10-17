@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agentml xmlns="xsd.agentml.dev/agentml"
+  version="1.0"
   datamodel="ecmascript">
 
   <state id="main">
@@ -11,4 +12,4 @@
 
   <final id="done" />
 
-</agent>
+</agentml>
