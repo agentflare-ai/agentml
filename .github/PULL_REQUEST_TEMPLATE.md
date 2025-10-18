@@ -11,13 +11,10 @@
 - [ ] New feature (non-breaking change that adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] Documentation update (changes to docs, examples, or comments)
-- [ ] Performance improvement (non-breaking change that improves performance)
-- [ ] Code refactoring (no functional changes, code structure improvements)
+- [ ] Specification update (changes to .xsd, .wit, or other spec files)
+- [ ] Example update (changes to example implementations)
+- [ ] Interface definition (changes to WIT or other interface definitions)
 - [ ] Build/CI changes (changes to build process, CI/CD, dependencies)
-- [ ] Test improvements (adding or updating tests)
-- [ ] SCXML conformance (changes to improve W3C SCXML compliance)
-- [ ] Namespace extension (new or updated namespace implementation)
-- [ ] WebAssembly component (WASM-related changes)
 
 ## Related Issues
 
@@ -52,42 +49,25 @@
 
 ```bash
 # List the commands you ran to test this PR
-go test ./...
+# Examples: validation scripts, example runs, integration tests
 ```
 
 ### Test Results
 
 <!-- Summarize test results. If all tests pass, say so. If some fail, explain why. -->
 
-- [ ] All existing tests pass
-- [ ] New tests added for new functionality
+- [ ] Specification validation passes (XSD, WIT)
+- [ ] Example implementations run successfully
 - [ ] Integration tests pass (if applicable)
-- [ ] SCXML conformance tests pass (`go test ./tests/conformance/...`)
 - [ ] Manual testing completed
 
 ### Test Coverage
 
 <!-- If you added new code, did you add corresponding tests? What's the coverage impact? -->
 
-- Coverage impact: [increase/decrease/unchanged]
-- Critical paths covered: [Yes/No]
-
-## SCXML Compliance
-
-<!-- Complete this section if your changes affect SCXML runtime behavior -->
-
-- [ ] N/A - This PR does not affect SCXML compliance
-- [ ] Changes improve W3C SCXML conformance (specify which tests now pass)
-- [ ] Changes maintain existing conformance level
-- [ ] Changes may impact conformance (explain why and plan to address)
-
-**Conformance test results:**
-<!-- If applicable, report current pass rate, e.g., "185/193 tests passing (95.9%)" -->
-
-```
-Current: X/193 tests passing
-Previous: Y/193 tests passing
-```
+- [ ] New examples added to demonstrate functionality
+- [ ] Existing examples updated to reflect changes
+- [ ] Critical paths validated
 
 ## Breaking Changes
 
@@ -132,19 +112,18 @@ Previous: Y/193 tests passing
 
 ### Code Quality
 
-- [ ] My code follows the project's style guidelines
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] My code passes `go fmt` and `go vet` checks
-- [ ] I have run `golangci-lint` (if applicable) and addressed warnings
-- [ ] No new compiler warnings or errors introduced
+- [ ] My changes follow the project's style guidelines
+- [ ] I have performed a self-review of my own changes
+- [ ] I have added comments where necessary, particularly in hard-to-understand areas
+- [ ] Specification files validate correctly (XSD, WIT, etc.)
+- [ ] No syntax errors or validation issues introduced
 
 ### Testing & Validation
 
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] I have tested edge cases and error conditions
-- [ ] Integration tests pass (if applicable)
+- [ ] I have validated that my changes work as intended
+- [ ] Examples have been tested and run successfully
+- [ ] I have tested edge cases and error conditions (if applicable)
+- [ ] Validation tests pass (if applicable)
 - [ ] Manual testing completed and documented above
 
 ### Documentation & Communication
@@ -156,10 +135,9 @@ Previous: Y/193 tests passing
 ### Project-Specific
 
 - [ ] If this PR implements an AEP, I have linked it in the "Related AEP" section above
-- [ ] If this PR modifies namespaces, I have updated the namespace documentation
-- [ ] If this PR affects WASM components, I have tested with the WIT definitions
-- [ ] If this PR changes the SCXML runtime, I have run conformance tests
-- [ ] Dependencies are up-to-date and security vulnerabilities addressed
+- [ ] If this PR modifies the specification (.xsd, .wit), I have validated it
+- [ ] If this PR affects interface definitions, I have tested with implementations
+- [ ] If this PR updates examples, I have verified they run correctly
 - [ ] I have verified no sensitive data (credentials, keys, secrets) is committed
 
 ## Performance Impact
@@ -201,14 +179,13 @@ After:  [benchmark results]
 <!-- This section is for reviewers - authors can skip -->
 
 **Review focus areas:**
-- [ ] Code correctness and logic
-- [ ] Test coverage and quality
+- [ ] Specification correctness and validity
+- [ ] Example quality and accuracy
 - [ ] Documentation completeness
-- [ ] Performance implications
+- [ ] Interface design (for WIT/API changes)
 - [ ] Security considerations
-- [ ] SCXML compliance (if applicable)
 - [ ] Breaking changes properly handled
-- [ ] API design (for namespace changes)
+- [ ] Backward compatibility considerations
 
 **Shepherd:** <!-- To be assigned by maintainers -->
 

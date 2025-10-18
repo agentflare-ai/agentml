@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<agentml xmlns="xsd.agentml.dev/agentml"
+    xmlns:stdin="xsd.agentml.dev/stdin"
+    version="1.0"
+    datamodel="ecmascript">
+
+    <datamodel>
+        <data id="input" expr="''" />
+    </datamodel>
+
+    <state id="prompt">
+        <!-- <stdin:read prompt="> " /> -->
+        <onentry>
+            <log expr="`Reading input...`" />
+        </onentry>
+        <transition event="stdin.read" target="done"
+            cond="_event.data === 'exit' || _event.data === null">
+            <assign location="input" expr="_event.data" />
+        </transition>
+        <transition event="stdin.read" target="prompt" cond="_event.data === ''">
+            <assign location="input" expr="_event.data" />
+        </transition>
+        <transition event="stdin.read" target="echo"
+            cond="_event.data !== null &amp;&amp; _event.data !== '' &amp;&amp; _event.data !== 'exit'">
+            <assign location="input" expr="_event.data" />
+        </transition>
+    </state>
+
+    <state id="echo">
+        <onentry>
+            <log expr="`You said: ${input}`" />
+        </onentry>
+        <transition target="prompt" cond="true" />
+    </state>
+
+    <final id="done" />
+</agentml>

@@ -241,7 +241,6 @@
     <xsd:attribute name="version" type="xsd:decimal" use="required" fixed="1.0" />
     <xsd:attribute name="datamodel" type="xsd:NMTOKEN" default="null" use="optional" />
     <xsd:attribute name="binding" type="Binding.datatype" />
-    <xsd:attribute name="schemaLocation" type="URI.datatype" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
   <xsd:group name="agentml.agentml.mix">

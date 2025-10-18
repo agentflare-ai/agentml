@@ -404,6 +404,68 @@ interface interpreter {
     start: func(interp: instance) -> result<_, error>;
 }
 
+/// Transformer interface for converting AgentML to other formats
+interface transformer {
+    use types.{error, trace};
+    use xmldom.{element};
+
+    /// Transformer metadata
+    record metadata {
+        /// Transformer name (e.g., "langgraph", "autogen", "crewai")
+        name: string,
+        /// Transformer version
+        version: string,
+        /// Target framework/language (e.g., "python:langgraph", "typescript:langchain")
+        target: string,
+        /// Description of what this transformer produces
+        description: string,
+        /// Author information
+        author: option<string>,
+        /// Supported AgentML features
+        supported-features: list<string>,
+    }
+
+    /// Transformation options
+    record options {
+        /// Pretty print output
+        pretty: bool,
+        /// Include comments in generated code
+        include-comments: bool,
+        /// Target language version (e.g., "3.11" for Python)
+        language-version: option<string>,
+        /// Custom options as key-value pairs
+        custom: list<tuple<string, string>>,
+    }
+
+    /// Transformation result
+    record result {
+        /// Generated code/output
+        output: string,
+        /// Source map for debugging (optional)
+        source-map: option<string>,
+        /// Diagnostics/warnings
+        diagnostics: list<trace>,
+    }
+
+    /// Transformer resource
+    resource instance {
+        /// Get transformer metadata
+        metadata: func() -> metadata;
+
+        /// Validate if the AgentML document is supported
+        validate: func(document: string) -> result<bool, error>;
+
+        /// Transform an AgentML document
+        transform: func(document: string, opts: option<options>) -> result<result, error>;
+
+        /// Transform with a parsed document element
+        transform-element: func(root: element, opts: option<options>) -> result<result, error>;
+    }
+
+    /// Create a new transformer instance
+    create: func() -> instance;
+}
+
 /// Main world for AgentML WASM component
 world agentml {
     export xmldom;
@@ -412,4 +474,11 @@ world agentml {
     export ioprocessor;
     export clock;
     export tracer;
+}
+
+/// Transformer world for WASM transformer components
+world transformer-plugin {
+    import xmldom;
+    import types;
+    export transformer;
 }

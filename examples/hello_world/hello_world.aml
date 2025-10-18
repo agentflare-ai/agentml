@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<agentml xmlns="xsd.agentml.dev/agentml"
+<agentml xmlns="https://xsd.agentml.dev/agentml"
   version="1.0"
   datamodel="ecmascript">
 

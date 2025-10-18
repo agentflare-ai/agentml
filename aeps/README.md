@@ -157,7 +157,7 @@ AEPs use the following labels for tracking:
 
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - General contribution guidelines
 - [GOVERNANCE.md](../GOVERNANCE.md) - Project governance model and decision-making process
-- [AgentML Specification](../spec/) - Core schema and runtime specification
+- [AgentML Specification](../agentml.xsd) - Core schema and runtime specification
 - [GitHub Discussions](https://github.com/agentflare/agentml/discussions) - Discuss ideas before drafting an AEP
 
 ---
