@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    targetNamespace="https://xsd.agentml.dev/stdin"
-    xmlns:stdin="https://xsd.agentml.dev/stdin"
+    targetNamespace="file://../../stdin"
+    xmlns:stdin="file://../../stdin"
     xmlns:agentml="https://xsd.agentml.dev/agentml"
     elementFormDefault="qualified">
 
