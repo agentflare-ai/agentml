@@ -12,13 +12,10 @@ The default template is used automatically for all standard pull requests. It co
 - Bug fixes
 - New features
 - Documentation updates
-- Performance improvements
-- Code refactoring
+- Specification updates (.xsd, .wit files)
+- Example implementations
+- Interface definitions
 - Build/CI changes
-- Test improvements
-- SCXML conformance changes
-- Namespace extensions
-- WebAssembly components
 
 **When to use:** For all regular code contributions, this template is applied automatically when you create a new PR.
 
@@ -72,13 +69,12 @@ Use this guide to choose the right template:
 | Bug fix | Default | Automatic |
 | New feature (standard) | Default | Automatic |
 | Documentation update | Default | Automatic |
-| Performance improvement | Default | Automatic |
-| Test improvements | Default | Automatic |
-| Namespace extension | Default | Automatic |
-| WASM component | Default | Automatic |
+| Specification update (.xsd, .wit) | Default | Automatic |
+| Example implementation | Default | Automatic |
+| Interface definition | Default | Automatic |
 | **AEP submission** | **AEP** | **`?template=aep.md`** |
 | **Major design proposal** | **AEP** | **`?template=aep.md`** |
-| **Schema changes (significant)** | **AEP** | **`?template=aep.md`** |
+| **Spec changes (significant)** | **AEP** | **`?template=aep.md`** |
 
 ## Contributing
 

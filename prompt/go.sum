@@ -1,6 +1,0 @@
-github.com/agentflare-ai/go-jsonpatch v0.0.0-20251007202521-03a28775fba1 h1:NJgrQGDcEVqv8zj6npC1WWD3jCZlOgImUI50mSoPefA=
-github.com/agentflare-ai/go-jsonpointer v0.0.0-20251007202556-e629e396a034 h1:FAvkNmOVhgn1pn97RiFk8B4OY9p/7czdsQDAiP96ChE=
-github.com/agentflare-ai/go-jsonschema v0.0.0-20251007203233-ad868cee4fcf h1:eHv7m93YzspIc5XoNIpmSqG+pfog3PHBst88ELDLF6s=
-github.com/agentflare-ai/go-xmldom v0.0.0-20251007203554-7447af628498 h1:Y6OdDVFhCBEa3XZKk5PPLz1OBIwG58JSRjSqzCxpTHU=
-github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 h1:f+oWsMOmNPc8JmEHVZIycC7hBoQxHH9pNKQORJNozsQ=
-golang.org/x/text v0.30.0 h1:yznKA/E9zq54KzlzBEAWn1NXSQ8DIp/NYMy88xJjl4k=

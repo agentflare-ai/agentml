@@ -1,0 +1,17 @@
+<agentml xmlns="https://xsd.agentml.dev/agentml"
+    version="1.0"
+    xmlns:stdin="github.com/agentflare-ai/agentml/stdin"
+    datamodel="ecmascript">
+
+    <state id="active">
+        <stdin:read prompt="> " />
+        <onentry>
+            <log expr="`reading stdin`" />
+        </onentry>
+        <transition event="stdin.read">
+            <log expr="`received: ${_event.data}`" />
+        </transition>
+
+    </state>
+
+</agentml>

@@ -4,7 +4,9 @@
 > 
 > AgentML is in early alpha and being built openly with the community. The vision is ambitious, the foundation is solid, but many features are still in development. Join us in shaping the future of agent standards.
 >
-> **⚠️ Repository Status:** Many packages in this repository are proof-of-concept (POC) or work-in-progress (WIP). Code quality, APIs, and implementation approaches are evolving rapidly. Use with caution in production environments.
+> **📋 This Repository:** Contains the AgentML language specification, documentation, and examples. For runtime implementations and namespace packages, see:
+> - **[agentmlx](https://github.com/agentflare-ai/agentmlx)** - Reference runtime (Go/WASM) **NOT YET RELEASED**
+> - **[agentml-go](https://github.com/agentflare-ai/agentml-go)** - Go namespace implementations (Gemini, Ollama, Memory, etc.)
 
 ---
 
@@ -40,6 +42,7 @@ By separating behavior from runtime, your agents outlive framework trends.
 - [Current Status & Roadmap](#current-status--roadmap)
 - [Getting Started](#getting-started)
 - [Namespaces](#namespaces)
+- [Repository Structure](#repository-structure)
 - [Best Practices](#best-practices)
 
 ---
@@ -323,29 +326,52 @@ This architecture supports patterns like agent swarms, supervisor-worker delegat
 
 We are building AgentML in the open. Your feedback is critical.
 
-**What's working now:**
-- ✅ Core SCXML interpreter (Go implementation)
-- ✅ Gemini & Ollama LLM integration namespaces
-- ✅ Basic event-driven agent workflows
+### Specification (This Repository)
+
+**Available now:**
+- ✅ Core AgentML/SCXML schema definition (`agentml.xsd`)
+- ✅ WASM interface specification (`agentml.wit`)
+- ✅ Comprehensive documentation and examples
+- ✅ Enhancement Proposal (AEP) process
+
+**In active development:**
+- 🚧 Event schema validation specifications
+- 🚧 Additional example agents and patterns
+- 🚧 Migration guides and tutorials
+
+### Implementations
+
+**Runtime ([agentmlx](https://github.com/agentflare-ai/agentmlx)):**
+- ✅ Core SCXML interpreter
+- ✅ W3C SCXML conformance (193/193 tests passing)
+- ✅ Event-driven agent workflows
 - ✅ Datamodel and state machine semantics
 - ✅ OpenTelemetry tracing foundation
 - ✅ IOProcessor implementations (HTTP, WebSocket)
+- 🚧 Event schema validation runtime
+- 🚧 External schema loading (`import`)
 
-**What's in active development:**
-- 🚧 **`agentmlx` runtime** - Native Go/WASM execution (primary focus)
-- 🚧 Memory namespace (vector search, graph database)
-- 🚧 Event schema validation (`event:schema`) and external schema loading (`import`)
+**Go Namespaces ([agentml-go](https://github.com/agentflare-ai/agentml-go)):**
+- ✅ Gemini LLM integration
+- ✅ Ollama local LLM support
+- ✅ Memory namespace (vector search, graph database)
+- ✅ Stdin/stdout I/O
+- ✅ Environment variable loading
 
-**What's planned:**
+**Planned:**
 - 🔮 **Framework transformers** (LangGraph, CrewAI, n8n, OpenAI, Autogen)
-- 🔮 **WASM namespace loading** via `agentml.wit`
-- 🔮 Visual editor and debugger
-- 🔮 Agent marketplace
+- 🔮 **WASM namespace loading** - Load namespaces as WASM components
+- 🔮 **Python/Rust namespace SDKs** - Multi-language namespace development
+- 🔮 **Visual editor and debugger**
+- 🔮 **Agent marketplace**
 
-**How to participate:**
-- **🗣️ Share your use cases** in [GitHub Discussions](https://github.com/agentflare-ai/agentml/discussions).
-- **💡 Propose features** via [GitHub Issues](https://github.com/agentflare-ai/agentml/issues).
-- **🔧 Contribute code** through pull requests.
+### How to Participate
+
+- **🗣️ Share your use cases** in [GitHub Discussions](https://github.com/agentflare-ai/agentml/discussions)
+- **💡 Propose spec changes** via [AEPs](./aeps/README.md)
+- **📝 Improve documentation** through pull requests to this repository
+- **🔧 Contribute implementations** to [agentmlx](https://github.com/agentflare-ai/agentmlx) or [agentml-go](https://github.com/agentflare-ai/agentml-go)
+- **🐛 Report issues** in the relevant repository
 
 ---
 
@@ -367,7 +393,7 @@ We are building AgentML in the open. Your feedback is critical.
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       import:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -419,13 +445,21 @@ We are building AgentML in the open. Your feedback is critical.
 
 AgentML's functionality is extended through namespaces. Here are the currently available or planned ones:
 
+### Standard Namespaces
+
+These namespaces are implemented in Go and available in the [agentml-go](https://github.com/agentflare-ai/agentml-go) repository:
+
 - **Agent (`.../agentml/agent`)**: Core namespace for `<agent>` root element and `event:schema` validation.
-- **Gemini (`.../agentml/gemini`)**: Google Gemini LLM integration.
-- **Ollama (`.../agentml/ollama`)**: Local LLM integration via Ollama.
-- **Memory (`github.com/agentflare-ai/agentml/memory`)**: High-performance memory with vector search and graph database capabilities. This is powered by `sqlite-graph`, our custom extension that provides a complete, local, filesystem-based memory framework within a single SQLite file.
+- **Gemini (`.../agentml-go/gemini`)**: Google Gemini LLM integration. [Documentation](https://github.com/agentflare-ai/agentml-go/tree/main/gemini)
+- **Ollama (`.../agentml-go/ollama`)**: Local LLM integration via Ollama. [Documentation](https://github.com/agentflare-ai/agentml-go/tree/main/ollama)
+- **Memory (`.../agentml-go/memory`)**: High-performance memory with vector search and graph database capabilities. Powered by `sqlite-graph`, our custom extension that provides a complete, local, filesystem-based memory framework within a single SQLite file. [Documentation](https://github.com/agentflare-ai/agentml-go/tree/main/memory)
+- **Stdin (`.../agentml-go/stdin`)**: Simple stdin/stdout I/O for console agents.
+- **Env (`.../agentml-go/env`)**: Environment variable and configuration loading.
+
+### Example Usage
 
 ```xml
-<agent import:memory="github.com/agentflare-ai/agentml/memory">
+<agent import:memory="github.com/agentflare-ai/agentml-go/memory">
   <!-- Vector operations -->
   <memory:embed location="embedding" expr="text_content" />
   <memory:search location="results" expr="query_embedding" limit="10" />
@@ -445,30 +479,95 @@ AgentML's functionality is extended through namespaces. Here are the currently a
 </agent>
 ```
 
-Features:
+**Key Features:**
 - Vector similarity search
 - Graph database with Cypher queries
 - Embedding generation
 - Persistent key-value storage
 
-See [memory/README.md](./memory/README.md) for details.
-- **Stdin (`.../agentml/stdin`)**: Simple stdin/stdout I/O for console agents.
-
 ### Creating Custom Namespaces
 
-Custom namespaces can be implemented in Go (currently), or any language that compiles to WASM (future).
+Custom namespaces can be implemented in any language, with Go and WASM being the primary supported targets.
 
-**Current:** Go implementations define types and interfaces in code.
+**Go Implementation:**
 
-**Future:** WebAssembly Component Model via [`agentml.wit`](./agentml.wit) 🔮
+For Go namespace development, see [agentml-go](https://github.com/agentflare-ai/agentml-go) for examples and the type definitions. Each namespace package includes:
+- XSD schema file (e.g., `gemini.xsd`, `memory.xsd`)
+- Go implementation with namespace actions
+- Tests and documentation
 
-The `agentml.wit` file defines standard interfaces for namespaces using WebAssembly Interface Types (WIT). This enables:
+Example structure:
+```
+my-namespace/
+├── my-namespace.xsd    # Schema definition
+├── namespace.go        # Namespace registration
+├── actions.go          # Executable actions
+└── README.md           # Documentation
+```
+
+**WebAssembly (Future):**
+
+The [`agentml.wit`](./agentml.wit) file defines standard interfaces for namespaces using WebAssembly Interface Types (WIT). This will enable:
 - **Language freedom**: Implement namespaces in Rust, Go, Python, C++, or any WASM-capable language
 - **Portable**: Same `.wasm` module works across all runtimes
 - **Standard contract**: Defined interfaces ensure interoperability
 - **Secure**: WASM sandboxing isolates namespace code
 
-> **🚧 Migration Note:** Current Go-based type definitions (e.g., `types.go`) will be deprecated in favor of `agentml.wit` as the canonical type specification. This transition enables true polyglot namespace development.
+> **🔮 Future Vision:** The `agentml.wit` specification will become the canonical interface definition, enabling true polyglot namespace development. Current Go implementations serve as the reference for WASM migration.
+
+---
+
+## Repository Structure
+
+The AgentML ecosystem is organized into separate repositories for clarity and modularity:
+
+### **[agentml](https://github.com/agentflare-ai/agentml)** (This Repository)
+**Language Specification & Documentation**
+
+```
+agentml/
+├── agentml.xsd          # Core SCXML/AgentML schema
+├── agentml.wit          # WebAssembly interface specification
+├── docs/                # Comprehensive documentation
+├── examples/            # Example agent files (.aml)
+├── aeps/                # Enhancement proposals
+└── CONTRIBUTING.md      # Contribution guidelines
+```
+
+This repository defines the standard but contains no runtime implementations.
+
+### **[agentmlx](https://github.com/agentflare-ai/agentmlx)**
+**Reference Runtime Implementation (Go/WASM)**
+
+The official runtime for executing AgentML agents. Provides:
+- W3C SCXML-compliant interpreter
+- Cross-platform binary (Linux, macOS, Windows, ARM)
+- CLI tools for running and validating agents
+- OpenTelemetry instrumentation
+
+### **[agentml-go](https://github.com/agentflare-ai/agentml-go)**
+**Go Namespace Implementations**
+
+```
+agentml-go/
+├── gemini/              # Gemini LLM namespace (with gemini.xsd)
+├── ollama/              # Ollama namespace
+├── memory/              # Memory namespace (with memory.xsd)
+├── stdin/               # Stdin/stdout I/O (with stdin.xsd)
+├── env/                 # Environment loading
+└── types.go             # Shared type definitions
+```
+
+Each namespace package includes its XSD schema alongside the Go implementation.
+
+### Contributing
+
+- **Spec changes**: Submit AEPs to [agentml](https://github.com/agentflare-ai/agentml)
+- **Runtime bugs/features**: Open issues in [agentmlx](https://github.com/agentflare-ai/agentmlx)
+- **Namespace development**: Contribute to [agentml-go](https://github.com/agentflare-ai/agentml-go)
+- **Documentation**: Improve docs in [agentml](https://github.com/agentflare-ai/agentml)
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
 
 ---
 
