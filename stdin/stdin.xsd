@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    targetNamespace="xsd.agentml.dev/stdin"
-    xmlns:stdin="xsd.agentml.dev/stdin"
-    xmlns:agentml="xsd.agentml.dev/agentml"
+    targetNamespace="https://xsd.agentml.dev/stdin"
+    xmlns:stdin="https://xsd.agentml.dev/stdin"
+    xmlns:agentml="https://xsd.agentml.dev/agentml"
     elementFormDefault="qualified">
 
-    <xs:import namespace="xsd.agentml.dev/agentml"
+    <xs:import namespace="https://xsd.agentml.dev/agentml"
         schemaLocation="https://xsd.agentml.dev/agentml.xsd">
         <xs:annotation>
             <xs:documentation>Import AgentML schema to access invokable substitution group</xs:documentation>
