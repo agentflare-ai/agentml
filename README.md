@@ -51,7 +51,9 @@ By separating behavior from runtime, your agents outlive framework trends.
 
 ### Installing agentmlx Runtime
 
-To run AgentML files (`.aml`), you need the `agentmlx` runtime. Install it with a single command:
+To run AgentML files (`.aml`), you need the `agentmlx` runtime. Choose the installation method for your platform:
+
+#### Linux & macOS
 
 ```bash
 curl -fsSL sh.agentml.dev | sh
@@ -87,17 +89,74 @@ export AGENTMLX_INSTALL_DIR=/usr/local
 curl -fsSL sh.agentml.dev | sh
 ```
 
-**Release Channels:**
+#### Windows
+
+**PowerShell (Recommended for Windows):**
+
+```powershell
+iwr -useb ps.agentml.dev | iex
+```
+
+This will:
+- Automatically detect your architecture (x64/ARM64)
+- Download the latest release
+- Verify checksums for security
+- Install to `$HOME\.agentmlx\bin`
+- Add to your PowerShell PATH
+
+**Install from different channels:**
+```powershell
+# Latest stable release
+iwr -useb ps.agentml.dev | iex
+
+# Next (release candidate) - set environment variable
+$env:AGENTMLX_CHANNEL="next"; iwr -useb ps.agentml.dev | iex
+
+# Beta releases
+$env:AGENTMLX_CHANNEL="beta"; iwr -useb ps.agentml.dev | iex
+
+# Or download the installer and run with parameters:
+iwr -useb ps.agentml.dev -OutFile install.ps1
+.\install.ps1 -Channel next
+```
+
+**Install specific version:**
+```powershell
+# Download installer first
+iwr -useb ps.agentml.dev -OutFile install.ps1
+.\install.ps1 -Version 1.0.0-rc.1
+
+# Or use environment variable
+$env:AGENTMLX_VERSION="1.0.0-rc.1"; iwr -useb ps.agentml.dev | iex
+```
+
+**Git Bash / WSL / MSYS2:**
+
+If you're using Git Bash, WSL, or MSYS2 on Windows, you can use the Linux/macOS installer:
+
+```bash
+curl -fsSL sh.agentml.dev | sh
+```
+
+#### Release Channels
+
 - `latest` - Stable releases (v1.0.0) - **Default**
 - `next` - Release candidates (v1.0.0-rc.1)
 - `beta` - Beta releases (v1.0.0-beta.1)
 
 The installer automatically falls back if a channel is empty: `latest` → `next` → `beta`
 
-**Verify installation:**
+#### Verify Installation
+
 ```bash
+# On Linux/macOS/Git Bash/WSL
 agentmlx --version
-# or use the shorter alias
+amlx --version
+```
+
+```powershell
+# On Windows PowerShell
+agentmlx --version
 amlx --version
 ```
 

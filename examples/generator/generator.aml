@@ -1,6 +1,6 @@
-<agentml xmlns="https://xsd.agentml.dev/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
     version="1.0"
-    xmlns:stdin="github.com/agentflare-ai/agentml/stdin"
+    xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin"
     datamodel="ecmascript">
 
     <state id="active">
