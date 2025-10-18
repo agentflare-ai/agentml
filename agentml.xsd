@@ -3,19 +3,6 @@
   xmlns="https://xsd.agentml.dev/agentml"
   xmlns:agentml="https://xsd.agentml.dev/agentml"
   targetNamespace="https://xsd.agentml.dev/agentml" elementFormDefault="qualified">
-  <xsd:import namespace="http://www.w3.org/XML/1998/namespace"
-    schemaLocation="http://www.w3.org/2001/xml.xsd">
-    <xsd:annotation>
-      <xsd:documentation> This import brings in the XML namespace attributes The module itself does
-        not provide the schemaLocation and expects the driver schema to provide the actual
-        SchemaLocation. </xsd:documentation>
-    </xsd:annotation>
-  </xsd:import>
-  <xsd:annotation>
-    <xsd:documentation> This is the XML Schema driver for AgentML 1.0. Please use this namespace for
-      AgentML 1.0 elements: "github.com/agentflare-ai/agentml/agent" </xsd:documentation>
-    <xsd:documentation source="agentml-copyright.xsd" />
-  </xsd:annotation>
   <xsd:annotation>
     <xsd:documentation> This is the XML Schema driver file for AgentML 1.0. This schema: + sets the
       namespace for AgentML 1.0 + imports external schemas (xml.xsd) + imports AgentML common
