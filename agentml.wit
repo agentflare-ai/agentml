@@ -1,48 +1,10 @@
 package agentflare:agentml@0.1.0;
-
-/// XML DOM interface for working with XML elements
-interface xmldom {
-    /// DOM element resource
-    resource element {
-        /// Get the tag name
-        tag-name: func() -> string;
-
-        /// Get an attribute value
-        get-attribute: func(name: string) -> string;
-
-        /// Set an attribute value
-        set-attribute: func(name: string, value: string) -> result<_, string>;
-
-        /// Check if an attribute exists
-        has-attribute: func(name: string) -> bool;
-
-        /// Get namespace URI
-        namespace-uri: func() -> string;
-
-        /// Get local name
-        local-name: func() -> string;
-
-        /// Get text content
-        text-content: func() -> string;
-
-        /// Get child elements
-        child-elements: func() -> list<element>;
-
-        /// Get first child element
-        first-child-element: func() -> option<element>;
-
-        /// Get next sibling element
-        next-sibling-element: func() -> option<element>;
-
-        /// Get parent element
-        parent-element: func() -> option<element>;
-    }
-}
+use agentflare:xmldom/xmldom;
 
 /// AgentML - SCXML-based state machine interpreter for WebAssembly
 interface types {
     /// Namespace URI for AgentML extensions
-    const NAMESPACE-URI: string = "github.com/agentflare-ai/agentml/agent";
+    const NAMESPACE-URI: string = "github.com/agentflare-ai/agentml";
 
     /// System variable names
     const EVENT-SYSTEM-VARIABLE: string = "_event";
@@ -404,6 +366,28 @@ interface interpreter {
     start: func(interp: instance) -> result<_, error>;
 }
 
+/// Namespace interface for AgentML extension handlers
+interface namespace {
+    use types.{error};
+    use xmldom.{element};
+    use interpreter.{instance as interpreter-instance};
+
+    /// Namespace handler resource
+    resource instance {
+        /// Return the namespace URI this handler supports
+        uri: func() -> string;
+
+        /// Handle an element belonging to this namespace
+        handle: func(element: element) -> result<bool, error>;
+
+        /// Unload and release any resources
+        unload: func() -> result<_, error>;
+    }
+
+    /// Factory: create a namespace handler bound to an interpreter and root element
+    create: func(interp: interpreter-instance, root: element) -> result<instance, error>;
+}
+
 /// Transformer interface for converting AgentML to other formats
 interface transformer {
     use types.{error, trace};
@@ -468,7 +452,7 @@ interface transformer {
 
 /// Main world for AgentML WASM component
 world agentml {
-    export xmldom;
+    import xmldom;
     export interpreter;
     export datamodel;
     export ioprocessor;
@@ -481,4 +465,12 @@ world transformer-plugin {
     import xmldom;
     import types;
     export transformer;
+}
+
+/// Namespace world for WASM namespace components
+world namespace-plugin {
+    import xmldom;
+    import types;
+    import interpreter;
+    export namespace;
 }
