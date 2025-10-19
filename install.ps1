@@ -120,7 +120,11 @@ function Get-BinaryUrlWithFallback {
     )
 
     Write-Info "Checking $Channel channel..."
-    $binaryUrl = "$ReleasesBaseUrl/$Channel/agentmlx_$Platform"
+    $binaryName = "agentmlx_$Platform"
+    if ($Platform -like "windows_*") {
+        $binaryName += ".exe"
+    }
+    $binaryUrl = "$ReleasesBaseUrl/$Channel/$binaryName"
     $checksumsUrl = "$ReleasesBaseUrl/$Channel/checksums.txt"
 
     if (Test-UrlExists $binaryUrl) {
@@ -134,7 +138,11 @@ function Get-BinaryUrlWithFallback {
     switch ($Channel) {
         "latest" {
             Write-Warn "No binary found in latest channel, trying next (rc) channel..."
-            $binaryUrl = "$ReleasesBaseUrl/next/agentmlx_$Platform"
+            $binaryName = "agentmlx_$Platform"
+            if ($Platform -like "windows_*") {
+                $binaryName += ".exe"
+            }
+            $binaryUrl = "$ReleasesBaseUrl/next/$binaryName"
             $checksumsUrl = "$ReleasesBaseUrl/next/checksums.txt"
             if (Test-UrlExists $binaryUrl) {
                 Write-Warn "Using next channel"
@@ -145,7 +153,11 @@ function Get-BinaryUrlWithFallback {
             }
 
             Write-Warn "No binary found in next channel, trying beta channel..."
-            $binaryUrl = "$ReleasesBaseUrl/beta/agentmlx_$Platform"
+            $binaryName = "agentmlx_$Platform"
+            if ($Platform -like "windows_*") {
+                $binaryName += ".exe"
+            }
+            $binaryUrl = "$ReleasesBaseUrl/beta/$binaryName"
             $checksumsUrl = "$ReleasesBaseUrl/beta/checksums.txt"
             if (Test-UrlExists $binaryUrl) {
                 Write-Warn "Using beta channel"
@@ -157,7 +169,11 @@ function Get-BinaryUrlWithFallback {
         }
         "next" {
             Write-Warn "No binary found in next channel, trying beta channel..."
-            $binaryUrl = "$ReleasesBaseUrl/beta/agentmlx_$Platform"
+            $binaryName = "agentmlx_$Platform"
+            if ($Platform -like "windows_*") {
+                $binaryName += ".exe"
+            }
+            $binaryUrl = "$ReleasesBaseUrl/beta/$binaryName"
             $checksumsUrl = "$ReleasesBaseUrl/beta/checksums.txt"
             if (Test-UrlExists $binaryUrl) {
                 Write-Warn "Using beta channel"
@@ -282,6 +298,9 @@ try {
     if ($Version) {
         Write-Info "Version: $Version"
         $binaryName = "agentmlx_${Version}_${platform}"
+        if ($platform -like "windows_*") {
+            $binaryName += ".exe"
+        }
         $binaryUrl = "$ReleasesBaseUrl/v$Version/$binaryName"
         $checksumsUrl = "$ReleasesBaseUrl/v$Version/checksums.txt"
         $urls = @{
