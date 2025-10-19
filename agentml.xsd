@@ -351,6 +351,7 @@
     <xsd:attribute name="cond" type="CondLang.datatype" />
     <xsd:attribute name="target" type="xsd:IDREFS" />
     <xsd:attribute name="type" type="TransitionType.datatype" />
+    <xsd:attribute name="schema" type="xsd:string" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
   <xsd:group name="agentml.transition.content">
