@@ -3,32 +3,60 @@
   xmlns="github.com/agentflare-ai/agentml"
   xmlns:agentml="github.com/agentflare-ai/agentml"
   targetNamespace="github.com/agentflare-ai/agentml" elementFormDefault="qualified">
-  <xsd:annotation>
-    <xsd:documentation> This is the XML Schema driver file for AgentML 1.0. This schema: + sets the
-      namespace for AgentML 1.0 + imports external schemas (xml.xsd) + imports AgentML common
-      datatypes, attributes and content models + imports modular schemas AgentML 1.0 includes: +
-      AgentML core constructs + AgentML executable content + AgentML data model and manipulation +
-      AgentML external communications This schema is permissive such that it accomodates all
-      datamodels, but validating documents may contain markup that is ignored in certain datamodels. </xsd:documentation>
-  </xsd:annotation>
 
-  <xsd:annotation>
-    <xsd:documentation> This is the XML Schema core module for AgentML * AgentML * state * initial *
-      onexit * onentry * transition * parallel * final * history * donedata * if * elsif * else *
-      foreach * raise * log The core module defines these elements and the attributes. </xsd:documentation>
-    <xsd:documentation source="agentml-copyright.xsd" />
-  </xsd:annotation>
+  <!--
+  =============================================================================
+  AGENTML 1.0 SCHEMA - LLM GENERATION GUIDE
+  =============================================================================
 
-  <xsd:annotation>
-    <xsd:documentation> XML Schema datatypes for AgentML Defines containers for the AgentML
-      datatypes, many of these imported from other specifications and standards. </xsd:documentation>
-    <xsd:documentation source="agentml-copyright.xsd" />
-  </xsd:annotation>
+  AgentML is a state machine language for defining autonomous agents. It extends
+  SCXML (State Chart XML) with agent-specific features like LLM integration,
+  event-driven communication, and data manipulation.
 
+  KEY CONCEPTS FOR LLMs:
+  - AgentML documents define state machines where agents transition between states
+  - Events trigger transitions between states
+  - Executable content (actions) run during state transitions
+  - Datamodel stores agent state and memory
+  - External communication via send/invoke for multi-agent coordination
+
+  BASIC STRUCTURE:
+  <agentml version="1.0" datamodel="null">
+    <datamodel>
+      <data id="agentState" expr="{}"/>
+    </datamodel>
+    <state id="initialState" initial="subState">
+      <state id="subState">
+        <transition event="triggerEvent" target="nextState"/>
+      </state>
+      <transition event="done" target="final"/>
+    </state>
+    <final id="final"/>
+  </agentml>
+
+  This schema is permissive - it accommodates all datamodels but some markup may
+  be ignored in certain implementations.
+  =============================================================================
+  -->
+
+  <!--
+  =============================================================================
+  DATA TYPES - Fundamental types used throughout AgentML
+  =============================================================================
+
+  These define the basic data types for attributes, expressions, and content.
+  Understanding these is crucial for generating valid AgentML.
+  =============================================================================
+  -->
+
+  <!--
+  EXECUTION MODES:
+  - lax: Permissive execution, errors don't stop processing
+  - strict: Strict validation, errors halt execution
+  -->
   <xsd:simpleType name="Exmode.datatype">
     <xsd:annotation>
-      <xsd:documentation> Describes the processor execution mode for this document, being either
-        "lax" or "strict". </xsd:documentation>
+      <xsd:documentation>Execution mode: "lax" (permissive) or "strict" (halting on errors)</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:NMTOKEN">
       <xsd:enumeration value="lax" />
@@ -36,9 +64,14 @@
     </xsd:restriction>
   </xsd:simpleType>
 
+  <!--
+  BINDING TYPES:
+  - early: Datamodel initialized at document load time
+  - late: Datamodel initialized when first accessed
+  -->
   <xsd:simpleType name="Binding.datatype">
     <xsd:annotation>
-      <xsd:documentation> The binding type in use for the AgentML document. </xsd:documentation>
+      <xsd:documentation>Datamodel binding: "early" (load-time init) or "late" (lazy init)</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:NMTOKEN">
       <xsd:enumeration value="early" />
@@ -46,17 +79,30 @@
     </xsd:restriction>
   </xsd:simpleType>
 
-
+  <!--
+  HISTORY TYPES:
+  - shallow: Remember only immediate substate
+  - deep: Remember entire substate configuration
+  -->
   <xsd:simpleType name="HistoryType.datatype">
+    <xsd:annotation>
+      <xsd:documentation>History depth: "shallow" (immediate substate) or "deep" (full
+        configuration)</xsd:documentation>
+    </xsd:annotation>
     <xsd:restriction base="xsd:string">
       <xsd:enumeration value="shallow" />
       <xsd:enumeration value="deep" />
     </xsd:restriction>
   </xsd:simpleType>
 
+  <!--
+  TRANSITION TYPES:
+  - internal: Stay in same state, just execute actions
+  - external: Exit current state, enter target state
+  -->
   <xsd:simpleType name="TransitionType.datatype">
     <xsd:annotation>
-      <xsd:documentation> The type of the transition i.e. internal or external. </xsd:documentation>
+      <xsd:documentation>Transition scope: "internal" (same state) or "external" (change states)</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:NMTOKEN">
       <xsd:enumeration value="internal" />
@@ -64,9 +110,10 @@
     </xsd:restriction>
   </xsd:simpleType>
 
+  <!-- Boolean values for conditions and flags -->
   <xsd:simpleType name="Boolean.datatype">
     <xsd:annotation>
-      <xsd:documentation> Boolean: true or false only </xsd:documentation>
+      <xsd:documentation>Boolean values: "true" or "false"</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:NMTOKENS">
       <xsd:enumeration value="true" />
@@ -74,11 +121,20 @@
     </xsd:restriction>
   </xsd:simpleType>
 
+  <!--
+  ASSIGNMENT TYPES - How to modify datamodel locations:
+  - replacechildren: Replace all children (default)
+  - firstchild: Insert as first child
+  - lastchild: Insert as last child
+  - previoussibling: Insert before current node
+  - nextsibling: Insert after current node
+  - replace: Replace entire node
+  - delete: Remove node
+  - addattribute: Add/modify attribute
+  -->
   <xsd:simpleType name="AssignType.datatype">
     <xsd:annotation>
-      <xsd:documentation> The assign type that allows for precise manipulation of the datamodel
-        location. Types are: replacechildren (default), firstchild, lastchild, previoussibling,
-        nextsibling, replace, delete, addattribute </xsd:documentation>
+      <xsd:documentation>Assignment operation type for datamodel manipulation</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:NMTOKEN">
       <xsd:enumeration value="replacechildren" />
@@ -92,38 +148,41 @@
     </xsd:restriction>
   </xsd:simpleType>
 
+  <!-- URI references for external resources, events, etc. -->
   <xsd:simpleType name="URI.datatype">
     <xsd:annotation>
-      <xsd:documentation> The xsd:anyURI type and thus URI references in AgentML documents may
-        contain a wide array of international characters. Implementers should reference RFC 3987 and
-        the "Character Model for the World Wide Web 1.0: Resource Identifiers" in order to provide
-        appropriate support for these characters in VoiceXML documents and when processing values of
-        this type or mapping them to URIs. </xsd:documentation>
+      <xsd:documentation>URI reference supporting international characters (RFC 3987)</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:anyURI" />
   </xsd:simpleType>
 
+  <!-- Non-negative integers for counts, ages, etc. -->
   <xsd:simpleType name="Integer.datatype">
     <xsd:annotation>
-      <xsd:documentation>Non-negative integer</xsd:documentation>
+      <xsd:documentation>Non-negative integer values</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:nonNegativeInteger" />
   </xsd:simpleType>
 
+  <!-- Duration format: 100ms, 5s, 10m, 2h, 3d -->
   <xsd:simpleType name="Duration.datatype">
     <xsd:annotation>
-      <xsd:documentation> Duration allowing positive values ranging from milliseconds to days. </xsd:documentation>
+      <xsd:documentation>Time duration: 100ms, 5s, 10m, 2h, 3d</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:string">
       <xsd:pattern value="\d*(\.\d+)?(ms|s|m|h|d)" />
     </xsd:restriction>
   </xsd:simpleType>
 
-
+  <!--
+  EVENT TYPES:
+  - Single event: "user.input", "system.error"
+  - Pattern: "user.*" matches "user.input", "user.click", etc.
+  - Multiple: "error.* system.done" matches error events or system.done
+  -->
   <xsd:simpleType name="EventType.datatype">
     <xsd:annotation>
-      <xsd:documentation> EventType is the name of an event. Example legal values: foo foo.bar
-        foo.bar.baz </xsd:documentation>
+      <xsd:documentation>Single event name (e.g., "user.input", "system.error")</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:token">
       <xsd:pattern value="(\i|\d|\-)+(\.(\i|\d|\-)+)*" />
@@ -132,8 +191,7 @@
 
   <xsd:simpleType name="EventTypes.datatype">
     <xsd:annotation>
-      <xsd:documentation> Custom datatype for the event attribute in AgentML based on xsd:token.
-        Example legal values: * foo foo.bar foo.* foo.bar.* foo bar baz foo.bar bar.* baz.foo.* </xsd:documentation>
+      <xsd:documentation>Event patterns: "user.* system.done" (wildcards and multiple events)</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:token">
       <xsd:pattern
@@ -141,108 +199,157 @@
     </xsd:restriction>
   </xsd:simpleType>
 
-  <!-- Defines the  default CondLang datatype.        -->
+  <!--
+  JSON SCHEMA TYPE:
+  - String containing a valid JSON Schema object for data/event validation
+  - Pattern enforces basic JSON object structure (curly braces)
+  - Full JSON validation would require external tools; this ensures basic format
+  -->
+  <xsd:simpleType name="JsonSchema.datatype">
+    <xsd:annotation>
+      <xsd:documentation>JSON Schema string for validating event data or datamodel structures</xsd:documentation>
+    </xsd:annotation>
+    <xsd:restriction base="xsd:string">
+      <xsd:pattern value="\{.*\}" />
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <!--
+  EXPRESSION LANGUAGES:
+  - CondLang: Boolean expressions for conditions (supports In(stateID))
+  - LocLang: Location expressions for datamodel paths
+  - ValueLang: Value expressions for data and computations
+  -->
   <xsd:simpleType name="CondLang.datatype">
     <xsd:annotation>
-      <xsd:documentation> Conditional language is expression which must evaluate to Boolean True or
-        False. The expression language must define In(stateID) as a valid expression. </xsd:documentation>
+      <xsd:documentation>Boolean condition expressions (supports In(stateID))</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:string" />
   </xsd:simpleType>
 
-  <!-- Defines the  default LocLang datatype.         -->
   <xsd:simpleType name="LocLang.datatype">
     <xsd:annotation>
-      <xsd:documentation> Location language is expression identifying a location in the datamodel. </xsd:documentation>
+      <xsd:documentation>Datamodel location/path expressions</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:string" />
   </xsd:simpleType>
 
-  <!-- Defines the default ValueLang datatype.       -->
   <xsd:simpleType name="ValueLang.datatype">
     <xsd:annotation>
-      <xsd:documentation> Value language is expression return a value. </xsd:documentation>
+      <xsd:documentation>Value/computation expressions</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:string" />
   </xsd:simpleType>
-  <xsd:annotation>
-    <xsd:documentation> This is the XML Schema common attributes for AgentML </xsd:documentation>
-    <xsd:documentation source="agentml-copyright.xsd" />
-  </xsd:annotation>
+  <!--
+  =============================================================================
+  COMMON ATTRIBUTES - Reusable attribute groups
+  =============================================================================
 
+  These attribute groups provide common functionality across multiple elements.
+  =============================================================================
+  -->
+
+  <!-- Cache control attributes for external resource fetching -->
   <xsd:attributeGroup name="Fetchtimeout.attrib">
     <xsd:annotation>
-      <xsd:documentation>Used in Cache.attribs</xsd:documentation>
+      <xsd:documentation>Maximum time to wait for resource fetch</xsd:documentation>
     </xsd:annotation>
     <xsd:attribute name="fetchtimeout" type="Duration.datatype" />
   </xsd:attributeGroup>
+
   <xsd:attributeGroup name="Maxage.attrib">
     <xsd:annotation>
-      <xsd:documentation>Used in Cache.attribs</xsd:documentation>
+      <xsd:documentation>Maximum age of cached resource before refetch</xsd:documentation>
     </xsd:annotation>
     <xsd:attribute name="maxage" type="Integer.datatype" />
   </xsd:attributeGroup>
+
   <xsd:attributeGroup name="Maxstale.attrib">
     <xsd:annotation>
-      <xsd:documentation>Used in Cache attribs</xsd:documentation>
+      <xsd:documentation>Maximum staleness tolerance for cached resources</xsd:documentation>
     </xsd:annotation>
     <xsd:attribute name="maxstale" type="Integer.datatype" />
   </xsd:attributeGroup>
 
   <xsd:attributeGroup name="Cache.attribs">
     <xsd:annotation>
-      <xsd:documentation>Cache attributes to control caching behavior</xsd:documentation>
+      <xsd:documentation>Complete cache control attributes group</xsd:documentation>
     </xsd:annotation>
     <xsd:attributeGroup ref="Fetchtimeout.attrib" />
     <xsd:attributeGroup ref="Maxage.attrib" />
     <xsd:attributeGroup ref="Maxstale.attrib" />
   </xsd:attributeGroup>
-  <xsd:annotation>
-    <xsd:documentation> XML Schema content models for AgentML * agentml.extra.content * content *
-      agentml.extra.attribs Defines AgentML shared content models. </xsd:documentation>
-    <xsd:documentation source="agentml-copyright.xsd" />
-  </xsd:annotation>
 
+  <!--
+  EXTENSIBILITY - Allow custom elements and attributes from other namespaces
+  -->
   <xsd:attributeGroup name="agentml.extra.attribs">
     <xsd:annotation>
-      <xsd:documentation>group allowing attributes from other namespaces</xsd:documentation>
+      <xsd:documentation>Extensibility point for custom attributes from other namespaces</xsd:documentation>
     </xsd:annotation>
     <xsd:anyAttribute namespace="##other" processContents="lax" />
   </xsd:attributeGroup>
 
   <xsd:group name="agentml.extra.content">
     <xsd:annotation>
-      <xsd:documentation> group allowing elements from other namespaces </xsd:documentation>
+      <xsd:documentation>Extensibility point for custom elements from other namespaces</xsd:documentation>
     </xsd:annotation>
     <xsd:sequence>
       <xsd:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
 
-  <!-- Substitution group heads for extensibility -->
+  <!--
+  SUBSTITUTION GROUPS - Extension points for custom implementations
+
+  Use substitutionGroup="agentml:executable" to create custom executable actions
+  Use substitutionGroup="agentml:invokable" to create custom invocation types
+  -->
   <xsd:element name="executable" abstract="true">
     <xsd:annotation>
-      <xsd:documentation>Abstract base element for executable content. Custom executable elements
-        should use substitutionGroup="agentml:executable".</xsd:documentation>
+      <xsd:documentation>Abstract base for executable content. Extend with
+        substitutionGroup="agentml:executable"</xsd:documentation>
     </xsd:annotation>
   </xsd:element>
 
   <xsd:element name="invokable" abstract="true">
     <xsd:annotation>
-      <xsd:documentation>Abstract base element for invokable elements. Custom invoke elements should
-        use substitutionGroup="agentml:invokable".</xsd:documentation>
+      <xsd:documentation>Abstract base for invokable elements. Extend with
+        substitutionGroup="agentml:invokable"</xsd:documentation>
     </xsd:annotation>
   </xsd:element>
 
-  <!-- aml -->
+  <!--
+  =============================================================================
+  CORE STATE MACHINE ELEMENTS
+  =============================================================================
+
+  These elements define the basic structure of AgentML state machines.
+  Every AgentML document is a hierarchical state machine.
+  =============================================================================
+  -->
+
+  <!--
+  AGENTML ROOT ELEMENT - The state machine document
+
+  Attributes:
+  - version: Always "1.0" (required)
+  - initial: IDREFS to initial state(s) to enter
+  - name: Optional machine identifier
+  - datamodel: Datamodel type ("null" for no datamodel, or custom type)
+  - binding: "early" or "late" datamodel initialization
+
+  Content: states, parallel regions, final states, datamodel, scripts
+  -->
   <xsd:attributeGroup name="agentml.agentml.attlist">
     <xsd:attribute name="initial" type="xsd:IDREFS" />
     <xsd:attribute name="name" type="xsd:NMTOKEN" />
     <xsd:attribute name="version" type="xsd:decimal" use="required" fixed="1.0" />
-    <xsd:attribute name="datamodel" type="xsd:NMTOKEN" default="null" use="optional" />
+    <xsd:attribute name="datamodel" type="xsd:NMTOKEN" default="null" />
     <xsd:attribute name="binding" type="Binding.datatype" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.agentml.mix">
     <xsd:choice>
       <xsd:element ref="state" minOccurs="0" maxOccurs="unbounded" />
@@ -253,24 +360,47 @@
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
+
   <xsd:group name="agentml.agentml.content">
     <xsd:sequence>
       <xsd:group ref="agentml.agentml.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.agentml.type">
     <xsd:group ref="agentml.agentml.content" />
     <xsd:attributeGroup ref="agentml.agentml.attlist" />
   </xsd:complexType>
-  <xsd:element name="agentml" type="agentml.agentml.type" />
-  <xsd:element name="agent" type="agentml.agentml.type" /> <!-- Alias for backwards compatibility -->
 
-  <!-- state -->
+  <!-- Main root element -->
+  <xsd:element name="agentml" type="agentml.agentml.type" />
+  <!-- Alias for backwards compatibility -->
+  <xsd:element name="agent" type="agentml.agentml.type" />
+
+  <!--
+  STATE ELEMENT - Basic state in the state machine
+
+  Attributes:
+  - id: Unique identifier for this state (required for targeting)
+  - initial: IDREFS to substate(s) entered when this state is entered
+
+  Content:
+  - onentry/onexit: Executable content run when entering/exiting
+  - transition: Event-triggered transitions to other states
+  - initial: Default transition for compound states
+  - state/parallel/final: Child states (makes this a compound state)
+  - history: History states for remembering previous configurations
+  - datamodel: State-local data
+  - invokable: External service invocations
+
+  States can be atomic (no children) or compound (with child states).
+  -->
   <xsd:attributeGroup name="agentml.state.attlist">
     <xsd:attribute name="id" type="xsd:ID" />
     <xsd:attribute name="initial" type="xsd:IDREFS" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.state.mix">
     <xsd:choice>
       <xsd:element ref="onentry" minOccurs="0" maxOccurs="unbounded" />
@@ -285,23 +415,34 @@
       <xsd:element ref="agentml:invokable" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
+
   <xsd:group name="agentml.state.content">
     <xsd:sequence>
       <xsd:group ref="agentml.state.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.state.type">
     <xsd:sequence>
       <xsd:group ref="agentml.state.content" />
     </xsd:sequence>
     <xsd:attributeGroup ref="agentml.state.attlist" />
   </xsd:complexType>
+
   <xsd:element name="state" type="agentml.state.type" />
 
-  <!-- initial -->
+  <!--
+  INITIAL ELEMENT - Default transition for compound states
+
+  Used within compound states to specify which child state to enter when
+  the parent state is entered without an explicit target.
+
+  Content: Exactly one transition element
+  -->
   <xsd:attributeGroup name="agentml.initial.attlist">
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.initial.content">
     <xsd:sequence>
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
@@ -309,67 +450,118 @@
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.initial.type">
     <xsd:group ref="agentml.initial.content" />
     <xsd:attributeGroup ref="agentml.initial.attlist" />
   </xsd:complexType>
+
   <xsd:element name="initial" type="agentml.initial.type" />
 
-  <!-- onentry -->
+  <!--
+  ONENTRY ELEMENT - Executable content run when entering a state
+
+  Executed whenever the state is entered, after all entry transitions.
+  Multiple onentry elements are executed in document order.
+
+  Content: Executable content (actions) to perform on state entry
+  -->
   <xsd:attributeGroup name="agentml.onentry.attlist">
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.onentry.content">
     <xsd:sequence>
       <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.onentry.type">
     <xsd:group ref="agentml.onentry.content" />
     <xsd:attributeGroup ref="agentml.onentry.attlist" />
   </xsd:complexType>
+
   <xsd:element name="onentry" type="agentml.onentry.type" />
 
-  <!-- onexit -->
+  <!--
+  ONEXIT ELEMENT - Executable content run when exiting a state
+
+  Executed whenever the state is exited, before exit transitions.
+  Multiple onexit elements are executed in document order.
+
+  Content: Executable content (actions) to perform on state exit
+  -->
   <xsd:attributeGroup name="agentml.onexit.attlist">
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.onexit.content">
     <xsd:sequence>
       <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.onexit.type">
     <xsd:group ref="agentml.onexit.content" />
     <xsd:attributeGroup ref="agentml.onexit.attlist" />
   </xsd:complexType>
+
   <xsd:element name="onexit" type="agentml.onexit.type" />
 
-  <!-- transition -->
+  <!--
+  TRANSITION ELEMENT - Event-triggered state changes
+
+  Attributes:
+  - event: Event name(s) that trigger this transition (wildcards allowed)
+  - cond: Boolean condition that must be true for transition to fire
+  - target: IDREFS to target state(s) to transition to
+  - type: "internal" (stay in state) or "external" (exit state)
+  - schema: JSON Schema for event data validation
+
+  Content: Executable content run during the transition
+
+  Transitions are evaluated when events occur. First matching transition fires.
+  -->
   <xsd:attributeGroup name="agentml.transition.attlist">
     <xsd:attribute name="event" type="EventTypes.datatype" />
     <xsd:attribute name="cond" type="CondLang.datatype" />
     <xsd:attribute name="target" type="xsd:IDREFS" />
     <xsd:attribute name="type" type="TransitionType.datatype" />
-    <xsd:attribute name="schema" type="xsd:string" />
+    <xsd:attribute name="schema" type="JsonSchema.datatype" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.transition.content">
     <xsd:sequence>
       <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.transition.type">
     <xsd:group ref="agentml.transition.content" />
     <xsd:attributeGroup ref="agentml.transition.attlist" />
   </xsd:complexType>
+
   <xsd:element name="transition" type="agentml.transition.type" />
 
-  <!-- parallel -->
+  <!--
+  PARALLEL ELEMENT - Concurrent state execution
+
+  Attributes:
+  - id: Unique identifier for this parallel region
+
+  Content: Child states that execute concurrently. All child states must be
+  active simultaneously. The parallel region is complete when all children
+  reach final states.
+
+  Parallel regions allow multiple state machines to run concurrently within
+  a single parent state.
+  -->
   <xsd:attributeGroup name="agentml.parallel.attlist">
     <xsd:attribute name="id" type="xsd:ID" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.parallel.mix">
     <xsd:choice>
       <xsd:element ref="onentry" minOccurs="0" maxOccurs="unbounded" />
@@ -382,22 +574,38 @@
       <xsd:element ref="agentml:invokable" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
+
   <xsd:group name="agentml.parallel.content">
     <xsd:sequence>
       <xsd:group ref="agentml.parallel.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.parallel.type">
     <xsd:group ref="agentml.parallel.content" />
     <xsd:attributeGroup ref="agentml.parallel.attlist" />
   </xsd:complexType>
+
   <xsd:element name="parallel" type="agentml.parallel.type" />
 
-  <!-- final -->
+  <!--
+  FINAL ELEMENT - Terminal state that ends execution
+
+  Attributes:
+  - id: Unique identifier for this final state
+
+  Content:
+  - onentry/onexit: Executable content for entry/exit
+  - donedata: Data to return when this final state is reached
+
+  When a final state is entered, it causes the parent state to complete.
+  If the root state reaches a final state, the entire state machine terminates.
+  -->
   <xsd:attributeGroup name="agentml.final.attlist">
     <xsd:attribute name="id" type="xsd:ID" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.final.mix">
     <xsd:choice>
       <xsd:element ref="onentry" minOccurs="0" maxOccurs="unbounded" />
@@ -406,23 +614,38 @@
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
+
   <xsd:group name="agentml.final.content">
     <xsd:sequence>
       <xsd:group ref="agentml.final.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.final.type">
     <xsd:group ref="agentml.final.content" />
     <xsd:attributeGroup ref="agentml.final.attlist" />
   </xsd:complexType>
+
   <xsd:element name="final" type="agentml.final.type" />
 
-  <!-- history -->
+  <!--
+  HISTORY ELEMENT - Remembers previous state configurations
+
+  Attributes:
+  - id: Unique identifier for this history state
+  - type: "shallow" (remember immediate substate) or "deep" (remember full configuration)
+
+  Content: Exactly one transition that specifies the default state when no history exists
+
+  History states allow state machines to remember which substate they were in
+  when they are re-entered, enabling resumable state machine execution.
+  -->
   <xsd:attributeGroup name="agentml.history.attlist">
     <xsd:attribute name="id" type="xsd:ID" />
     <xsd:attribute name="type" type="HistoryType.datatype" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.history.content">
     <xsd:sequence>
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
@@ -430,46 +653,84 @@
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.history.type">
     <xsd:group ref="agentml.history.content" />
     <xsd:attributeGroup ref="agentml.history.attlist" />
   </xsd:complexType>
+
   <xsd:element name="history" type="agentml.history.type" />
 
+  <!--
+  DONEDATA ELEMENT - Data returned when reaching a final state
 
-  <!-- donedata -->
+  Contains the data that will be sent in the "done.state.<id>" event when
+  this final state is reached.
+
+  Content: Either a content element or param elements specifying the return data
+  -->
   <xsd:attributeGroup name="agentml.donedata.attlist">
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.donedata.content">
     <xsd:choice>
       <xsd:element ref="content" minOccurs="0" maxOccurs="1" />
       <xsd:element ref="param" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
+
   <xsd:complexType name="agentml.donedata.type">
     <xsd:group ref="agentml.donedata.content" />
     <xsd:attributeGroup ref="agentml.donedata.attlist" />
   </xsd:complexType>
+
   <xsd:element name="donedata" type="agentml.donedata.type" />
 
-  <!-- if -->
+  <!--
+  =============================================================================
+  EXECUTABLE CONTENT - Actions performed during state transitions
+  =============================================================================
+
+  These elements define actions that can be executed during state transitions,
+  state entry/exit, or in response to events. They form the "executable content"
+  that makes state machines actually do work.
+  =============================================================================
+  -->
+
+  <!--
+  IF/ELSEIF/ELSE ELEMENTS - Conditional execution
+
+  Allows conditional execution of executable content based on datamodel conditions.
+  Similar to if/else if/else in programming languages.
+
+  IF attributes:
+  - cond: Required boolean condition to evaluate
+
+  ELSEIF attributes:
+  - cond: Required boolean condition to evaluate (only if previous conditions false)
+
+  ELSE: Executed when all previous conditions are false (no attributes needed)
+  -->
   <xsd:attributeGroup name="agentml.if.attlist">
     <xsd:attribute name="cond" type="CondLang.datatype" use="required" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.if.elseif.mix">
     <xsd:sequence>
       <xsd:element ref="elseif" />
       <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:group name="agentml.if.else.mix">
     <xsd:sequence>
       <xsd:element ref="else" />
       <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:group name="agentml.if.content">
     <xsd:sequence>
       <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
@@ -477,170 +738,270 @@
       <xsd:group ref="agentml.if.else.mix" minOccurs="0" maxOccurs="1" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.if.type">
     <xsd:group ref="agentml.if.content" />
     <xsd:attributeGroup ref="agentml.if.attlist" />
   </xsd:complexType>
+
   <xsd:element name="if" type="agentml.if.type" substitutionGroup="agentml:executable" />
 
-  <!-- elseif -->
   <xsd:attributeGroup name="agentml.elseif.attlist">
     <xsd:attribute name="cond" type="CondLang.datatype" use="required" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.elseif.mix">
     <xsd:choice>
-      <!-- No content for this element -->
+      <!-- elseif has no direct content - it just marks a condition branch -->
     </xsd:choice>
   </xsd:group>
+
   <xsd:group name="agentml.elseif.content">
     <xsd:sequence>
       <xsd:group ref="agentml.elseif.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.elseif.type">
     <xsd:group ref="agentml.elseif.content" />
     <xsd:attributeGroup ref="agentml.elseif.attlist" />
   </xsd:complexType>
+
   <xsd:element name="elseif" type="agentml.elseif.type" />
 
-  <!-- else -->
   <xsd:attributeGroup name="agentml.else.attlist">
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.else.mix">
     <xsd:choice>
-      <!-- No content for this element -->
+      <!-- else has no direct content - it just marks the fallback branch -->
     </xsd:choice>
   </xsd:group>
+
   <xsd:group name="agentml.else.content">
     <xsd:sequence>
       <xsd:group ref="agentml.else.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.else.type">
     <xsd:group ref="agentml.else.content" />
     <xsd:attributeGroup ref="agentml.else.attlist" />
   </xsd:complexType>
+
   <xsd:element name="else" type="agentml.else.type" />
 
-  <!-- foreach -->
+  <!--
+  FOREACH ELEMENT - Iterate over arrays
+
+  Attributes:
+  - array: Required expression evaluating to an array to iterate over
+  - item: Required variable name for current array item
+  - index: Optional variable name for current array index
+
+  Content: Executable content to run for each array item
+  -->
   <xsd:attributeGroup name="agentml.foreach.attlist">
     <xsd:attribute name="array" type="ValueLang.datatype" use="required" />
     <xsd:attribute name="item" type="xsd:string" use="required" />
     <xsd:attribute name="index" type="xsd:string" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.foreach.content">
     <xsd:sequence>
       <xsd:group ref="agentml.core.executablecontent" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.foreach.type">
     <xsd:group ref="agentml.foreach.content" />
     <xsd:attributeGroup ref="agentml.foreach.attlist" />
   </xsd:complexType>
+
   <xsd:element name="foreach" type="agentml.foreach.type" substitutionGroup="agentml:executable" />
 
-  <!-- raise -->
+  <!--
+  RAISE ELEMENT - Generate internal events
+
+  Attributes:
+  - event: Required name of the event to raise
+
+  Raises an event that can trigger transitions within the same state machine.
+  Useful for creating complex control flow and event-driven logic.
+  -->
   <xsd:attributeGroup name="agentml.raise.attlist">
     <xsd:attribute name="event" type="xsd:NMTOKEN" use="required" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.raise.mix">
     <xsd:choice>
-      <!-- No content for this element -->
+      <!-- raise has no content - it just generates an event -->
     </xsd:choice>
   </xsd:group>
+
   <xsd:group name="agentml.raise.content">
     <xsd:sequence>
       <xsd:group ref="agentml.raise.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.raise.type">
     <xsd:group ref="agentml.raise.content" />
     <xsd:attributeGroup ref="agentml.raise.attlist" />
   </xsd:complexType>
+
   <xsd:element name="raise" type="agentml.raise.type" substitutionGroup="agentml:executable" />
 
-  <!-- log -->
+  <!--
+  LOG ELEMENT - Output debugging/logging information
+
+  Attributes:
+  - label: Optional descriptive label for the log entry
+  - expr: Optional expression to evaluate and log (alternative to content)
+
+  Content: Optional custom content to log (alternative to expr)
+
+  Used for debugging and monitoring state machine execution.
+  -->
   <xsd:attributeGroup name="agentml.log.attlist">
     <xsd:attribute name="label" type="xsd:string" />
     <xsd:attribute name="expr" type="ValueLang.datatype" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.log.content">
     <xsd:sequence>
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.log.type">
     <xsd:group ref="agentml.log.content" />
     <xsd:attributeGroup ref="agentml.log.attlist" />
   </xsd:complexType>
+
   <xsd:element name="log" type="agentml.log.type" substitutionGroup="agentml:executable" />
 
+  <!--
+  =============================================================================
+  DATA MANAGEMENT - Datamodel manipulation and data handling
+  =============================================================================
 
-  <xsd:annotation>
-    <xsd:documentation> This is the XML Schema data module for AgentML * datamodel * data * assign *
-      param * script * content The data module defines these elements and their attributes. </xsd:documentation>
-    <xsd:documentation source="agentml-copyright.xsd" />
-  </xsd:annotation>
+  These elements define how AgentML handles data storage, retrieval, and
+  manipulation. The datamodel is the agent's memory and state storage system.
+  =============================================================================
+  -->
 
-  <!-- datamodel -->
+  <!--
+  DATAMODEL ELEMENT - Container for data definitions
+
+  The datamodel defines the data variables available to the state machine.
+  Can appear at the root level or within individual states.
+
+  Content: data elements defining variables and their initial values
+  -->
   <xsd:attributeGroup name="agentml.datamodel.attlist">
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.datamodel.content">
     <xsd:sequence>
       <xsd:element ref="data" minOccurs="0" maxOccurs="unbounded" />
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.datamodel.type">
     <xsd:group ref="agentml.datamodel.content" />
     <xsd:attributeGroup ref="agentml.datamodel.attlist" />
   </xsd:complexType>
+
   <xsd:element name="datamodel" type="agentml.datamodel.type" />
 
-  <!-- data -->
+  <!--
+  DATA ELEMENT - Define a data variable
+
+  Attributes:
+  - id: Required unique identifier for this data variable
+  - src: Optional URI to load data from
+  - expr: Optional expression to initialize the data
+  - schema: Optional JSON Schema for data validation
+
+  Content: Optional inline data content (alternative to src/expr)
+
+  Data elements define variables in the datamodel. Only one of src, expr,
+  or inline content should be used.
+  -->
   <xsd:attributeGroup name="agentml.data.attlist">
     <xsd:attribute name="id" type="xsd:ID" use="required" />
     <xsd:attribute name="src" type="URI.datatype" />
     <xsd:attribute name="expr" type="ValueLang.datatype" />
+    <xsd:attribute name="schema" type="JsonSchema.datatype" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.data.content">
     <xsd:sequence>
       <xsd:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.data.type" mixed="true">
     <xsd:group ref="agentml.data.content" />
     <xsd:attributeGroup ref="agentml.data.attlist" />
   </xsd:complexType>
+
   <xsd:element name="data" type="agentml.data.type" />
 
+  <!--
+  PARAM ELEMENT - Parameter for external communication
 
-  <!-- param -->
+  Attributes:
+  - name: Required parameter name
+  - expr: Optional expression for parameter value
+  - location: Optional datamodel location to get value from
+
+  Content: Optional custom parameter content
+
+  Used in send, invoke, and donedata elements to pass data to external systems.
+  -->
   <xsd:attributeGroup name="agentml.param.attlist">
     <xsd:attribute name="name" type="xsd:NMTOKEN" use="required" />
     <xsd:attribute name="expr" type="ValueLang.datatype" />
     <xsd:attribute name="location" type="LocLang.datatype" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.param.content">
     <xsd:sequence>
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.param.type">
     <xsd:group ref="agentml.param.content" />
     <xsd:attributeGroup ref="agentml.param.attlist" />
   </xsd:complexType>
+
   <xsd:element name="param" type="agentml.param.type" />
 
-  <!--  assign  -->
+  <!--
+  ASSIGN ELEMENT - Modify datamodel data
+
+  Attributes:
+  - location: Required datamodel location to modify
+  - expr: Optional expression for new value
+  - type: How to modify (replacechildren, firstchild, etc.)
+  - attr: Optional attribute name to modify (when type="addattribute")
+
+  Content: Optional inline content for new value (alternative to expr)
+
+  The primary way to update data in the AgentML datamodel.
+  -->
   <xsd:attributeGroup name="agentml.assign.attlist">
     <xsd:attribute name="location" type="LocLang.datatype" use="required" />
     <xsd:attribute name="expr" type="ValueLang.datatype" />
@@ -648,57 +1009,103 @@
     <xsd:attribute name="attr" type="xsd:NMTOKEN" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.assign.content">
     <xsd:sequence>
       <xsd:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.assign.type" mixed="true">
     <xsd:group ref="agentml.assign.content" />
     <xsd:attributeGroup ref="agentml.assign.attlist" />
   </xsd:complexType>
+
   <xsd:element name="assign" type="agentml.assign.type" substitutionGroup="agentml:executable" />
 
+  <!--
+  SCRIPT ELEMENT - Execute scripts
 
-  <!-- script -->
+  Attributes:
+  - src: Optional URI to load script from
+
+  Content: Optional inline script content (alternative to src)
+
+  Allows execution of scripts in the state machine's scripting language.
+  -->
   <xsd:attributeGroup name="agentml.script.attlist">
     <xsd:attribute name="src" type="URI.datatype" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.script.content">
     <xsd:sequence>
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.script.type" mixed="true">
     <xsd:group ref="agentml.script.content" />
     <xsd:attributeGroup ref="agentml.script.attlist" />
   </xsd:complexType>
+
   <xsd:element name="script" type="agentml.script.type" substitutionGroup="agentml:executable" />
 
-  <!-- content -->
+  <!--
+  CONTENT ELEMENT - Dynamic content evaluation
+
+  Attributes:
+  - expr: Optional expression to evaluate for content
+
+  Content: Optional static content (alternative to expr)
+
+  Used to include dynamic or static content in various contexts like
+  send messages, donedata, etc.
+  -->
   <xsd:attributeGroup name="agentml.content.attlist">
     <xsd:attributeGroup ref="agentml.extra.attribs" />
     <xsd:attribute name="expr" type="ValueLang.datatype" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.content.content">
     <xsd:sequence>
       <xsd:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.content.type" mixed="true">
     <xsd:group ref="agentml.content.content" />
     <xsd:attributeGroup ref="agentml.content.attlist" />
   </xsd:complexType>
+
   <xsd:element name="content" type="agentml.content.type" />
 
-  <xsd:annotation>
-    <xsd:documentation> This is the XML Schema external module for AgentML * send * cancel * invoke
-      * finalize The external module defines these elements and their attributes. </xsd:documentation>
-    <xsd:documentation source="agentml-copyright.xsd" />
-  </xsd:annotation>
+  <!--
+  =============================================================================
+  EXTERNAL COMMUNICATION - Multi-agent and external system interaction
+  =============================================================================
 
-  <!-- send -->
+  These elements enable AgentML state machines to communicate with external
+  systems, other agents, and invoke external services. This is how agents
+  coordinate and interact with the world outside their state machine.
+  =============================================================================
+  -->
+
+  <!--
+  SEND ELEMENT - Send events to external targets
+
+  Attributes:
+  - event/eventexpr: Event name to send (static or dynamic)
+  - target/targetexpr: Where to send the event (URI or expression)
+  - type/typeexpr: Communication protocol ("agentml", "http", etc.)
+  - id/idlocation: Optional ID for the send operation
+  - delay/delayexpr: Delay before sending (default "0s")
+  - namelist: Variables to include in the event data
+
+  Content: content and param elements specifying event data
+
+  Send enables agents to communicate with other agents or external systems.
+  -->
   <xsd:attributeGroup name="agentml.send.attlist">
     <xsd:attribute name="event" type="EventType.datatype" />
     <xsd:attribute name="eventexpr" type="ValueLang.datatype" />
@@ -713,6 +1120,7 @@
     <xsd:attribute name="namelist" type="xsd:string" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.send.mix">
     <xsd:choice>
       <xsd:element ref="content" minOccurs="0" maxOccurs="1" />
@@ -720,41 +1128,70 @@
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:choice>
   </xsd:group>
+
   <xsd:group name="agentml.send.content">
     <xsd:sequence>
       <xsd:group ref="agentml.send.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.send.type">
     <xsd:group ref="agentml.send.content" />
     <xsd:attributeGroup ref="agentml.send.attlist" />
   </xsd:complexType>
+
   <xsd:element name="send" type="agentml.send.type" substitutionGroup="agentml:executable" />
 
-  <!-- cancel -->
+  <!--
+  CANCEL ELEMENT - Cancel delayed sends
+
+  Attributes:
+  - sendid/sendidexpr: ID of the send operation to cancel
+
+  Content: Optional additional content
+
+  Used to cancel delayed send operations before they execute.
+  -->
   <xsd:attributeGroup name="agentml.cancel.attlist">
     <xsd:attribute name="sendid" type="xsd:IDREF" />
     <xsd:attribute name="sendidexpr" type="ValueLang.datatype" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.cancel.mix">
     <xsd:sequence>
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:group name="agentml.cancel.content">
     <xsd:sequence>
       <xsd:group ref="agentml.cancel.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.cancel.type">
     <xsd:group ref="agentml.cancel.content" />
     <xsd:attributeGroup ref="agentml.cancel.attlist" />
   </xsd:complexType>
+
   <xsd:element name="cancel" type="agentml.cancel.type" substitutionGroup="agentml:executable" />
 
+  <!--
+  INVOKE ELEMENT - Invoke external services or sub-agents
 
-  <!-- invoke -->
+  Attributes:
+  - type/typeexpr: Type of invocation ("agentml", "http", etc.)
+  - src/srcexpr: Source URI for the invoked entity
+  - id/idlocation: Optional ID for tracking the invocation
+  - namelist: Variables to pass to the invoked entity
+  - autoforward: Whether to automatically forward events
+
+  Content: content, param, and finalize elements
+
+  Invoke creates a new session with an external service or sub-agent.
+  The invoked entity runs concurrently until completion.
+  -->
   <xsd:attributeGroup name="agentml.invoke.attlist">
     <xsd:attribute name="type" type="xsd:string" default="agentml" />
     <xsd:attribute name="typeexpr" type="ValueLang.datatype" />
@@ -766,6 +1203,7 @@
     <xsd:attribute name="autoforward" type="Boolean.datatype" use="optional" default="false" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.invoke.mix">
     <xsd:sequence>
       <xsd:element ref="content" minOccurs="0" maxOccurs="1" />
@@ -774,40 +1212,67 @@
       <xsd:group ref="agentml.extra.content" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:group name="agentml.invoke.content">
     <xsd:sequence>
       <xsd:group ref="agentml.invoke.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.invoke.type">
     <xsd:group ref="agentml.invoke.content" />
     <xsd:attributeGroup ref="agentml.invoke.attlist" />
   </xsd:complexType>
+
+  <!--
+  INVOKABLE LIFECYCLE:
+- Invocation creates a concurrent session running alongside the invoking state
+- The invoked entity (sub-agent/service) runs until it reaches a final state or errors
+- On completion: sends "done.invoke.<invoke.id>" event with donedata
+- On error: sends "error.execution" event
+- The invoking state remains active; use hierarchical states for lifecycle management
+- For long-running subagents, tie lifecycle to parent state completion
+- Finalize executes when invocation completes (success or error)
+-->
   <xsd:element name="invoke" type="agentml.invoke.type" substitutionGroup="agentml:invokable" />
 
-  <!-- finalize -->
+  <!--
+  FINALIZE ELEMENT - Cleanup when invocation completes
+
+  Executable content that runs when an invoked session completes.
+  Used to handle the results of invoke operations.
+
+  Content: Executable actions to perform on completion
+  -->
   <xsd:attributeGroup name="agentml.finalize.attlist">
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
+
   <xsd:group name="agentml.finalize.mix">
     <xsd:sequence>
       <xsd:group ref="agentml.core.executablecontent" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:group name="agentml.finalize.content">
     <xsd:sequence>
       <xsd:group ref="agentml.finalize.mix" minOccurs="0" maxOccurs="unbounded" />
     </xsd:sequence>
   </xsd:group>
+
   <xsd:complexType name="agentml.finalize.type">
     <xsd:group ref="agentml.finalize.content" />
     <xsd:attributeGroup ref="agentml.finalize.attlist" />
   </xsd:complexType>
+
   <xsd:element name="finalize" type="agentml.finalize.type" />
 
+  <!--
+  EXECUTABLE CONTENT REFERENCE - Groups all executable elements
 
-  <!-- the various elements of executable content are defined in the relevant modules. 
-This gathers them up into a single type -->
+  This group references all elements that can appear as executable content.
+  Used in onentry, onexit, transition, etc.
+  -->
   <xsd:group name="agentml.core.executablecontent">
     <xsd:choice>
       <xsd:element ref="agentml:executable" minOccurs="0" maxOccurs="unbounded" />
