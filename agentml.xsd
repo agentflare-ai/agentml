@@ -1062,6 +1062,10 @@ be ignored in certain implementations.
   Content: Optional inline script content (alternative to src)
 
   Allows execution of scripts in the state machine's scripting language.
+
+  RECOMMENDATION: Use external scripts via the 'src' attribute for better
+  maintainability and separation of concerns. When including inline script
+  content, wrap code in <![CDATA[...]]> to avoid XML character escaping issues.
   -->
   <xsd:attributeGroup name="agentml.script.attlist">
     <xsd:attribute name="src" type="URI.datatype" />
