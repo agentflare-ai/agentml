@@ -5,39 +5,39 @@
   targetNamespace="github.com/agentflare-ai/agentml" elementFormDefault="qualified">
 
   <!--
-  =============================================================================
-  AGENTML 1.0 SCHEMA - LLM GENERATION GUIDE
-  =============================================================================
+=============================================================================
+AGENTML 1.0 SCHEMA
+=============================================================================
 
-  AgentML is a state machine language for defining autonomous agents. It extends
-  SCXML (State Chart XML) with agent-specific features like LLM integration,
-  event-driven communication, and data manipulation.
+AgentML is a state machine language for defining autonomous agents. It extends
+SCXML (State Chart XML) with agent-specific features like LLM integration,
+event-driven communication, and data manipulation.
 
-  KEY CONCEPTS FOR LLMs:
-  - AgentML documents define state machines where agents transition between states
-  - Events trigger transitions between states
-  - Executable content (actions) run during state transitions
-  - Datamodel stores agent state and memory
-  - External communication via send/invoke for multi-agent coordination
+KEY CONCEPTS:
+- AgentML documents define state machines where agents transition between states
+- Events trigger transitions between states
+- Executable content (actions) run during state transitions
+- Datamodel stores agent state and memory
+- External communication via send/invoke for multi-agent coordination
 
-  BASIC STRUCTURE:
-  <agentml version="1.0" datamodel="null">
-    <datamodel>
-      <data id="agentState" expr="{}"/>
-    </datamodel>
-    <state id="initialState" initial="subState">
-      <state id="subState">
-        <transition event="triggerEvent" target="nextState"/>
-      </state>
-      <transition event="done" target="final"/>
+BASIC STRUCTURE:
+<agentml version="1.0" datamodel="null">
+  <datamodel>
+    <data id="agentState" expr="{}"/>
+  </datamodel>
+  <state id="initialState" initial="subState">
+    <state id="subState">
+      <transition event="triggerEvent" target="nextState"/>
     </state>
-    <final id="final"/>
-  </agentml>
+    <transition event="done" target="final"/>
+  </state>
+  <final id="final"/>
+</agentml>
 
-  This schema is permissive - it accommodates all datamodels but some markup may
-  be ignored in certain implementations.
-  =============================================================================
-  -->
+This schema is permissive - it accommodates all datamodels but some markup may
+be ignored in certain implementations.
+=============================================================================
+-->
 
   <!--
   =============================================================================
@@ -200,14 +200,23 @@
   </xsd:simpleType>
 
   <!--
-  JSON SCHEMA TYPE:
+  JSON SCHEMA TYPE - CRITICAL FOR LLM-GENERATED VALIDATION:
   - String containing a valid JSON Schema object for data/event validation
   - Pattern enforces basic JSON object structure (curly braces)
   - Full JSON validation would require external tools; this ensures basic format
+
+  *** CRITICAL: The JSON Schema content itself MUST include detailed descriptions ***
+  - JSON Schema "description" and "title" fields are ESSENTIAL for LLMs
+  - Property descriptions guide proper data structure generation
+  - Without descriptions, LLMs cannot create meaningful validation schemas
+  - Example: schema='{"type":"object","properties":{"name":{"type":"string","description":"User
+  name"}}}'
   -->
   <xsd:simpleType name="JsonSchema.datatype">
     <xsd:annotation>
-      <xsd:documentation>JSON Schema string for validating event data or datamodel structures</xsd:documentation>
+      <xsd:documentation>JSON Schema string for validating event data or datamodel structures.
+        CRITICAL: The JSON Schema content itself MUST include detailed "description" fields for all
+        properties to enable proper LLM generation of validation schemas.</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:string">
       <xsd:pattern value="\{.*\}" />
@@ -516,11 +525,17 @@
   - cond: Boolean condition that must be true for transition to fire
   - target: IDREFS to target state(s) to transition to
   - type: "internal" (stay in state) or "external" (exit state)
-  - schema: JSON Schema for event data validation
+  - schema: ***CRITICAL*** JSON Schema for event data validation (MUST include detailed descriptions
+  for LLM success)
 
   Content: Executable content run during the transition
 
   Transitions are evaluated when events occur. First matching transition fires.
+  ***IMPORTANT: When using schema attribute, the JSON Schema MUST contain detailed "description"
+  fields for all properties***
+
+  XML SYNTAX EXAMPLE:
+  schema='{"type":"object","properties":{"name":{"type":"string","description":"User name"}}}'
   -->
   <xsd:attributeGroup name="agentml.transition.attlist">
     <xsd:attribute name="event" type="EventTypes.datatype" />
@@ -929,12 +944,18 @@
   - id: Required unique identifier for this data variable
   - src: Optional URI to load data from
   - expr: Optional expression to initialize the data
-  - schema: Optional JSON Schema for data validation
+  - schema: ***CRITICAL*** Optional JSON Schema for data validation (MUST include detailed
+  descriptions for LLM success)
 
   Content: Optional inline data content (alternative to src/expr)
 
   Data elements define variables in the datamodel. Only one of src, expr,
   or inline content should be used.
+  ***IMPORTANT: When using schema attribute, the JSON Schema MUST contain detailed "description"
+  fields for all properties***
+
+  XML SYNTAX EXAMPLE:
+  schema='{"type":"object","properties":{"value":{"type":"string","description":"Data value"}}}'
   -->
   <xsd:attributeGroup name="agentml.data.attlist">
     <xsd:attribute name="id" type="xsd:ID" use="required" />
