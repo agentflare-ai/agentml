@@ -12,7 +12,7 @@ The namespace system is AgentML's mechanism for extending SCXML with custom acti
 In AgentML, namespaces extend the base SCXML vocabulary with domain-specific actions. They are declared using the `xmlns:prefix="uri"` directive on the `<agent>` root element:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
@@ -29,7 +29,7 @@ In AgentML, namespaces extend the base SCXML vocabulary with domain-specific act
       <memory:put key="last_input" expr="userInput" />
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 ## Namespace URIs
@@ -41,7 +41,7 @@ Namespace URIs identify the implementation and version:
 AgentML provides several official namespaces:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory"
@@ -60,7 +60,7 @@ AgentML provides several official namespaces:
 Import JSON Schema or OpenAPI files:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:events="./schemas/events.json"
        xmlns:api="./schemas/openapi.yaml">
 
@@ -68,7 +68,7 @@ Import JSON Schema or OpenAPI files:
   <transition event="user.message"
               event:schema="events:#/components/schemas/UserMessage"
               target="processing" />
-</agent>
+</agentml>
 ```
 
 ## Namespace Prefix Conventions
@@ -103,7 +103,7 @@ The agent namespace is the default and provides AgentML-specific extensions:
 Schema-guided event validation:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <transition event="intent.flight"
@@ -116,7 +116,7 @@ Schema-guided event validation:
                 "required": ["from", "to"]
               }'
               target="handle_flight" />
-</agent>
+</agentml>
 ```
 
 ### Runtime Snapshots
@@ -129,7 +129,7 @@ The agent namespace enables runtime snapshot generation for token-efficient LLM 
 - Transition conditions
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -140,7 +140,7 @@ The agent namespace enables runtime snapshot generation for token-efficient LLM 
   <state id="search_flights">
     <!-- Runtime provides snapshot with datamodel context -->
   </state>
-</agent>
+</agentml>
 ```
 
 ## Gemini Namespace
@@ -148,7 +148,7 @@ The agent namespace enables runtime snapshot generation for token-efficient LLM 
 Google Gemini LLM integration:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="generate">
@@ -165,7 +165,7 @@ Google Gemini LLM integration:
 
     <transition event="action.error" target="handle_error" />
   </state>
-</agent>
+</agentml>
 ```
 
 **Gemini Actions:**
@@ -183,7 +183,7 @@ Google Gemini LLM integration:
 Local LLM integration:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <state id="classify">
@@ -196,7 +196,7 @@ Local LLM integration:
 
     <transition event="action.response" target="handle_classification" />
   </state>
-</agent>
+</agentml>
 ```
 
 **Ollama Actions:**
@@ -208,7 +208,7 @@ Local LLM integration:
 High-performance memory with vector search and graph database, powered by `sqlite-graph`:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <state id="store_and_query">
@@ -232,7 +232,7 @@ High-performance memory with vector search and graph database, powered by `sqlit
       </memory:graph-query>
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 **Memory Actions:**
@@ -249,7 +249,7 @@ All data persists in a single SQLite file with vector and graph capabilities.
 Console I/O for command-line agents:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
 
   <state id="get_input">
@@ -269,7 +269,7 @@ Console I/O for command-line agents:
 
     <transition target="get_input" />
   </state>
-</agent>
+</agentml>
 ```
 
 **Stdin Actions:**
@@ -320,7 +320,7 @@ func Register() {
 
 **Usage in AgentML:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:custom="github.com/example/custom">
 
   <state id="use_custom">
@@ -333,7 +333,7 @@ func Register() {
 
     <transition event="custom.complete" target="next_state" />
   </state>
-</agent>
+</agentml>
 ```
 
 ### WASM Implementation (Planned)
@@ -400,7 +400,7 @@ impl Namespace for MyCustomNamespace {
 
 **Load WASM namespace:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:custom="https://cdn.example.com/custom-namespace.wasm">
 
   <state id="use_wasm">
@@ -408,7 +408,7 @@ impl Namespace for MyCustomNamespace {
       <custom:action model="mymodel" />
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 ## Namespace Resolution
@@ -436,7 +436,7 @@ agentmlx validate agent.aml
 Use different LLM providers for different tasks:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
@@ -465,7 +465,7 @@ Use different LLM providers for different tasks:
         promptexpr="'Detailed analysis: ' + userInput" />
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 ### Memory-Augmented Generation
@@ -473,7 +473,7 @@ Use different LLM providers for different tasks:
 Combine LLM with vector search:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
@@ -501,7 +501,7 @@ Combine LLM with vector search:
       <memory:put key="last_answer" expr="answer" />
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 ### I/O Processing Pattern
@@ -509,7 +509,7 @@ Combine LLM with vector search:
 Combine I/O with LLM processing:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
        xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
 
@@ -544,7 +544,7 @@ Combine I/O with LLM processing:
 
     <transition target="interactive" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Best Practices

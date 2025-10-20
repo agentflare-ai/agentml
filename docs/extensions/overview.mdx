@@ -12,7 +12,7 @@ AgentML extensions are namespaces that add custom actions to your agents. They i
 Extensions in AgentML are namespace implementations that provide XML actions for your agents:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
@@ -29,7 +29,7 @@ Extensions in AgentML are namespace implementations that provide XML actions for
       <memory:put key="last_input" expr="userInput" />
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 ## Official Extensions
@@ -39,7 +39,7 @@ Extensions in AgentML are namespace implementations that provide XML actions for
 Google Gemini LLM integration:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="generate">
@@ -52,7 +52,7 @@ Google Gemini LLM integration:
 
     <transition event="action.response" target="process" />
   </state>
-</agent>
+</agentml>
 ```
 
 **Environment setup:**
@@ -68,7 +68,7 @@ agentmlx run agent.aml
 Local LLM integration via Ollama:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <state id="classify">
@@ -81,7 +81,7 @@ Local LLM integration via Ollama:
 
     <transition event="action.response" target="handle_classification" />
   </state>
-</agent>
+</agentml>
 ```
 
 **Prerequisites:**
@@ -103,7 +103,7 @@ agentmlx run agent.aml
 Vector search and graph database powered by sqlite-graph:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <state id="store_and_search">
@@ -123,7 +123,7 @@ Vector search and graph database powered by sqlite-graph:
       </memory:graph-query>
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 [Learn more about Memory Extension →](/extensions/memory)
@@ -133,7 +133,7 @@ Vector search and graph database powered by sqlite-graph:
 Console I/O for terminal agents:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
 
   <state id="interactive">
@@ -144,7 +144,7 @@ Console I/O for terminal agents:
 
     <transition event="stdin.received" target="process" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Extension Architecture
@@ -180,7 +180,7 @@ Extensions are namespaces that:
 Combine extensions for powerful functionality:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory"
@@ -231,7 +231,7 @@ Combine extensions for powerful functionality:
 
     <transition target="interactive" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Creating Custom Extensions
@@ -279,7 +279,7 @@ func Register() {
 
 **Usage:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:custom="github.com/example/myextension">
 
   <state id="use_custom">
@@ -292,7 +292,7 @@ func Register() {
 
     <transition event="custom.complete" target="process_result" />
   </state>
-</agent>
+</agentml>
 ```
 
 [Learn more about Custom Extensions →](/extensions/custom)

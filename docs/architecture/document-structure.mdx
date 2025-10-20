@@ -12,13 +12,13 @@ AgentML documents use XML syntax based on W3C SCXML, with an `<agent>` root elem
 The `<agent>` element is the root of every AgentML document. It extends SCXML's `<scxml>` element with AgentML-specific features:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <!-- Document content -->
 
-</agent>
+</agentml>
 ```
 
 ### Required Attributes
@@ -41,27 +41,27 @@ AgentML currently supports ECMAScript (JavaScript) as the datamodel language.
 
 **name** - Optional agent identifier:
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        name="customer-support-bot"
        datamodel="ecmascript">
 ```
 
 **initial** - Initial state (if not using document order):
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        initial="awaiting_input">
 
   <state id="awaiting_input">...</state>
   <state id="processing">...</state>
-</agent>
+</agentml>
 ```
 
 ### Namespace Imports
 
 **xmlns:prefix="uri"** - Import external namespaces:
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory"
        xmlns:events="./schemas/events.json">
@@ -76,7 +76,7 @@ The `xmlns:` prefix declares namespace imports. Each import maps a prefix to a U
 The `<datamodel>` element defines the agent's variables:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -88,7 +88,7 @@ The `<datamodel>` element defines the agent's variables:
 
   <!-- States -->
 
-</agent>
+</agentml>
 ```
 
 **Attributes:**
@@ -101,7 +101,7 @@ The `<datamodel>` element defines the agent's variables:
 States define what the agent is doing:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- Simple state -->
@@ -123,7 +123,7 @@ States define what the agent is doing:
     <transition event="complete" target="idle" />
   </state>
 
-</agent>
+</agentml>
 ```
 
 ### 3. Transitions
@@ -278,7 +278,7 @@ Remember and return to previous substates:
 Here's a complete AgentML document demonstrating all components:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        name="customer-support-agent"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
@@ -393,7 +393,7 @@ Here's a complete AgentML document demonstrating all components:
     <transition target="awaiting_input" />
   </state>
 
-</agent>
+</agentml>
 ```
 
 ## File Organization

@@ -20,7 +20,7 @@ agentmlx run agent.aml
 ## Basic Usage
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -43,7 +43,7 @@ agentmlx run agent.aml
 
     <transition event="action.error" target="error_handler" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Actions
@@ -96,7 +96,7 @@ Most capable model:
 Control generation behavior:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="generate">
@@ -111,7 +111,7 @@ Control generation behavior:
 
     <transition event="action.response" target="success" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Schema-Guided Generation
@@ -119,7 +119,7 @@ Control generation behavior:
 Combine with `event:schema` for structured outputs:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="extract_info">
@@ -146,7 +146,7 @@ Combine with `event:schema` for structured outputs:
 
     <transition event="error.execution.validation" target="retry_extraction" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Multi-Turn Conversations
@@ -154,7 +154,7 @@ Combine with `event:schema` for structured outputs:
 Build conversation history in datamodel:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -181,7 +181,7 @@ Build conversation history in datamodel:
               expr="conversationHistory.concat([{role: 'assistant', content: _event.data.message}])" />
     </transition>
   </state>
-</agent>
+</agentml>
 ```
 
 ## Error Handling
@@ -189,7 +189,7 @@ Build conversation history in datamodel:
 Handle Gemini-specific errors:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
@@ -240,7 +240,7 @@ Handle Gemini-specific errors:
       <assign location="retryCount" expr="0" />
     </transition>
   </state>
-</agent>
+</agentml>
 ```
 
 ## Token Usage Tracking
@@ -248,7 +248,7 @@ Handle Gemini-specific errors:
 Monitor token consumption:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
@@ -269,7 +269,7 @@ Monitor token consumption:
       <log expr="'Total session tokens: ' + totalTokens" />
     </transition>
   </state>
-</agent>
+</agentml>
 ```
 
 ## Best Practices

@@ -86,13 +86,13 @@ The static parts of AgentML agents (the agent definition itself) can be cached b
 
 **Anthropic Claude with Prompt Caching:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml">
+<agentml xmlns="github.com/agentflare-ai/agentml">
   <!-- This entire agent definition is cached -->
   <state id="awaiting_input">
     <transition event="user.message" .../>
   </state>
   ...
-</agent>
+</agentml>
 
 <!-- Only the dynamic snapshot changes per request -->
 <snapshot>
@@ -172,7 +172,7 @@ The LLM sees the snapshot and knows exactly what to do.
 Let the state machine handle flow control, not the LLM:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="classify">
@@ -189,7 +189,7 @@ Let the state machine handle flow control, not the LLM:
     <transition event="intent.flight" target="handle_flight" />
     <transition event="intent.unknown" target="handle_unknown" />
   </state>
-</agent>
+</agentml>
 ```
 
 ### Pattern 2: Datamodel as Context
@@ -283,7 +283,7 @@ Set per-request token limits:
 Use Ollama for classification and simple tasks:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <state id="classify">
@@ -295,7 +295,7 @@ Use Ollama for classification and simple tasks:
         promptexpr="'Classify: ' + userInput" />
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 ### Powerful Cloud Models
@@ -303,7 +303,7 @@ Use Ollama for classification and simple tasks:
 Use Gemini for complex reasoning:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="generate_response">
@@ -315,7 +315,7 @@ Use Gemini for complex reasoning:
         promptexpr="'Generate detailed response'" />
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 ### Hybrid Approach
@@ -323,7 +323,7 @@ Use Gemini for complex reasoning:
 Combine fast and powerful models:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -343,7 +343,7 @@ Combine fast and powerful models:
       <gemini:generate model="gemini-2.0-flash-exp" location="_event" promptexpr="'Detailed response'" />
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 ## Best Practices
@@ -386,7 +386,7 @@ Combine fast and powerful models:
 Flight booking agent with full conversation:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -415,7 +415,7 @@ Flight booking agent with full conversation:
         promptexpr="'Search for flights'" />
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 **Token usage per turn:** ~250 tokens (after first request)

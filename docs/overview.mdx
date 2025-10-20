@@ -39,7 +39,7 @@ AgentML : Agent Frameworks  =  HTML : Web Browsers
 AgentML uses W3C SCXML state machines to define **deterministic behavior**, moving beyond prompt-only approaches where behavior is emergent and unpredictable.
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="idle">
@@ -52,7 +52,7 @@ AgentML uses W3C SCXML state machines to define **deterministic behavior**, movi
     <!-- Agent logic here -->
     <transition event="task.complete" target="idle" />
   </state>
-</agent>
+</agentml>
 ```
 
 ### Schema-Guided Events
@@ -87,7 +87,7 @@ The runtime provides the LLM with a "snapshot" of the current state, datamodel, 
 Here's a simple customer support agent:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -120,7 +120,7 @@ Here's a simple customer support agent:
     </onentry>
     <transition target="awaiting_input" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Architecture Overview

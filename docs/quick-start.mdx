@@ -16,7 +16,7 @@ Make sure you have [installed agentmlx](/installation) before proceeding.
 Create a file called `chatbot.aml`:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -50,7 +50,7 @@ Create a file called `chatbot.aml`:
     </onentry>
     <transition target="awaiting_input" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Understanding the Code
@@ -60,7 +60,7 @@ Let's break down each part of this agent:
 ### Root Element
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 ```
@@ -125,7 +125,7 @@ You should see output showing the agent's state transitions and the LLM response
 Let's enhance our agent with event schema validation to ensure type safety:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -183,7 +183,7 @@ Let's enhance our agent with event schema validation to ensure type safety:
     </onentry>
     <transition target="awaiting_input" />
   </state>
-</agent>
+</agentml>
 ```
 
 The `event:schema` attribute validates incoming events against JSON Schema, ensuring data integrity.
@@ -193,7 +193,7 @@ The `event:schema` attribute validates incoming events against JSON Schema, ensu
 Let's create a more sophisticated agent that can handle different user intents:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -263,7 +263,7 @@ Let's create a more sophisticated agent that can handle different user intents:
   </state>
 
   <final id="final_state" />
-</agent>
+</agentml>
 ```
 
 ## Validating Your Agent

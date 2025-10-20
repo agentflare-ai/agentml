@@ -25,7 +25,7 @@ ollama serve
 ## Basic Usage
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
@@ -48,7 +48,7 @@ ollama serve
 
     <transition event="action.error" target="error_handler" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Actions
@@ -149,7 +149,7 @@ ollama pull username/model-name
 Use Ollama for classification, Gemini for generation:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama"
        xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
@@ -193,7 +193,7 @@ Use Ollama for classification, Gemini for generation:
 
     <transition event="action.response" target="respond" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Error Handling
@@ -201,7 +201,7 @@ Use Ollama for classification, Gemini for generation:
 Handle Ollama-specific errors:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <state id="generate">
@@ -232,7 +232,7 @@ Handle Ollama-specific errors:
     <!-- Other errors -->
     <transition event="action.error" target="failed" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Configuration

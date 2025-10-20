@@ -21,7 +21,7 @@ IOProcessors bridge the gap between state machines and the outside world. They h
 The `<send>` element sends events to external targets via IOProcessors:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="notify">
@@ -37,7 +37,7 @@ The `<send>` element sends events to external targets via IOProcessors:
     <transition event="task.acknowledged" target="done" />
     <transition event="error.communication" target="retry" />
   </state>
-</agent>
+</agentml>
 ```
 
 **Attributes:**
@@ -58,7 +58,7 @@ The `<send>` element sends events to external targets via IOProcessors:
 Send events via HTTP POST requests:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="call_api">
@@ -80,7 +80,7 @@ Send events via HTTP POST requests:
       <assign location="errorDetails" expr="_event.data" />
     </transition>
   </state>
-</agent>
+</agentml>
 ```
 
 **HTTP Request Format:**
@@ -113,7 +113,7 @@ Content-Type: application/json
 Persistent bidirectional communication:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="connect">
@@ -149,7 +149,7 @@ Persistent bidirectional communication:
 
     <transition event="ws.disconnected" target="reconnect" />
   </state>
-</agent>
+</agentml>
 ```
 
 **WebSocket Message Format:**
@@ -168,7 +168,7 @@ Persistent bidirectional communication:
 Built into the `stdin` namespace:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
 
   <state id="read_input">
@@ -181,7 +181,7 @@ Built into the `stdin` namespace:
       <assign location="input" expr="_event.data" />
     </transition>
   </state>
-</agent>
+</agentml>
 ```
 
 ### Internal IOProcessor
@@ -189,7 +189,7 @@ Built into the `stdin` namespace:
 Send to the same agent (internal events):
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="process">
@@ -204,7 +204,7 @@ Send to the same agent (internal events):
 
     <transition event="internal.processed" target="next_step" />
   </state>
-</agent>
+</agentml>
 ```
 
 ### SCXML IOProcessor
@@ -212,7 +212,7 @@ Send to the same agent (internal events):
 Send to other AgentML agents:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="coordinate">
@@ -229,7 +229,7 @@ Send to other AgentML agents:
     <transition event="task.accepted" target="monitor" />
     <transition event="task.rejected" target="reassign" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Multi-Agent Communication
@@ -238,7 +238,7 @@ Send to other AgentML agents:
 
 ```xml
 <!-- Orchestrator Agent -->
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        name="orchestrator"
        datamodel="ecmascript">
 
@@ -276,12 +276,12 @@ Send to other AgentML agents:
 
     <transition event="all.completed" target="finalize" />
   </state>
-</agent>
+</agentml>
 ```
 
 ```xml
 <!-- Worker Agent -->
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        name="worker"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
@@ -319,7 +319,7 @@ Send to other AgentML agents:
 
     <transition target="idle" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Event Routing
@@ -367,7 +367,7 @@ Responses know where they came from via `_event.origin`:
 Send events after a delay:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="waiting">
@@ -386,7 +386,7 @@ Send events after a delay:
 
     <transition event="timeout" target="timed_out" />
   </state>
-</agent>
+</agentml>
 ```
 
 **Delay formats:**
@@ -445,7 +445,7 @@ Or inline:
 IOProcessors raise error events on failure:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="send_request">
@@ -490,7 +490,7 @@ IOProcessors raise error events on failure:
     <transition event="should.retry" target="send_request" />
     <transition event="should.fail" target="failed" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Custom IOProcessors
@@ -537,7 +537,7 @@ func Register(token string) {
 
 **Usage:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="notify_team">
@@ -550,7 +550,7 @@ func Register(token string) {
       </send>
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 ## IOProcessor Patterns
@@ -558,7 +558,7 @@ func Register(token string) {
 ### Request-Response Pattern
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -588,13 +588,13 @@ func Register(token string) {
       <log expr="'Ignoring response for different request'" />
     </transition>
   </state>
-</agent>
+</agentml>
 ```
 
 ### Pub/Sub Pattern
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="subscribe">
@@ -629,13 +629,13 @@ func Register(token string) {
       </send>
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 ### Webhook Pattern
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- Receive webhook events from external services -->
@@ -662,7 +662,7 @@ func Register(token string) {
       </send>
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 ## Best Practices

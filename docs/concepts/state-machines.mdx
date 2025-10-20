@@ -24,7 +24,7 @@ Traditional LLM applications rely on emergent behavior from prompts, leading to 
 A state represents what the agent is currently doing:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- The agent starts in the 'idle' state -->
@@ -39,7 +39,7 @@ A state represents what the agent is currently doing:
   <state id="responding">
     <!-- State content here -->
   </state>
-</agent>
+</agentml>
 ```
 
 ### Transitions
@@ -79,7 +79,7 @@ Execute code when entering or leaving a state:
 Here's a simple customer support agent:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -130,7 +130,7 @@ Here's a simple customer support agent:
 
     <transition target="idle" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Hierarchical States
@@ -138,7 +138,7 @@ Here's a simple customer support agent:
 Nest states within states to manage complexity:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- Top-level state -->
@@ -172,7 +172,7 @@ Nest states within states to manage complexity:
   <state id="logged_out">
     <transition event="login.success" target="authenticated" />
   </state>
-</agent>
+</agentml>
 ```
 
 Benefits of hierarchical states:
@@ -185,7 +185,7 @@ Benefits of hierarchical states:
 Execute multiple state machines simultaneously:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- Both state machines run in parallel -->
@@ -246,7 +246,7 @@ Execute multiple state machines simultaneously:
       </state>
     </state>
   </parallel>
-</agent>
+</agentml>
 ```
 
 Parallel states are useful for:

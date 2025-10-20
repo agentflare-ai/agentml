@@ -112,7 +112,7 @@ func Register() {
 
 **Usage:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:http="github.com/example/httpext">
 
   <state id="fetch_data">
@@ -128,7 +128,7 @@ func Register() {
 
     <transition event="http.error" target="handle_error" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Expression Evaluation
@@ -280,7 +280,7 @@ func Register() {
 
 **Usage:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:slack="github.com/example/slack">
 
   <datamodel>
@@ -301,7 +301,7 @@ func Register() {
 
     <transition event="slack.error" target="notification_failed" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Async Operations
@@ -485,7 +485,7 @@ impl Namespace for MyExtension {
 Load WASM extensions via URL:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:custom="https://cdn.example.com/extension.wasm">
 
   <state id="use_wasm">
@@ -493,7 +493,7 @@ Load WASM extensions via URL:
       <custom:action param="value" />
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 ## Publishing Extensions

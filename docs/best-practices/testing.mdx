@@ -36,7 +36,7 @@ Test individual states with targeted events:
 
 **test-agent.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -57,7 +57,7 @@ Test individual states with targeted events:
       <log expr="'Result: ' + result" />
     </onentry>
   </state>
-</agent>
+</agentml>
 ```
 
 **test.sh:**
@@ -79,7 +79,7 @@ Test multi-state workflows:
 
 **integration-test.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
@@ -112,7 +112,7 @@ Test multi-state workflows:
 
     <transition target="final" />
   </state>
-</agent>
+</agentml>
 ```
 
 Run integration tests:
@@ -126,7 +126,7 @@ Create test agents without LLM dependencies:
 
 **mock-agent.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -156,7 +156,7 @@ Create test agents without LLM dependencies:
     </onentry>
     <transition target="final" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## State Machine Testing
@@ -165,7 +165,7 @@ Test state transitions systematically:
 
 **state-test.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -207,7 +207,7 @@ Test state transitions systematically:
 
     <transition target="final" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Event Testing
@@ -216,7 +216,7 @@ Test event handling and data:
 
 **event-test.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="await_event">
@@ -241,7 +241,7 @@ Test event handling and data:
 
     <transition target="final" />
   </state>
-</agent>
+</agentml>
 ```
 
 Test with events:
@@ -261,7 +261,7 @@ Test JSON Schema validation:
 
 **schema-test.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -304,7 +304,7 @@ Test JSON Schema validation:
     </onentry>
     <transition target="final" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Performance Testing

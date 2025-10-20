@@ -12,7 +12,7 @@ Robust error handling is essential for production AgentML agents. SCXML's event-
 SCXML defines standard error events that agents can handle:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="processing">
@@ -40,7 +40,7 @@ SCXML defines standard error events that agents can handle:
 
     <transition target="recovery" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Graceful Degradation
@@ -48,7 +48,7 @@ SCXML defines standard error events that agents can handle:
 Handle errors gracefully without halting the agent:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
@@ -94,7 +94,7 @@ Handle errors gracefully without halting the agent:
       <log expr="'Both providers failed'" />
     </transition>
   </state>
-</agent>
+</agentml>
 ```
 
 ## Retry Logic with Exponential Backoff
@@ -102,7 +102,7 @@ Handle errors gracefully without halting the agent:
 Implement retry logic using state machines:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -147,7 +147,7 @@ Implement retry logic using state machines:
 
     <transition event="retry" target="attempt_processing" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Validation with JSON Schema
@@ -155,7 +155,7 @@ Implement retry logic using state machines:
 Validate LLM outputs using `event:schema`:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -197,7 +197,7 @@ Validate LLM outputs using `event:schema`:
     </onentry>
     <transition target="final" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Circuit Breaker Pattern
@@ -205,7 +205,7 @@ Validate LLM outputs using `event:schema`:
 Prevent cascading failures using parallel states:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -283,7 +283,7 @@ Prevent cascading failures using parallel states:
       </state>
     </state>
   </parallel>
-</agent>
+</agentml>
 ```
 
 ## Logging Best Practices
@@ -291,7 +291,7 @@ Prevent cascading failures using parallel states:
 Use `<log>` for debugging and monitoring:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -319,7 +319,7 @@ Use `<log>` for debugging and monitoring:
       <log expr="'Datamodel state: ' + JSON.stringify({userInput, retryCount})" />
     </transition>
   </state>
-</agent>
+</agentml>
 ```
 
 ## Error Context
@@ -327,7 +327,7 @@ Use `<log>` for debugging and monitoring:
 Capture error context for debugging:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -361,7 +361,7 @@ Capture error context for debugging:
 
     <transition target="final" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Monitoring and Observability

@@ -19,7 +19,7 @@ Every event has:
 - **Origin**: Source of the event (IOProcessor, internal raise, etc.)
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="idle">
@@ -30,7 +30,7 @@ Every event has:
       <assign location="userId" expr="_event.data.userId" />
     </transition>
   </state>
-</agent>
+</agentml>
 ```
 
 ### Event Naming Conventions
@@ -201,7 +201,7 @@ For maintainability, define schemas in separate JSON or YAML files:
 Reference external schemas with JSON Pointer (RFC 6901):
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:events="./schemas/events.json">
 
@@ -215,7 +215,7 @@ Reference external schemas with JSON Pointer (RFC 6901):
                 event:schema="events:#/components/schemas/GreetingIntent"
                 target="handle_greeting" />
   </state>
-</agent>
+</agentml>
 ```
 
 ### OpenAPI Schemas
@@ -244,13 +244,13 @@ components:
 
 **agent.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:api="./schemas/api.yaml">
 
   <transition event="user.message"
               event:schema="api:#/components/schemas/UserMessage"
               target="processing" />
-</agent>
+</agentml>
 ```
 
 ## Accessing Event Data

@@ -18,7 +18,7 @@ The Memory namespace (`github.com/agentflare-ai/agentml-go/memory`) provides per
 ## Basic Usage
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
@@ -42,7 +42,7 @@ The Memory namespace (`github.com/agentflare-ai/agentml-go/memory`) provides per
 
     <transition target="process_results" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Actions
@@ -106,7 +106,7 @@ Query graph database with Cypher:
 Combine memory with LLM for context-aware responses:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
@@ -159,7 +159,7 @@ Combine memory with LLM for context-aware responses:
 
     <transition target="complete" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Graph Database
@@ -167,7 +167,7 @@ Combine memory with LLM for context-aware responses:
 Model relationships with graph queries:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
@@ -212,7 +212,7 @@ Model relationships with graph queries:
 
     <transition target="complete" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Semantic Search Example
@@ -220,7 +220,7 @@ Model relationships with graph queries:
 Build a semantic search agent:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory"
        xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
@@ -267,7 +267,7 @@ Build a semantic search agent:
 
     <transition target="search_prompt" />
   </state>
-</agent>
+</agentml>
 ```
 
 ## Configuration
