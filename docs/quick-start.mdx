@@ -18,7 +18,7 @@ Create a file called `chatbot.aml`:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -62,13 +62,13 @@ Let's break down each part of this agent:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 ```
 
 - `<agent>` is the root element for AgentML files (extends W3C SCXML's `<scxml>`)
 - `xmlns` declares the default namespace
 - `datamodel="ecmascript"` specifies we're using JavaScript for expressions
-- `import:gemini` imports the Gemini LLM namespace
+- `xmlns:gemini` imports the Gemini LLM namespace
 
 ### Data Model
 
@@ -127,7 +127,7 @@ Let's enhance our agent with event schema validation to ensure type safety:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -195,7 +195,7 @@ Let's create a more sophisticated agent that can handle different user intents:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="user_input" expr="''" />

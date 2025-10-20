@@ -27,7 +27,7 @@ ollama serve
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:ollama="github.com/agentflare-ai/agentml/ollama">
+       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
 
   <datamodel>
     <data id="userInput" expr="''" />
@@ -151,8 +151,8 @@ Use Ollama for classification, Gemini for generation:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:ollama="github.com/agentflare-ai/agentml/ollama"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:ollama="github.com/agentflare-ai/agentml/ollama"
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <state id="classify">
     <!-- Fast local classification -->
@@ -202,7 +202,7 @@ Handle Ollama-specific errors:
 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:ollama="github.com/agentflare-ai/agentml/ollama">
+       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
 
   <state id="generate">
     <onentry>

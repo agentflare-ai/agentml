@@ -203,7 +203,7 @@ Reference external schemas with JSON Pointer (RFC 6901):
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:events="./schemas/events.json">
+       xmlns:events="./schemas/events.json">
 
   <state id="classify_intent">
     <!-- Reference using namespace:pointer syntax -->
@@ -245,7 +245,7 @@ components:
 **agent.aml:**
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:api="./schemas/api.yaml">
+       xmlns:api="./schemas/api.yaml">
 
   <transition event="user.message"
               event:schema="api:#/components/schemas/UserMessage"

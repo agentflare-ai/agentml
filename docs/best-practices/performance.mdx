@@ -14,7 +14,7 @@ AgentML achieves 90%+ token reduction using runtime snapshots instead of full co
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="conversationHistory" expr="[]" />
@@ -55,7 +55,7 @@ Use prompt caching to reduce latency and costs:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <!-- Cache-friendly system prompt -->
@@ -89,7 +89,7 @@ Minimize token usage with focused prompts:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <!-- Bad: Verbose prompt -->
   <state id="verbose_generate">
@@ -120,8 +120,8 @@ Stream LLM responses for better perceived performance:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini"
-       import:stdin="github.com/agentflare-ai/agentml/stdin">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
+       xmlns:stdin="github.com/agentflare-ai/agentml/stdin">
 
   <state id="stream_generate">
     <onentry>
@@ -151,7 +151,7 @@ Process multiple tasks concurrently:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="summaryResult" expr="''" />
@@ -217,7 +217,7 @@ Process collections efficiently:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:memory="github.com/agentflare-ai/agentml/memory">
 
   <datamodel>
     <data id="documents" expr="[
@@ -255,7 +255,7 @@ Use Ollama for high-volume, low-latency scenarios:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:ollama="github.com/agentflare-ai/agentml/ollama">
+       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
 
   <state id="classify">
     <onentry>
@@ -292,7 +292,7 @@ Optimize vector search performance:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:memory="github.com/agentflare-ai/agentml/memory">
 
   <state id="search_optimized">
     <onentry>
@@ -417,7 +417,7 @@ Track agent performance:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="startTime" expr="0" />

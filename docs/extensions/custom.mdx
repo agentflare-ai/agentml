@@ -113,7 +113,7 @@ func Register() {
 **Usage:**
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:http="github.com/example/httpext">
+       xmlns:http="github.com/example/httpext">
 
   <state id="fetch_data">
     <onentry>
@@ -281,7 +281,7 @@ func Register() {
 **Usage:**
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:slack="github.com/example/slack">
+       xmlns:slack="github.com/example/slack">
 
   <datamodel>
     <data id="slackToken" expr="'xoxb-your-token'" />
@@ -486,7 +486,7 @@ Load WASM extensions via URL:
 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:custom="https://cdn.example.com/extension.wasm">
+       xmlns:custom="https://cdn.example.com/extension.wasm">
 
   <state id="use_wasm">
     <onentry>

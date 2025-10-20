@@ -89,7 +89,7 @@ Here's a simple customer support agent:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -128,7 +128,7 @@ Here's a simple customer support agent:
 AgentML consists of four main components:
 
 1. **Document Structure**: AgentML files (`.aml`) use an `<agent>` root element, which extends SCXML's `<scxml>` element.
-2. **Namespace System**: Functionality is extended through namespaces declared with the `import:prefix="uri"` directive.
+2. **Namespace System**: Functionality is extended through namespaces declared with the `xmlns:prefix="uri"` directive.
 3. **Runtime (agentmlx)**: The Go/WASM interpreter executes AgentML files with full W3C SCXML conformance.
 4. **I/O Processors**: Handle external communications via HTTP, WebSocket, and other protocols.
 

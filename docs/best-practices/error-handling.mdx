@@ -50,8 +50,8 @@ Handle errors gracefully without halting the agent:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini"
-       import:ollama="github.com/agentflare-ai/agentml/ollama">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
+       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
 
   <datamodel>
     <data id="retryCount" expr="0" />
@@ -104,7 +104,7 @@ Implement retry logic using state machines:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="retryCount" expr="0" />
@@ -157,7 +157,7 @@ Validate LLM outputs using `event:schema`:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <state id="request_booking">
     <onentry>
@@ -207,7 +207,7 @@ Prevent cascading failures using parallel states:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="failureCount" expr="0" />
@@ -293,7 +293,7 @@ Use `<log>` for debugging and monitoring:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <state id="processing">
     <onentry>

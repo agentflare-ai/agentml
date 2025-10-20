@@ -22,7 +22,7 @@ agentmlx run agent.aml
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="userInput" expr="''" />
@@ -97,7 +97,7 @@ Control generation behavior:
 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <state id="generate">
     <onentry>
@@ -120,7 +120,7 @@ Combine with `event:schema` for structured outputs:
 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <state id="extract_info">
     <onentry>
@@ -156,7 +156,7 @@ Build conversation history in datamodel:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="conversationHistory" expr="[]" />
@@ -190,7 +190,7 @@ Handle Gemini-specific errors:
 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="retryCount" expr="0" />
@@ -249,7 +249,7 @@ Monitor token consumption:
 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="totalTokens" expr="0" />

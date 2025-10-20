@@ -5,7 +5,7 @@ description: "Extending AgentML with namespace-based extensions for LLM, memory,
 
 # Extensions Overview
 
-AgentML extensions are namespaces that add custom actions to your agents. They integrate seamlessly through the `import:prefix="uri"` directive, providing modular capabilities without modifying core SCXML functionality.
+AgentML extensions are namespaces that add custom actions to your agents. They integrate seamlessly through the `xmlns:prefix="uri"` directive, providing modular capabilities without modifying core SCXML functionality.
 
 ## What Are Extensions?
 
@@ -14,8 +14,8 @@ Extensions in AgentML are namespace implementations that provide XML actions for
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini"
-       import:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
+       xmlns:memory="github.com/agentflare-ai/agentml/memory">
 
   <state id="process">
     <onentry>
@@ -40,7 +40,7 @@ Google Gemini LLM integration:
 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <state id="generate">
     <onentry>
@@ -69,7 +69,7 @@ Local LLM integration via Ollama:
 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:ollama="github.com/agentflare-ai/agentml/ollama">
+       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
 
   <state id="classify">
     <onentry>
@@ -104,7 +104,7 @@ Vector search and graph database powered by sqlite-graph:
 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:memory="github.com/agentflare-ai/agentml/memory">
 
   <state id="store_and_search">
     <onentry>
@@ -134,7 +134,7 @@ Console I/O for terminal agents:
 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:stdin="github.com/agentflare-ai/agentml/stdin">
+       xmlns:stdin="github.com/agentflare-ai/agentml/stdin">
 
   <state id="interactive">
     <onentry>
@@ -181,10 +181,10 @@ Combine extensions for powerful functionality:
 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:gemini="github.com/agentflare-ai/agentml/gemini"
-       import:ollama="github.com/agentflare-ai/agentml/ollama"
-       import:memory="github.com/agentflare-ai/agentml/memory"
-       import:stdin="github.com/agentflare-ai/agentml/stdin">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
+       xmlns:ollama="github.com/agentflare-ai/agentml/ollama"
+       xmlns:memory="github.com/agentflare-ai/agentml/memory"
+       xmlns:stdin="github.com/agentflare-ai/agentml/stdin">
 
   <state id="interactive">
     <onentry>
@@ -280,7 +280,7 @@ func Register() {
 **Usage:**
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:custom="github.com/example/myextension">
+       xmlns:custom="github.com/example/myextension">
 
   <state id="use_custom">
     <onentry>

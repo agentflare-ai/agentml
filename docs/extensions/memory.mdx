@@ -20,7 +20,7 @@ The Memory namespace (`github.com/agentflare-ai/agentml/memory`) provides persis
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:memory="github.com/agentflare-ai/agentml/memory">
 
   <state id="store">
     <onentry>
@@ -108,8 +108,8 @@ Combine memory with LLM for context-aware responses:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini"
-       import:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
+       xmlns:memory="github.com/agentflare-ai/agentml/memory">
 
   <datamodel>
     <data id="userQuery" expr="''" />
@@ -169,7 +169,7 @@ Model relationships with graph queries:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:memory="github.com/agentflare-ai/agentml/memory">
 
   <state id="query_relationships">
     <onentry>
@@ -222,8 +222,8 @@ Build a semantic search agent:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:memory="github.com/agentflare-ai/agentml/memory"
-       import:stdin="github.com/agentflare-ai/agentml/stdin">
+       xmlns:memory="github.com/agentflare-ai/agentml/memory"
+       xmlns:stdin="github.com/agentflare-ai/agentml/stdin">
 
   <state id="index_documents">
     <onentry>

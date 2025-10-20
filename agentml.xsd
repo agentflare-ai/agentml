@@ -208,19 +208,20 @@ be ignored in certain implementations.
   *** CRITICAL: The JSON Schema content itself MUST include detailed descriptions ***
   - JSON Schema MUST have top-level "description" and "title" fields
   - ALL properties MUST have "description" fields
+  - Use "required" array to specify mandatory properties
   - JSON Schema "description" and "title" fields are ESSENTIAL for LLMs
   - Property descriptions guide proper data structure generation
   - Without descriptions, LLMs cannot create meaningful validation schemas
   - Example: schema='{"title":"User Query","description":"Schema for user question
   events","type":"object","properties":{"query":{"type":"string","description":"User query
-  string"}}}'
+  string"}},"required":["query"]}'
   -->
   <xsd:simpleType name="JsonSchema.datatype">
     <xsd:annotation>
       <xsd:documentation>JSON Schema string for validating event data or datamodel structures.
-        CRITICAL: The JSON Schema MUST have top-level "description" and "title" fields, and ALL
-        properties MUST have "description" fields to enable proper LLM generation of validation
-        schemas.</xsd:documentation>
+        CRITICAL: The JSON Schema MUST have top-level "description" and "title" fields, ALL
+        properties MUST have "description" fields, and use "required" array for mandatory properties
+        to enable proper LLM generation of validation schemas.</xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:string">
       <xsd:pattern value="\{.*\}" />
@@ -541,7 +542,7 @@ be ignored in certain implementations.
   XML SYNTAX EXAMPLE:
   schema='{"title":"User Query","description":"Schema for user question
   events","type":"object","properties":{"query":{"type":"string","description":"User query
-  string"}}}'
+  string"}},"required":["query"]}'
   -->
   <xsd:attributeGroup name="agentml.transition.attlist">
     <xsd:attribute name="event" type="EventTypes.datatype" />
@@ -962,7 +963,8 @@ be ignored in certain implementations.
 
   XML SYNTAX EXAMPLE:
   schema='{"title":"Data Schema","description":"Schema for data
-  validation","type":"object","properties":{"value":{"type":"string","description":"Data value"}}}'
+  validation","type":"object","properties":{"value":{"type":"string","description":"Data
+  value"}},"required":["value"]}'
   -->
   <xsd:attributeGroup name="agentml.data.attlist">
     <xsd:attribute name="id" type="xsd:ID" use="required" />

@@ -355,6 +355,11 @@ interface interpreter {
         /// Get location (IOProcessor interface)
         location: func() -> result<string, error>;
 
+        /// Register a callback for context cancellation
+        /// Returns a stop function handle (0 indicates registration failed)
+        /// The callback-id will be passed to the WASM module's __context_cancelled export
+        after-func: func(callback-id: string) -> u32;
+
         /// Shutdown the interpreter
         shutdown: func() -> result<_, error>;
     }
@@ -386,6 +391,23 @@ interface namespace {
 
     /// Factory: create a namespace handler bound to an interpreter and root element
     create: func(interp: interpreter-instance, root: element) -> result<instance, error>;
+}
+
+/// Invoker interface for long-running invoked services
+interface invoker {
+    use types.{event, error};
+    use interpreter.{instance as interpreter-instance};
+
+    /// Invoker resource for long-running services
+    resource instance {
+        /// Handle the invoke event and run until context is cancelled
+        /// The event contains invoke parameters in event.data
+        /// This method should block until the context is cancelled or an error occurs
+        handle: func(event: event) -> result<_, error>;
+    }
+
+    /// Factory: create an invoker bound to an interpreter
+    create: func(interp: interpreter-instance) -> result<instance, error>;
 }
 
 /// Transformer interface for converting AgentML to other formats
@@ -473,4 +495,12 @@ world namespace-plugin {
     import types;
     import interpreter;
     export namespace;
+}
+
+/// Invoker world for WASM invoke components
+world invoke-plugin {
+    import xmldom;
+    import types;
+    import interpreter;
+    export invoker;
 }

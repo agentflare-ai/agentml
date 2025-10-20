@@ -48,7 +48,7 @@ Events flow through the SCXML state machine, triggering transitions and executin
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -221,7 +221,7 @@ For better maintainability, define schemas in external files:
 **agent.aml:**
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:events="./schemas/events.json">
+       xmlns:events="./schemas/events.json">
 
   <transition event="intent.flight"
               event:schema="events:#/components/schemas/FlightIntent"

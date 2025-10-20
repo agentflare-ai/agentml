@@ -1,395 +1,405 @@
 <!DOCTYPE html>
 <html>
-<head>
-<title>overview.mdx</title>
-<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
 
-<style>
-/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
-/*---------------------------------------------------------------------------------------------
+<head>
+	<title>overview.mdx</title>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+	<style>
+		/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+		/*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-body {
-	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
-	font-size: var(--vscode-markdown-font-size, 14px);
-	padding: 0 26px;
-	line-height: var(--vscode-markdown-line-height, 22px);
-	word-wrap: break-word;
-}
+		body {
+			font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+			font-size: var(--vscode-markdown-font-size, 14px);
+			padding: 0 26px;
+			line-height: var(--vscode-markdown-line-height, 22px);
+			word-wrap: break-word;
+		}
 
-#code-csp-warning {
-	position: fixed;
-	top: 0;
-	right: 0;
-	color: white;
-	margin: 16px;
-	text-align: center;
-	font-size: 12px;
-	font-family: sans-serif;
-	background-color:#444444;
-	cursor: pointer;
-	padding: 6px;
-	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
-}
+		#code-csp-warning {
+			position: fixed;
+			top: 0;
+			right: 0;
+			color: white;
+			margin: 16px;
+			text-align: center;
+			font-size: 12px;
+			font-family: sans-serif;
+			background-color: #444444;
+			cursor: pointer;
+			padding: 6px;
+			box-shadow: 1px 1px 1px rgba(0, 0, 0, .25);
+		}
 
-#code-csp-warning:hover {
-	text-decoration: none;
-	background-color:#007acc;
-	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
-}
+		#code-csp-warning:hover {
+			text-decoration: none;
+			background-color: #007acc;
+			box-shadow: 2px 2px 2px rgba(0, 0, 0, .25);
+		}
 
-body.scrollBeyondLastLine {
-	margin-bottom: calc(100vh - 22px);
-}
+		body.scrollBeyondLastLine {
+			margin-bottom: calc(100vh - 22px);
+		}
 
-body.showEditorSelection .code-line {
-	position: relative;
-}
+		body.showEditorSelection .code-line {
+			position: relative;
+		}
 
-body.showEditorSelection .code-active-line:before,
-body.showEditorSelection .code-line:hover:before {
-	content: "";
-	display: block;
-	position: absolute;
-	top: 0;
-	left: -12px;
-	height: 100%;
-}
+		body.showEditorSelection .code-active-line:before,
+		body.showEditorSelection .code-line:hover:before {
+			content: "";
+			display: block;
+			position: absolute;
+			top: 0;
+			left: -12px;
+			height: 100%;
+		}
 
-body.showEditorSelection li.code-active-line:before,
-body.showEditorSelection li.code-line:hover:before {
-	left: -30px;
-}
+		body.showEditorSelection li.code-active-line:before,
+		body.showEditorSelection li.code-line:hover:before {
+			left: -30px;
+		}
 
-.vscode-light.showEditorSelection .code-active-line:before {
-	border-left: 3px solid rgba(0, 0, 0, 0.15);
-}
+		.vscode-light.showEditorSelection .code-active-line:before {
+			border-left: 3px solid rgba(0, 0, 0, 0.15);
+		}
 
-.vscode-light.showEditorSelection .code-line:hover:before {
-	border-left: 3px solid rgba(0, 0, 0, 0.40);
-}
+		.vscode-light.showEditorSelection .code-line:hover:before {
+			border-left: 3px solid rgba(0, 0, 0, 0.40);
+		}
 
-.vscode-light.showEditorSelection .code-line .code-line:hover:before {
-	border-left: none;
-}
+		.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+			border-left: none;
+		}
 
-.vscode-dark.showEditorSelection .code-active-line:before {
-	border-left: 3px solid rgba(255, 255, 255, 0.4);
-}
+		.vscode-dark.showEditorSelection .code-active-line:before {
+			border-left: 3px solid rgba(255, 255, 255, 0.4);
+		}
 
-.vscode-dark.showEditorSelection .code-line:hover:before {
-	border-left: 3px solid rgba(255, 255, 255, 0.60);
-}
+		.vscode-dark.showEditorSelection .code-line:hover:before {
+			border-left: 3px solid rgba(255, 255, 255, 0.60);
+		}
 
-.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
-	border-left: none;
-}
+		.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+			border-left: none;
+		}
 
-.vscode-high-contrast.showEditorSelection .code-active-line:before {
-	border-left: 3px solid rgba(255, 160, 0, 0.7);
-}
+		.vscode-high-contrast.showEditorSelection .code-active-line:before {
+			border-left: 3px solid rgba(255, 160, 0, 0.7);
+		}
 
-.vscode-high-contrast.showEditorSelection .code-line:hover:before {
-	border-left: 3px solid rgba(255, 160, 0, 1);
-}
+		.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+			border-left: 3px solid rgba(255, 160, 0, 1);
+		}
 
-.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
-	border-left: none;
-}
+		.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+			border-left: none;
+		}
 
-img {
-	max-width: 100%;
-	max-height: 100%;
-}
+		img {
+			max-width: 100%;
+			max-height: 100%;
+		}
 
-a {
-	text-decoration: none;
-}
+		a {
+			text-decoration: none;
+		}
 
-a:hover {
-	text-decoration: underline;
-}
+		a:hover {
+			text-decoration: underline;
+		}
 
-a:focus,
-input:focus,
-select:focus,
-textarea:focus {
-	outline: 1px solid -webkit-focus-ring-color;
-	outline-offset: -1px;
-}
+		a:focus,
+		input:focus,
+		select:focus,
+		textarea:focus {
+			outline: 1px solid -webkit-focus-ring-color;
+			outline-offset: -1px;
+		}
 
-hr {
-	border: 0;
-	height: 2px;
-	border-bottom: 2px solid;
-}
+		hr {
+			border: 0;
+			height: 2px;
+			border-bottom: 2px solid;
+		}
 
-h1 {
-	padding-bottom: 0.3em;
-	line-height: 1.2;
-	border-bottom-width: 1px;
-	border-bottom-style: solid;
-}
+		h1 {
+			padding-bottom: 0.3em;
+			line-height: 1.2;
+			border-bottom-width: 1px;
+			border-bottom-style: solid;
+		}
 
-h1, h2, h3 {
-	font-weight: normal;
-}
+		h1,
+		h2,
+		h3 {
+			font-weight: normal;
+		}
 
-table {
-	border-collapse: collapse;
-}
+		table {
+			border-collapse: collapse;
+		}
 
-table > thead > tr > th {
-	text-align: left;
-	border-bottom: 1px solid;
-}
+		table>thead>tr>th {
+			text-align: left;
+			border-bottom: 1px solid;
+		}
 
-table > thead > tr > th,
-table > thead > tr > td,
-table > tbody > tr > th,
-table > tbody > tr > td {
-	padding: 5px 10px;
-}
+		table>thead>tr>th,
+		table>thead>tr>td,
+		table>tbody>tr>th,
+		table>tbody>tr>td {
+			padding: 5px 10px;
+		}
 
-table > tbody > tr + tr > td {
-	border-top: 1px solid;
-}
+		table>tbody>tr+tr>td {
+			border-top: 1px solid;
+		}
 
-blockquote {
-	margin: 0 7px 0 5px;
-	padding: 0 16px 0 10px;
-	border-left-width: 5px;
-	border-left-style: solid;
-}
+		blockquote {
+			margin: 0 7px 0 5px;
+			padding: 0 16px 0 10px;
+			border-left-width: 5px;
+			border-left-style: solid;
+		}
 
-code {
-	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
-	font-size: 1em;
-	line-height: 1.357em;
-}
+		code {
+			font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+			font-size: 1em;
+			line-height: 1.357em;
+		}
 
-body.wordWrap pre {
-	white-space: pre-wrap;
-}
+		body.wordWrap pre {
+			white-space: pre-wrap;
+		}
 
-pre:not(.hljs),
-pre.hljs code > div {
-	padding: 16px;
-	border-radius: 3px;
-	overflow: auto;
-}
+		pre:not(.hljs),
+		pre.hljs code>div {
+			padding: 16px;
+			border-radius: 3px;
+			overflow: auto;
+		}
 
-pre code {
-	color: var(--vscode-editor-foreground);
-	tab-size: 4;
-}
+		pre code {
+			color: var(--vscode-editor-foreground);
+			tab-size: 4;
+		}
 
-/** Theming */
+		/** Theming */
 
-.vscode-light pre {
-	background-color: rgba(220, 220, 220, 0.4);
-}
+		.vscode-light pre {
+			background-color: rgba(220, 220, 220, 0.4);
+		}
 
-.vscode-dark pre {
-	background-color: rgba(10, 10, 10, 0.4);
-}
+		.vscode-dark pre {
+			background-color: rgba(10, 10, 10, 0.4);
+		}
 
-.vscode-high-contrast pre {
-	background-color: rgb(0, 0, 0);
-}
+		.vscode-high-contrast pre {
+			background-color: rgb(0, 0, 0);
+		}
 
-.vscode-high-contrast h1 {
-	border-color: rgb(0, 0, 0);
-}
+		.vscode-high-contrast h1 {
+			border-color: rgb(0, 0, 0);
+		}
 
-.vscode-light table > thead > tr > th {
-	border-color: rgba(0, 0, 0, 0.69);
-}
+		.vscode-light table>thead>tr>th {
+			border-color: rgba(0, 0, 0, 0.69);
+		}
 
-.vscode-dark table > thead > tr > th {
-	border-color: rgba(255, 255, 255, 0.69);
-}
+		.vscode-dark table>thead>tr>th {
+			border-color: rgba(255, 255, 255, 0.69);
+		}
 
-.vscode-light h1,
-.vscode-light hr,
-.vscode-light table > tbody > tr + tr > td {
-	border-color: rgba(0, 0, 0, 0.18);
-}
+		.vscode-light h1,
+		.vscode-light hr,
+		.vscode-light table>tbody>tr+tr>td {
+			border-color: rgba(0, 0, 0, 0.18);
+		}
 
-.vscode-dark h1,
-.vscode-dark hr,
-.vscode-dark table > tbody > tr + tr > td {
-	border-color: rgba(255, 255, 255, 0.18);
-}
+		.vscode-dark h1,
+		.vscode-dark hr,
+		.vscode-dark table>tbody>tr+tr>td {
+			border-color: rgba(255, 255, 255, 0.18);
+		}
+	</style>
 
-</style>
+	<style>
+		/* Tomorrow Theme */
+		/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+		/* Original theme - https://github.com/chriskempson/tomorrow-theme */
 
-<style>
-/* Tomorrow Theme */
-/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
-/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+		/* Tomorrow Comment */
+		.hljs-comment,
+		.hljs-quote {
+			color: #8e908c;
+		}
 
-/* Tomorrow Comment */
-.hljs-comment,
-.hljs-quote {
-	color: #8e908c;
-}
+		/* Tomorrow Red */
+		.hljs-variable,
+		.hljs-template-variable,
+		.hljs-tag,
+		.hljs-name,
+		.hljs-selector-id,
+		.hljs-selector-class,
+		.hljs-regexp,
+		.hljs-deletion {
+			color: #c82829;
+		}
 
-/* Tomorrow Red */
-.hljs-variable,
-.hljs-template-variable,
-.hljs-tag,
-.hljs-name,
-.hljs-selector-id,
-.hljs-selector-class,
-.hljs-regexp,
-.hljs-deletion {
-	color: #c82829;
-}
+		/* Tomorrow Orange */
+		.hljs-number,
+		.hljs-built_in,
+		.hljs-builtin-name,
+		.hljs-literal,
+		.hljs-type,
+		.hljs-params,
+		.hljs-meta,
+		.hljs-link {
+			color: #f5871f;
+		}
 
-/* Tomorrow Orange */
-.hljs-number,
-.hljs-built_in,
-.hljs-builtin-name,
-.hljs-literal,
-.hljs-type,
-.hljs-params,
-.hljs-meta,
-.hljs-link {
-	color: #f5871f;
-}
+		/* Tomorrow Yellow */
+		.hljs-attribute {
+			color: #eab700;
+		}
 
-/* Tomorrow Yellow */
-.hljs-attribute {
-	color: #eab700;
-}
+		/* Tomorrow Green */
+		.hljs-string,
+		.hljs-symbol,
+		.hljs-bullet,
+		.hljs-addition {
+			color: #718c00;
+		}
 
-/* Tomorrow Green */
-.hljs-string,
-.hljs-symbol,
-.hljs-bullet,
-.hljs-addition {
-	color: #718c00;
-}
+		/* Tomorrow Blue */
+		.hljs-title,
+		.hljs-section {
+			color: #4271ae;
+		}
 
-/* Tomorrow Blue */
-.hljs-title,
-.hljs-section {
-	color: #4271ae;
-}
+		/* Tomorrow Purple */
+		.hljs-keyword,
+		.hljs-selector-tag {
+			color: #8959a8;
+		}
 
-/* Tomorrow Purple */
-.hljs-keyword,
-.hljs-selector-tag {
-	color: #8959a8;
-}
+		.hljs {
+			display: block;
+			overflow-x: auto;
+			color: #4d4d4c;
+			padding: 0.5em;
+		}
 
-.hljs {
-	display: block;
-	overflow-x: auto;
-	color: #4d4d4c;
-	padding: 0.5em;
-}
+		.hljs-emphasis {
+			font-style: italic;
+		}
 
-.hljs-emphasis {
-	font-style: italic;
-}
+		.hljs-strong {
+			font-weight: bold;
+		}
+	</style>
 
-.hljs-strong {
-	font-weight: bold;
-}
-</style>
-
-<style>
-/*
+	<style>
+		/*
  * Markdown PDF CSS
  */
 
- body {
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
-	padding: 0 12px;
-}
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+			padding: 0 12px;
+		}
 
-pre {
-	background-color: #f8f8f8;
-	border: 1px solid #cccccc;
-	border-radius: 3px;
-	overflow-x: auto;
-	white-space: pre-wrap;
-	overflow-wrap: break-word;
-}
+		pre {
+			background-color: #f8f8f8;
+			border: 1px solid #cccccc;
+			border-radius: 3px;
+			overflow-x: auto;
+			white-space: pre-wrap;
+			overflow-wrap: break-word;
+		}
 
-pre:not(.hljs) {
-	padding: 23px;
-	line-height: 19px;
-}
+		pre:not(.hljs) {
+			padding: 23px;
+			line-height: 19px;
+		}
 
-blockquote {
-	background: rgba(127, 127, 127, 0.1);
-	border-color: rgba(0, 122, 204, 0.5);
-}
+		blockquote {
+			background: rgba(127, 127, 127, 0.1);
+			border-color: rgba(0, 122, 204, 0.5);
+		}
 
-.emoji {
-	height: 1.4em;
-}
+		.emoji {
+			height: 1.4em;
+		}
 
-code {
-	font-size: 14px;
-	line-height: 19px;
-}
+		code {
+			font-size: 14px;
+			line-height: 19px;
+		}
 
-/* for inline code */
-:not(pre):not(.hljs) > code {
-	color: #C9AE75; /* Change the old color so it seems less like an error */
-	font-size: inherit;
-}
+		/* for inline code */
+		:not(pre):not(.hljs)>code {
+			color: #C9AE75;
+			/* Change the old color so it seems less like an error */
+			font-size: inherit;
+		}
 
-/* Page Break : use <div class="page"/> to insert page break
+		/* Page Break : use <div class="page"/> to insert page break
 -------------------------------------------------------- */
-.page {
-	page-break-after: always;
-}
+		.page {
+			page-break-after: always;
+		}
+	</style>
 
-</style>
-
-<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+	<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
 </head>
+
 <body>
-  <script>
-    mermaid.initialize({
-      startOnLoad: true,
-      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
-          ? 'dark'
-          : 'default'
-    });
-  </script>
-<h1 id="agentml">AgentML</h1>
-<p><strong>AgentML is the universal language for AI agents, built on the battle-tested W3C SCXML standard.</strong></p>
-<p>Just as HTML lets you write content once and have it render in any browser, AgentML lets you define your agent's behavior once and run it anywhere. By building on SCXML—a formal model for state machines proven for over 20 years in complex industrial systems—AgentML provides deterministic, auditable agent behavior that outlives framework trends.</p>
-<h2 id="the-problem">The Problem</h2>
-<p>The AI agent landscape is fragmented and accelerating, with new frameworks appearing weekly. This creates:</p>
-<ul>
-<li><strong>Vendor Lock-in</strong>: Tied to frameworks that may become limiting or unmaintained</li>
-<li><strong>Costly Rewrites</strong>: Forced to rebuild when switching frameworks</li>
-<li><strong>Token Waste</strong>: Sending entire conversation histories on every request</li>
-<li><strong>Non-Deterministic Behavior</strong>: Unpredictable agent responses</li>
-<li><strong>Poor Auditability</strong>: Difficult to trace and verify agent decisions</li>
-</ul>
-<h2 id="the-agentml-solution">The AgentML Solution</h2>
-<p>AgentML solves these problems by separating agent behavior from runtime execution:</p>
-<pre class="hljs"><code><div>AgentML : Agent Frameworks  =  HTML : Web Browsers
+	<script>
+		mermaid.initialize({
+			startOnLoad: true,
+			theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+				? 'dark'
+				: 'default'
+		});
+	</script>
+	<h1 id="agentml">AgentML</h1>
+	<p><strong>AgentML is the universal language for AI agents, built on the battle-tested W3C SCXML standard.</strong>
+	</p>
+	<p>Just as HTML lets you write content once and have it render in any browser, AgentML lets you define your agent's
+		behavior once and run it anywhere. By building on SCXML—a formal model for state machines proven for over 20
+		years in complex industrial systems—AgentML provides deterministic, auditable agent behavior that outlives
+		framework trends.</p>
+	<h2 id="the-problem">The Problem</h2>
+	<p>The AI agent landscape is fragmented and accelerating, with new frameworks appearing weekly. This creates:</p>
+	<ul>
+		<li><strong>Vendor Lock-in</strong>: Tied to frameworks that may become limiting or unmaintained</li>
+		<li><strong>Costly Rewrites</strong>: Forced to rebuild when switching frameworks</li>
+		<li><strong>Token Waste</strong>: Sending entire conversation histories on every request</li>
+		<li><strong>Non-Deterministic Behavior</strong>: Unpredictable agent responses</li>
+		<li><strong>Poor Auditability</strong>: Difficult to trace and verify agent decisions</li>
+	</ul>
+	<h2 id="the-agentml-solution">The AgentML Solution</h2>
+	<p>AgentML solves these problems by separating agent behavior from runtime execution:</p>
+	<pre class="hljs"><code><div>AgentML : Agent Frameworks  =  HTML : Web Browsers
 </div></code></pre>
-<h3 id="write-once-run-anywhere">Write Once, Run Anywhere</h3>
-<ol>
-<li><strong>Native Execution (Recommended)</strong>: Run agents with <strong>agentmlx</strong>, the reference runtime built in Go/WASM for high performance and portability.</li>
-<li><strong>Transformation (Planned)</strong>: Convert AgentML into other popular frameworks like LangGraph, CrewAI, n8n, and more.</li>
-</ol>
-<h2 id="core-philosophy">Core Philosophy</h2>
-<h3 id="deterministic-behavior-via-state-machines">Deterministic Behavior via State Machines</h3>
-<p>AgentML uses W3C SCXML state machines to define <strong>deterministic behavior</strong>, moving beyond prompt-only approaches where behavior is emergent and unpredictable.</p>
-<pre class="hljs"><code><div><span class="hljs-tag">&lt;<span class="hljs-name">agent</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"github.com/agentflare-ai/agentml/agent"</span>
+	<h3 id="write-once-run-anywhere">Write Once, Run Anywhere</h3>
+	<ol>
+		<li><strong>Native Execution (Recommended)</strong>: Run agents with <strong>agentmlx</strong>, the reference
+			runtime built in Go/WASM for high performance and portability.</li>
+		<li><strong>Transformation (Planned)</strong>: Convert AgentML into other popular frameworks like LangGraph,
+			CrewAI, n8n, and more.</li>
+	</ol>
+	<h2 id="core-philosophy">Core Philosophy</h2>
+	<h3 id="deterministic-behavior-via-state-machines">Deterministic Behavior via State Machines</h3>
+	<p>AgentML uses W3C SCXML state machines to define <strong>deterministic behavior</strong>, moving beyond
+		prompt-only approaches where behavior is emergent and unpredictable.</p>
+	<pre class="hljs"><code><div><span class="hljs-tag">&lt;<span class="hljs-name">agent</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"github.com/agentflare-ai/agentml/agent"</span>
        <span class="hljs-attr">datamodel</span>=<span class="hljs-string">"ecmascript"</span>&gt;</span>
 
   <span class="hljs-tag">&lt;<span class="hljs-name">state</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"idle"</span>&gt;</span>
@@ -404,32 +414,37 @@ code {
   <span class="hljs-tag">&lt;/<span class="hljs-name">state</span>&gt;</span>
 <span class="hljs-tag">&lt;/<span class="hljs-name">agent</span>&gt;</span>
 </div></code></pre>
-<h3 id="schema-guided-events">Schema-Guided Events</h3>
-<p>LLM outputs are constrained to structured JSON events validated against schemas using the <code>event:schema</code> attribute. This ensures reliability and type safety.</p>
-<pre class="hljs"><code><div><span class="hljs-tag">&lt;<span class="hljs-name">transition</span> <span class="hljs-attr">event</span>=<span class="hljs-string">"intent.flight"</span>
+	<h3 id="schema-guided-events">Schema-Guided Events</h3>
+	<p>LLM outputs are constrained to structured JSON events validated against schemas using the
+		<code>event:schema</code> attribute. This ensures reliability and type safety.
+	</p>
+	<pre class="hljs"><code><div><span class="hljs-tag">&lt;<span class="hljs-name">transition</span> <span class="hljs-attr">event</span>=<span class="hljs-string">"intent.flight"</span>
             <span class="hljs-attr">event:schema</span>=<span class="hljs-string">'{"type": "object", "properties": {"action": {"type": "string", "enum": ["search", "book", "cancel"]}}}'</span>
             <span class="hljs-attr">target</span>=<span class="hljs-string">"handle_flight"</span> /&gt;</span>
 </div></code></pre>
-<h3 id="token-efficiency">Token Efficiency</h3>
-<p>The runtime provides the LLM with a &quot;snapshot&quot; of the current state, datamodel, and available events. This context allows prompts to be minimal, and the static parts (the agent's definition) can be cached by the LLM provider, reducing token consumption dramatically.</p>
-<h2 id="key-features">Key Features</h2>
-<ul>
-<li>🎯 <strong>Deterministic Execution</strong>: Same inputs always produce same outputs</li>
-<li>📝 <strong>Schema-Guided Events</strong>: <code>event:schema</code> attributes validate LLM-generated events</li>
-<li>🔄 <strong>Runtime Snapshots</strong>: Efficiently provide LLM context, minimizing token usage</li>
-<li>📦 <strong>Modular Design</strong>: Decompose complex agents with <code>&lt;invoke&gt;</code></li>
-<li>🔌 <strong>Extensible Namespaces</strong>: Plug in custom functionality (LLMs, memory, I/O)</li>
-<li>📊 <strong>Observable</strong>: OpenTelemetry tracing and logging built-in</li>
-<li>🌐 <strong>Universal Standard</strong>: Write once, deploy anywhere</li>
-<li>🔗 <strong>Remote Communication</strong>: Built-in distributed agent communication via IOProcessors</li>
-<li>✅ <strong>W3C Conformant</strong>: 185/193 conformance tests passing (95.9%)</li>
-<li>🛡️ <strong>Compiler-Inspired Validation</strong>: Detailed, actionable error messages</li>
-</ul>
-<h2 id="quick-example">Quick Example</h2>
-<p>Here's a simple customer support agent:</p>
-<pre class="hljs"><code><div><span class="hljs-tag">&lt;<span class="hljs-name">agent</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"github.com/agentflare-ai/agentml/agent"</span>
+	<h3 id="token-efficiency">Token Efficiency</h3>
+	<p>The runtime provides the LLM with a &quot;snapshot&quot; of the current state, datamodel, and available events.
+		This context allows prompts to be minimal, and the static parts (the agent's definition) can be cached by the
+		LLM provider, reducing token consumption dramatically.</p>
+	<h2 id="key-features">Key Features</h2>
+	<ul>
+		<li>🎯 <strong>Deterministic Execution</strong>: Same inputs always produce same outputs</li>
+		<li>📝 <strong>Schema-Guided Events</strong>: <code>event:schema</code> attributes validate LLM-generated events
+		</li>
+		<li>🔄 <strong>Runtime Snapshots</strong>: Efficiently provide LLM context, minimizing token usage</li>
+		<li>📦 <strong>Modular Design</strong>: Decompose complex agents with <code>&lt;invoke&gt;</code></li>
+		<li>🔌 <strong>Extensible Namespaces</strong>: Plug in custom functionality (LLMs, memory, I/O)</li>
+		<li>📊 <strong>Observable</strong>: OpenTelemetry tracing and logging built-in</li>
+		<li>🌐 <strong>Universal Standard</strong>: Write once, deploy anywhere</li>
+		<li>🔗 <strong>Remote Communication</strong>: Built-in distributed agent communication via IOProcessors</li>
+		<li>✅ <strong>W3C Conformant</strong>: 185/193 conformance tests passing (95.9%)</li>
+		<li>🛡️ <strong>Compiler-Inspired Validation</strong>: Detailed, actionable error messages</li>
+	</ul>
+	<h2 id="quick-example">Quick Example</h2>
+	<p>Here's a simple customer support agent:</p>
+	<pre class="hljs"><code><div><span class="hljs-tag">&lt;<span class="hljs-name">agent</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"github.com/agentflare-ai/agentml/agent"</span>
        <span class="hljs-attr">datamodel</span>=<span class="hljs-string">"ecmascript"</span>
-       <span class="hljs-attr">import:gemini</span>=<span class="hljs-string">"github.com/agentflare-ai/agentml/gemini"</span>&gt;</span>
+       <span class="hljs-attr">xmlns:gemini</span>=<span class="hljs-string">"github.com/agentflare-ai/agentml/gemini"</span>&gt;</span>
 
   <span class="hljs-tag">&lt;<span class="hljs-name">datamodel</span>&gt;</span>
     <span class="hljs-tag">&lt;<span class="hljs-name">data</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"user_input"</span> <span class="hljs-attr">expr</span>=<span class="hljs-string">"''"</span> /&gt;</span>
@@ -462,29 +477,39 @@ code {
   <span class="hljs-tag">&lt;/<span class="hljs-name">state</span>&gt;</span>
 <span class="hljs-tag">&lt;/<span class="hljs-name">agent</span>&gt;</span>
 </div></code></pre>
-<h2 id="architecture-overview">Architecture Overview</h2>
-<p>AgentML consists of four main components:</p>
-<ol>
-<li><strong>Document Structure</strong>: AgentML files (<code>.aml</code>) use an <code>&lt;agent&gt;</code> root element, which extends SCXML's <code>&lt;scxml&gt;</code> element.</li>
-<li><strong>Namespace System</strong>: Functionality is extended through namespaces declared with the <code>import:prefix=&quot;uri&quot;</code> directive.</li>
-<li><strong>Runtime (agentmlx)</strong>: The Go/WASM interpreter executes AgentML files with full W3C SCXML conformance.</li>
-<li><strong>I/O Processors</strong>: Handle external communications via HTTP, WebSocket, and other protocols.</li>
-</ol>
-<h2 id="getting-started">Getting Started</h2>
-<p>Ready to build your first AgentML agent?</p>
-<ol>
-<li><a href="/installation">Install agentmlx</a> - Get the runtime installed</li>
-<li>Follow the <a href="/quick-start">Quick Start Guide</a> - Build your first agent</li>
-<li>Learn about <a href="/concepts/event-driven-llm">Core Concepts</a> - Understand the fundamentals</li>
-</ol>
-<h2 id="community--support">Community &amp; Support</h2>
-<ul>
-<li><strong>GitHub</strong>: <a href="https://github.com/agentflare-ai/agentml">github.com/agentflare-ai/agentml</a></li>
-<li><strong>Issues</strong>: <a href="https://github.com/agentflare-ai/agentml/issues">Report bugs or request features</a></li>
-<li><strong>Discussions</strong>: <a href="https://github.com/agentflare-ai/agentml/discussions">Share your use cases</a></li>
-</ul>
-<hr>
-<p><strong>Next Steps</strong>: Start with <a href="/installation">Installation</a> to set up your development environment.</p>
+	<h2 id="architecture-overview">Architecture Overview</h2>
+	<p>AgentML consists of four main components:</p>
+	<ol>
+		<li><strong>Document Structure</strong>: AgentML files (<code>.aml</code>) use an <code>&lt;agent&gt;</code>
+			root element, which extends SCXML's <code>&lt;scxml&gt;</code> element.</li>
+		<li><strong>Namespace System</strong>: Functionality is extended through namespaces declared with the
+			<code>xmlns:prefix=&quot;uri&quot;</code> directive.
+		</li>
+		<li><strong>Runtime (agentmlx)</strong>: The Go/WASM interpreter executes AgentML files with full W3C SCXML
+			conformance.</li>
+		<li><strong>I/O Processors</strong>: Handle external communications via HTTP, WebSocket, and other protocols.
+		</li>
+	</ol>
+	<h2 id="getting-started">Getting Started</h2>
+	<p>Ready to build your first AgentML agent?</p>
+	<ol>
+		<li><a href="/installation">Install agentmlx</a> - Get the runtime installed</li>
+		<li>Follow the <a href="/quick-start">Quick Start Guide</a> - Build your first agent</li>
+		<li>Learn about <a href="/concepts/event-driven-llm">Core Concepts</a> - Understand the fundamentals</li>
+	</ol>
+	<h2 id="community--support">Community &amp; Support</h2>
+	<ul>
+		<li><strong>GitHub</strong>: <a
+				href="https://github.com/agentflare-ai/agentml">github.com/agentflare-ai/agentml</a></li>
+		<li><strong>Issues</strong>: <a href="https://github.com/agentflare-ai/agentml/issues">Report bugs or request
+				features</a></li>
+		<li><strong>Discussions</strong>: <a href="https://github.com/agentflare-ai/agentml/discussions">Share your use
+				cases</a></li>
+	</ul>
+	<hr>
+	<p><strong>Next Steps</strong>: Start with <a href="/installation">Installation</a> to set up your development
+		environment.</p>
 
 </body>
+
 </html>

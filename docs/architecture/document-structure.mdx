@@ -14,7 +14,7 @@ The `<agent>` element is the root of every AgentML document. It extends SCXML's 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <!-- Document content -->
 
@@ -59,15 +59,15 @@ AgentML currently supports ECMAScript (JavaScript) as the datamodel language.
 
 ### Namespace Imports
 
-**import:prefix="uri"** - Import external namespaces:
+**xmlns:prefix="uri"** - Import external namespaces:
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:gemini="github.com/agentflare-ai/agentml/gemini"
-       import:memory="github.com/agentflare-ai/agentml/memory"
-       import:events="./schemas/events.json">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
+       xmlns:memory="github.com/agentflare-ai/agentml/memory"
+       xmlns:events="./schemas/events.json">
 ```
 
-The `import:` prefix declares namespace imports. Each import maps a prefix to a URI.
+The `xmlns:` prefix declares namespace imports. Each import maps a prefix to a URI.
 
 ## Document Components
 
@@ -281,8 +281,8 @@ Here's a complete AgentML document demonstrating all components:
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        name="customer-support-agent"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini"
-       import:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
+       xmlns:memory="github.com/agentflare-ai/agentml/memory">
 
   <!-- Datamodel: Agent's variables -->
   <datamodel>

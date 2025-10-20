@@ -169,7 +169,7 @@ Built into the `stdin` namespace:
 
 ```xml
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:stdin="github.com/agentflare-ai/agentml/stdin">
+       xmlns:stdin="github.com/agentflare-ai/agentml/stdin">
 
   <state id="read_input">
     <onentry>
@@ -284,7 +284,7 @@ Send to other AgentML agents:
 <agent xmlns="github.com/agentflare-ai/agentml/agent"
        name="worker"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <state id="idle">
     <!-- Receive tasks from orchestrator -->
