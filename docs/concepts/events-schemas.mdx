@@ -19,7 +19,7 @@ Every event has:
 - **Origin**: Source of the event (IOProcessor, internal raise, etc.)
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="idle">
@@ -201,7 +201,7 @@ For maintainability, define schemas in separate JSON or YAML files:
 Reference external schemas with JSON Pointer (RFC 6901):
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        xmlns:events="./schemas/events.json">
 
@@ -244,7 +244,7 @@ components:
 
 **agent.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        xmlns:api="./schemas/api.yaml">
 
   <transition event="user.message"

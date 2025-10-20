@@ -24,7 +24,7 @@ Traditional LLM applications rely on emergent behavior from prompts, leading to 
 A state represents what the agent is currently doing:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- The agent starts in the 'idle' state -->
@@ -79,9 +79,9 @@ Execute code when entering or leaving a state:
 Here's a simple customer support agent:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -138,7 +138,7 @@ Here's a simple customer support agent:
 Nest states within states to manage complexity:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- Top-level state -->
@@ -185,7 +185,7 @@ Benefits of hierarchical states:
 Execute multiple state machines simultaneously:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- Both state machines run in parallel -->

@@ -12,10 +12,10 @@ Namespaces are the primary way to extend AgentML functionality. They provide mod
 Namespaces extend the SCXML vocabulary with custom actions and elements. In AgentML, namespaces are declared using the `xmlns:prefix="uri"` directive on the `<agent>` root element.
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <state id="processing">
     <onentry>
@@ -41,7 +41,7 @@ AgentML provides several built-in namespaces:
 The core namespace for AgentML-specific features (default namespace):
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- event:schema is from the agent namespace -->
@@ -56,8 +56,8 @@ The core namespace for AgentML-specific features (default namespace):
 Google Gemini LLM integration:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="generate">
     <onentry>
@@ -77,8 +77,8 @@ Google Gemini LLM integration:
 Local LLM integration via Ollama:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <state id="generate">
     <onentry>
@@ -96,8 +96,8 @@ Local LLM integration via Ollama:
 High-performance memory with vector search and graph database:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <state id="store_data">
     <onentry>
@@ -135,8 +135,8 @@ The memory namespace is powered by `sqlite-graph`, providing:
 Simple stdin/stdout I/O for console agents:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:stdin="github.com/agentflare-ai/agentml/stdin">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
 
   <state id="get_input">
     <onentry>
@@ -161,8 +161,8 @@ Simple stdin/stdout I/O for console agents:
 Use the `xmlns:prefix="uri"` attribute:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
   <!-- gemini:generate is now available -->
 </agent>
 ```
@@ -172,11 +172,11 @@ Use the `xmlns:prefix="uri"` attribute:
 Import multiple namespaces:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory"
-       xmlns:stdin="github.com/agentflare-ai/agentml/stdin">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama"
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory"
+       xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
 
   <state id="multi_namespace">
     <onentry>
@@ -193,7 +193,7 @@ Import multiple namespaces:
 Import JSON/YAML files for schemas:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        xmlns:events="./schemas/events.json"
        xmlns:api="./schemas/openapi.yaml">
 
@@ -240,7 +240,7 @@ func Register() {
 
 **Usage:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        xmlns:custom="github.com/example/custom">
 
   <state id="use_custom">
@@ -298,7 +298,7 @@ impl Namespace for MyNamespace {
 
 **Usage:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        xmlns:custom="https://cdn.example.com/custom-namespace.wasm">
 
   <state id="use_wasm">
@@ -314,8 +314,8 @@ impl Namespace for MyNamespace {
 ### LLM Integration Pattern
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="userInput" expr="''" />
@@ -342,8 +342,8 @@ impl Namespace for MyNamespace {
 ### Memory Persistence Pattern
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <state id="save_state">
     <onentry>
@@ -366,9 +366,9 @@ impl Namespace for MyNamespace {
 ### Multi-Provider Pattern
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <state id="classify">
     <!-- Use fast local model for classification -->

@@ -36,7 +36,7 @@ Test individual states with targeted events:
 
 **test-agent.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -79,9 +79,9 @@ Test multi-state workflows:
 
 **integration-test.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <datamodel>
     <data id="testPassed" expr="false" />
@@ -126,7 +126,7 @@ Create test agents without LLM dependencies:
 
 **mock-agent.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -165,7 +165,7 @@ Test state transitions systematically:
 
 **state-test.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -216,7 +216,7 @@ Test event handling and data:
 
 **event-test.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="await_event">
@@ -261,7 +261,7 @@ Test JSON Schema validation:
 
 **schema-test.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>

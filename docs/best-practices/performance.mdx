@@ -12,9 +12,9 @@ Optimize your AgentML agents for maximum performance and minimal costs. AgentML'
 AgentML achieves 90%+ token reduction using runtime snapshots instead of full conversation history:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="conversationHistory" expr="[]" />
@@ -53,9 +53,9 @@ AgentML achieves 90%+ token reduction using runtime snapshots instead of full co
 Use prompt caching to reduce latency and costs:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <!-- Cache-friendly system prompt -->
@@ -87,9 +87,9 @@ Use prompt caching to reduce latency and costs:
 Minimize token usage with focused prompts:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <!-- Bad: Verbose prompt -->
   <state id="verbose_generate">
@@ -118,10 +118,10 @@ Minimize token usage with focused prompts:
 Stream LLM responses for better perceived performance:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
-       xmlns:stdin="github.com/agentflare-ai/agentml/stdin">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
 
   <state id="stream_generate">
     <onentry>
@@ -149,9 +149,9 @@ Stream LLM responses for better perceived performance:
 Process multiple tasks concurrently:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="summaryResult" expr="''" />
@@ -215,9 +215,9 @@ Process multiple tasks concurrently:
 Process collections efficiently:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <datamodel>
     <data id="documents" expr="[
@@ -253,9 +253,9 @@ Process collections efficiently:
 Use Ollama for high-volume, low-latency scenarios:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <state id="classify">
     <onentry>
@@ -290,9 +290,9 @@ Use Ollama for high-volume, low-latency scenarios:
 Optimize vector search performance:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <state id="search_optimized">
     <onentry>
@@ -325,7 +325,7 @@ Optimize vector search performance:
 Keep datamodel lean for efficient snapshots:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- Bad: Storing everything -->
@@ -355,7 +355,7 @@ Keep datamodel lean for efficient snapshots:
 Optimize transition evaluation order:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="handle_input">
@@ -375,7 +375,7 @@ Optimize transition evaluation order:
 IOProcessors reuse connections automatically:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="fetch_data">
@@ -415,9 +415,9 @@ WorkingDirectory=/mnt/fast-ssd/agentml
 Track agent performance:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="startTime" expr="0" />

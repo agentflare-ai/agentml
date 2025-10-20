@@ -5,7 +5,7 @@ description: "Use local LLM models with AgentML via Ollama"
 
 # Ollama Extension
 
-The Ollama namespace (`github.com/agentflare-ai/agentml/ollama`) enables AgentML agents to use locally-hosted Ollama models, providing privacy and cost-effective LLM capabilities.
+The Ollama namespace (`github.com/agentflare-ai/agentml-go/ollama`) enables AgentML agents to use locally-hosted Ollama models, providing privacy and cost-effective LLM capabilities.
 
 ## Prerequisites
 
@@ -25,9 +25,9 @@ ollama serve
 ## Basic Usage
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <datamodel>
     <data id="userInput" expr="''" />
@@ -149,9 +149,9 @@ ollama pull username/model-name
 Use Ollama for classification, Gemini for generation:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama"
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama"
        xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
   <state id="classify">
@@ -201,8 +201,8 @@ Use Ollama for classification, Gemini for generation:
 Handle Ollama-specific errors:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <state id="generate">
     <onentry>

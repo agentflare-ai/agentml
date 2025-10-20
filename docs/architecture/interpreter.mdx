@@ -48,7 +48,7 @@ This ensures:
 The interpreter maintains separate queues for internal and external events:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="process">
@@ -75,7 +75,7 @@ The interpreter maintains separate queues for internal and external events:
 The interpreter maintains the current **state configuration** - the set of active states at any time:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="parent">
@@ -111,7 +111,7 @@ The interpreter manages the ECMAScript datamodel:
 ### Data Elements
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -181,7 +181,7 @@ The interpreter selects transitions based on event matching and conditions:
 ### Event Matching
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="listen">
@@ -283,7 +283,7 @@ A key AgentML innovation: the interpreter generates **runtime snapshots** for to
 ### Snapshot Contents
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -341,7 +341,7 @@ The interpreter raises platform events for errors:
 ### Error Events
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="risky_operation">
@@ -492,7 +492,7 @@ agentmlx run agent.aml --trace-states
 ### Event Logging
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- Log all events -->

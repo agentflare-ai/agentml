@@ -12,9 +12,9 @@ AgentML documents use XML syntax based on W3C SCXML, with an `<agent>` root elem
 The `<agent>` element is the root of every AgentML document. It extends SCXML's `<scxml>` element with AgentML-specific features:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <!-- Document content -->
 
@@ -25,7 +25,7 @@ The `<agent>` element is the root of every AgentML document. It extends SCXML's 
 
 **xmlns** - The default namespace URI:
 ```xml
-xmlns="github.com/agentflare-ai/agentml/agent"
+xmlns="github.com/agentflare-ai/agentml"
 ```
 
 This identifies the document as an AgentML agent.
@@ -41,14 +41,14 @@ AgentML currently supports ECMAScript (JavaScript) as the datamodel language.
 
 **name** - Optional agent identifier:
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        name="customer-support-bot"
        datamodel="ecmascript">
 ```
 
 **initial** - Initial state (if not using document order):
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
        initial="awaiting_input">
 
@@ -61,9 +61,9 @@ AgentML currently supports ECMAScript (JavaScript) as the datamodel language.
 
 **xmlns:prefix="uri"** - Import external namespaces:
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory"
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory"
        xmlns:events="./schemas/events.json">
 ```
 
@@ -76,7 +76,7 @@ The `xmlns:` prefix declares namespace imports. Each import maps a prefix to a U
 The `<datamodel>` element defines the agent's variables:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -101,7 +101,7 @@ The `<datamodel>` element defines the agent's variables:
 States define what the agent is doing:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- Simple state -->
@@ -278,11 +278,11 @@ Remember and return to previous substates:
 Here's a complete AgentML document demonstrating all components:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        name="customer-support-agent"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <!-- Datamodel: Agent's variables -->
   <datamodel>

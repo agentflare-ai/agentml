@@ -12,10 +12,10 @@ The namespace system is AgentML's mechanism for extending SCXML with custom acti
 In AgentML, namespaces extend the base SCXML vocabulary with domain-specific actions. They are declared using the `xmlns:prefix="uri"` directive on the `<agent>` root element:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <state id="processing">
     <onentry>
@@ -41,26 +41,26 @@ Namespace URIs identify the implementation and version:
 AgentML provides several official namespaces:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory"
-       xmlns:stdin="github.com/agentflare-ai/agentml/stdin">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama"
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory"
+       xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
 ```
 
 **Official Namespace URIs:**
-- `github.com/agentflare-ai/agentml/agent` - Core AgentML features (default)
-- `github.com/agentflare-ai/agentml/gemini` - Google Gemini LLM integration
-- `github.com/agentflare-ai/agentml/ollama` - Local LLM via Ollama
-- `github.com/agentflare-ai/agentml/memory` - Vector search and graph database
-- `github.com/agentflare-ai/agentml/stdin` - Console I/O
+- `github.com/agentflare-ai/agentml-go/agent` - Core AgentML features (default)
+- `github.com/agentflare-ai/agentml-go/gemini` - Google Gemini LLM integration
+- `github.com/agentflare-ai/agentml-go/ollama` - Local LLM via Ollama
+- `github.com/agentflare-ai/agentml-go/memory` - Vector search and graph database
+- `github.com/agentflare-ai/agentml-go/stdin` - Console I/O
 
 ### External Schema Namespaces
 
 Import JSON Schema or OpenAPI files:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        xmlns:events="./schemas/events.json"
        xmlns:api="./schemas/openapi.yaml">
 
@@ -103,7 +103,7 @@ The agent namespace is the default and provides AgentML-specific extensions:
 Schema-guided event validation:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <transition event="intent.flight"
@@ -129,7 +129,7 @@ The agent namespace enables runtime snapshot generation for token-efficient LLM 
 - Transition conditions
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -148,8 +148,8 @@ The agent namespace enables runtime snapshot generation for token-efficient LLM 
 Google Gemini LLM integration:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="generate">
     <onentry>
@@ -183,8 +183,8 @@ Google Gemini LLM integration:
 Local LLM integration:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <state id="classify">
     <onentry>
@@ -208,8 +208,8 @@ Local LLM integration:
 High-performance memory with vector search and graph database, powered by `sqlite-graph`:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <state id="store_and_query">
     <onentry>
@@ -249,8 +249,8 @@ All data persists in a single SQLite file with vector and graph capabilities.
 Console I/O for command-line agents:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:stdin="github.com/agentflare-ai/agentml/stdin">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
 
   <state id="get_input">
     <onentry>
@@ -320,7 +320,7 @@ func Register() {
 
 **Usage in AgentML:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        xmlns:custom="github.com/example/custom">
 
   <state id="use_custom">
@@ -400,7 +400,7 @@ impl Namespace for MyCustomNamespace {
 
 **Load WASM namespace:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        xmlns:custom="https://cdn.example.com/custom-namespace.wasm">
 
   <state id="use_wasm">
@@ -436,9 +436,9 @@ agentmlx validate agent.aml
 Use different LLM providers for different tasks:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <state id="classify">
     <!-- Fast local classification -->
@@ -473,9 +473,9 @@ Use different LLM providers for different tasks:
 Combine LLM with vector search:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
-       xmlns:memory="github.com/agentflare-ai/agentml/memory">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <state id="answer_question">
     <onentry>
@@ -509,9 +509,9 @@ Combine LLM with vector search:
 Combine I/O with LLM processing:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
-       xmlns:stdin="github.com/agentflare-ai/agentml/stdin">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
 
   <state id="interactive">
     <onentry>

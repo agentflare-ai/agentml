@@ -16,9 +16,9 @@ Make sure you have [installed agentmlx](/installation) before proceeding.
 Create a file called `chatbot.aml`:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -60,9 +60,9 @@ Let's break down each part of this agent:
 ### Root Element
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 ```
 
 - `<agent>` is the root element for AgentML files (extends W3C SCXML's `<scxml>`)
@@ -125,9 +125,9 @@ You should see output showing the agent's state transitions and the LLM response
 Let's enhance our agent with event schema validation to ensure type safety:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -193,9 +193,9 @@ The `event:schema` attribute validates incoming events against JSON Schema, ensu
 Let's create a more sophisticated agent that can handle different user intents:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="user_input" expr="''" />

@@ -86,7 +86,7 @@ The static parts of AgentML agents (the agent definition itself) can be cached b
 
 **Anthropic Claude with Prompt Caching:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent">
+<agent xmlns="github.com/agentflare-ai/agentml">
   <!-- This entire agent definition is cached -->
   <state id="awaiting_input">
     <transition event="user.message" .../>
@@ -172,8 +172,8 @@ The LLM sees the snapshot and knows exactly what to do.
 Let the state machine handle flow control, not the LLM:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="classify">
     <onentry>
@@ -283,8 +283,8 @@ Set per-request token limits:
 Use Ollama for classification and simple tasks:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <state id="classify">
     <!-- Use fast local model -->
@@ -303,8 +303,8 @@ Use Ollama for classification and simple tasks:
 Use Gemini for complex reasoning:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="generate_response">
     <!-- Use powerful model -->
@@ -323,9 +323,9 @@ Use Gemini for complex reasoning:
 Combine fast and powerful models:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="classify">
     <!-- Fast local classification -->
@@ -386,9 +386,9 @@ Combine fast and powerful models:
 Flight booking agent with full conversation:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="from" expr="''" />

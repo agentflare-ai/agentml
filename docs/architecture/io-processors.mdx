@@ -21,7 +21,7 @@ IOProcessors bridge the gap between state machines and the outside world. They h
 The `<send>` element sends events to external targets via IOProcessors:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="notify">
@@ -58,7 +58,7 @@ The `<send>` element sends events to external targets via IOProcessors:
 Send events via HTTP POST requests:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="call_api">
@@ -113,7 +113,7 @@ Content-Type: application/json
 Persistent bidirectional communication:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="connect">
@@ -168,8 +168,8 @@ Persistent bidirectional communication:
 Built into the `stdin` namespace:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:stdin="github.com/agentflare-ai/agentml/stdin">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
 
   <state id="read_input">
     <onentry>
@@ -189,7 +189,7 @@ Built into the `stdin` namespace:
 Send to the same agent (internal events):
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="process">
@@ -212,7 +212,7 @@ Send to the same agent (internal events):
 Send to other AgentML agents:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="coordinate">
@@ -238,7 +238,7 @@ Send to other AgentML agents:
 
 ```xml
 <!-- Orchestrator Agent -->
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        name="orchestrator"
        datamodel="ecmascript">
 
@@ -281,10 +281,10 @@ Send to other AgentML agents:
 
 ```xml
 <!-- Worker Agent -->
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        name="worker"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="idle">
     <!-- Receive tasks from orchestrator -->
@@ -367,7 +367,7 @@ Responses know where they came from via `_event.origin`:
 Send events after a delay:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="waiting">
@@ -445,7 +445,7 @@ Or inline:
 IOProcessors raise error events on failure:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="send_request">
@@ -537,7 +537,7 @@ func Register(token string) {
 
 **Usage:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="notify_team">
@@ -558,7 +558,7 @@ func Register(token string) {
 ### Request-Response Pattern
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>
@@ -594,7 +594,7 @@ func Register(token string) {
 ### Pub/Sub Pattern
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="subscribe">
@@ -635,7 +635,7 @@ func Register(token string) {
 ### Webhook Pattern
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <!-- Receive webhook events from external services -->

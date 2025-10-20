@@ -12,7 +12,7 @@ Robust error handling is essential for production AgentML agents. SCXML's event-
 SCXML defines standard error events that agents can handle:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <state id="processing">
@@ -48,10 +48,10 @@ SCXML defines standard error events that agents can handle:
 Handle errors gracefully without halting the agent:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini"
-       xmlns:ollama="github.com/agentflare-ai/agentml/ollama">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <datamodel>
     <data id="retryCount" expr="0" />
@@ -102,9 +102,9 @@ Handle errors gracefully without halting the agent:
 Implement retry logic using state machines:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="retryCount" expr="0" />
@@ -155,9 +155,9 @@ Implement retry logic using state machines:
 Validate LLM outputs using `event:schema`:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="request_booking">
     <onentry>
@@ -205,9 +205,9 @@ Validate LLM outputs using `event:schema`:
 Prevent cascading failures using parallel states:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="failureCount" expr="0" />
@@ -291,9 +291,9 @@ Prevent cascading failures using parallel states:
 Use `<log>` for debugging and monitoring:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="processing">
     <onentry>
@@ -327,7 +327,7 @@ Use `<log>` for debugging and monitoring:
 Capture error context for debugging:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
   <datamodel>

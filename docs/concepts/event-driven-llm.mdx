@@ -46,9 +46,9 @@ AgentML solves these problems by treating every LLM interaction as part of a for
 Events flow through the SCXML state machine, triggering transitions and executing actions:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -220,7 +220,7 @@ For better maintainability, define schemas in external files:
 
 **agent.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        xmlns:events="./schemas/events.json">
 
   <transition event="intent.flight"

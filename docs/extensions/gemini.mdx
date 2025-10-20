@@ -5,7 +5,7 @@ description: "Integrate Google's Gemini models into AgentML agents"
 
 # Gemini Extension
 
-The Gemini namespace (`github.com/agentflare-ai/agentml/gemini`) integrates Google's Gemini models into AgentML agents, providing powerful cloud-based LLM capabilities.
+The Gemini namespace (`github.com/agentflare-ai/agentml-go/gemini`) integrates Google's Gemini models into AgentML agents, providing powerful cloud-based LLM capabilities.
 
 ## Setup
 
@@ -20,9 +20,9 @@ agentmlx run agent.aml
 ## Basic Usage
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="userInput" expr="''" />
@@ -96,8 +96,8 @@ Most capable model:
 Control generation behavior:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="generate">
     <onentry>
@@ -119,8 +119,8 @@ Control generation behavior:
 Combine with `event:schema` for structured outputs:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <state id="extract_info">
     <onentry>
@@ -154,9 +154,9 @@ Combine with `event:schema` for structured outputs:
 Build conversation history in datamodel:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agent xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="conversationHistory" expr="[]" />
@@ -189,8 +189,8 @@ Build conversation history in datamodel:
 Handle Gemini-specific errors:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="retryCount" expr="0" />
@@ -248,8 +248,8 @@ Handle Gemini-specific errors:
 Monitor token consumption:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
+<agent xmlns="github.com/agentflare-ai/agentml"
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="totalTokens" expr="0" />
