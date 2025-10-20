@@ -347,9 +347,9 @@ Follow W3C SCXML and XML best practices:
 
 ```xml
 <!-- ✅ Good: Clear structure, proper indentation, meaningful IDs -->
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="user_message" expr="''" />
@@ -375,7 +375,7 @@ Follow W3C SCXML and XML best practices:
     
     <transition event="response.ready" target="send_response" />
   </state>
-</agent>
+</agentml>
 ```
 
 **Guidelines:**
@@ -407,9 +407,9 @@ Opening paragraph that clearly explains what this is and why it matters.
 Practical example showing the feature in action:
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent">
+<agentml xmlns="github.com/agentflare-ai/agentml">
   <!-- Clear, minimal example -->
-</agent>
+</agentml>
 ```
 
 ## Best Practices

@@ -252,14 +252,14 @@ This enables schema reuse via **JSON Pointer (RFC 6901)** references with namesp
 
 **agent.aml:**
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
-       import:events="./schemas/events.json">
+<agentml xmlns="github.com/agentflare-ai/agentml"
+       xmlns:events="./schemas/events.json">
 
   <!-- Reference schemas using a namespace and JSON Pointer -->
   <transition event="intent.flight"
               event:schema="events:#/components/schemas/FlightRequest"
               target="handle_flight" />
-</agent>
+</agentml>
 ```
 
 This unified `import` directive is designed to work for schemas, namespace implementations, and future WASM components.
@@ -282,9 +282,9 @@ This unified `import` directive is designed to work for schemas, namespace imple
 
 ## Architecture
 
-- **Document Structure**: AgentML files use an `<agent>` root element, which is a compatible extension of SCXML's `<scxml>` element. The `datamodel` attribute specifies the scripting language used for data manipulation and expressions.
+- **Document Structure**: AgentML files use an `<agentml>` root element, which is a compatible extension of SCXML's `<scxml>` element. The `datamodel` attribute specifies the scripting language used for data manipulation and expressions.
 - **Supported Datamodels**: AgentML supports `ecmascript`, `starlark`, and `xpath`. Support for using `wasm` components as a datamodel is planned for the future.
-- **Namespace System**: Functionality is extended through namespaces (e.g., for Gemini, Ollama, Memory) declared with the `import:prefix="uri"` directive.
+- **Namespace System**: Functionality is extended through namespaces (e.g., for Gemini, Ollama, Memory) declared with the `xmlns:prefix="uri"` directive.
 - **Runtime Snapshot**: At each step, the runtime creates an XML snapshot containing the active states, datamodel, and available events. This, combined with the SCXML document, gives the LLM complete and current context.
 
 ---
@@ -341,12 +341,12 @@ Our vision for true interoperability and extensibility is to load namespaces as 
 
 ```xml
 <!-- Future: Load namespace from a WASM module -->
-<agent import:gemini="https://cdn.example.com/gemini-namespace.wasm"
-       import:custom="./my-namespace.wasm">
+<agentml xmlns:gemini="https://cdn.example.com/gemini-namespace.wasm"
+       xmlns:custom="./my-namespace.wasm">
   
   <gemini:generate ... />
   <custom:process ... />
-</agent>
+</agentml>
 ```
 
 This means you can:
@@ -450,9 +450,9 @@ We are building AgentML in the open. Your feedback is critical.
 ### Basic Agent Example
 
 ```xml
-<agent xmlns="github.com/agentflare-ai/agentml/agent"
+<agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       import:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -491,7 +491,7 @@ We are building AgentML in the open. Your feedback is critical.
       <transition target="awaiting_input" />
     </state>
   </state>
-</agent>
+</agentml>
 ```
 
 
@@ -508,17 +508,16 @@ AgentML's functionality is extended through namespaces. Here are the currently a
 
 These namespaces are implemented in Go and available in the [agentml-go](https://github.com/agentflare-ai/agentml-go) repository:
 
-- **Agent (`.../agentml/agent`)**: Core namespace for `<agent>` root element and `event:schema` validation.
-- **Gemini (`.../agentml-go/gemini`)**: Google Gemini LLM integration. [Documentation](https://github.com/agentflare-ai/agentml-go/tree/main/gemini)
-- **Ollama (`.../agentml-go/ollama`)**: Local LLM integration via Ollama. [Documentation](https://github.com/agentflare-ai/agentml-go/tree/main/ollama)
-- **Memory (`.../agentml-go/memory`)**: High-performance memory with vector search and graph database capabilities. Powered by `sqlite-graph`, our custom extension that provides a complete, local, filesystem-based memory framework within a single SQLite file. [Documentation](https://github.com/agentflare-ai/agentml-go/tree/main/memory)
-- **Stdin (`.../agentml-go/stdin`)**: Simple stdin/stdout I/O for console agents.
-- **Env (`.../agentml-go/env`)**: Environment variable and configuration loading.
+- **Gemini (`github.com/agentflare-ai/agentml-go/gemini`)**: Google Gemini LLM integration. [Documentation](https://github.com/agentflare-ai/agentml-go/tree/main/gemini)
+- **Ollama (`github.com/agentflare-ai/agentml-go/ollama`)**: Local LLM integration via Ollama. [Documentation](https://github.com/agentflare-ai/agentml-go/tree/main/ollama)
+- **Memory (`github.com/agentflare-ai/agentml-go/memory`)**: High-performance memory with vector search and graph database capabilities. Powered by `sqlite-graph`, our custom extension that provides a complete, local, filesystem-based memory framework within a single SQLite file. [Documentation](https://github.com/agentflare-ai/agentml-go/tree/main/memory)
+- **Stdin (`github.com/agentflare-ai/agentml-go/stdin`)**: Simple stdin/stdout I/O for console agents.
+- **Env (`github.com/agentflare-ai/agentml-go/env`)**: Environment variable and configuration loading.
 
 ### Example Usage
 
 ```xml
-<agent import:memory="github.com/agentflare-ai/agentml-go/memory">
+<agentml xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
   <!-- Vector operations -->
   <memory:embed location="embedding" expr="text_content" />
   <memory:search location="results" expr="query_embedding" limit="10" />
@@ -535,7 +534,7 @@ These namespaces are implemented in Go and available in the [agentml-go](https:/
   <!-- Key-value storage -->
   <memory:put key="user_preference" expr="preference_value" />
   <memory:get key="user_preference" location="preference" />
-</agent>
+</agentml>
 ```
 
 **Key Features:**
@@ -635,7 +634,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
 - **Keep `.aml` files focused**: Decompose large agents into smaller, invoked services.
 - **Use meaningful state IDs**: `handle_flight_request` is better than `state_5`.
 - **Validate with schemas**: Always use `event:schema` and provide detailed `description` fields to guide the LLM.
-- **Use external schemas**: Define schemas in `.json`/`.yaml` files and load them with `import:` for reuse and maintainability.
+- **Use external schemas**: Define schemas in `.json`/`.yaml` files and load them with `xmlns:` for reuse and maintainability.
 - **Prefer external scripts**: Use `<script src="./utils.js" />` for better linting, IDE support, and maintainability. Only use inline scripts for simple expressions. When you must write inline scripts with comparison operators (`<`, `>`) or other special XML characters, wrap your code in `<![CDATA[...]]>`:
 
 ```xml
