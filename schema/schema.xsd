@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="http://agentflare.ai/agentml/schema"
+    xmlns:s="http://agentflare.ai/agentml/schema"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+
+    <xsd:annotation>
+        <xsd:documentation> AgentML Schema Declaration Namespace This namespace provides attributes
+            for declaring JSON Schema references in AgentML documents. Usage: &lt;agentml
+            xmlns:schema="http://agentflare.ai/agentml/schema"
+            schema:user="file://schemas/user.json"
+            schema:api="github.com/org/repo/api-schema.json"&gt; &lt;data id="currentUser"
+            schema="user:/definitions/User"/&gt; &lt;transition event="api.response"
+            schema="api:/"/&gt; &lt;/agentml&gt; Schema URI Formats: - file://path/to/schema.json -
+            Local file (relative to document location) - github.com/user/repo/path/to/schema.json -
+            GitHub raw content (tries main/master) </xsd:documentation>
+    </xsd:annotation>
+
+    <!-- Attribute for schema declarations on root element -->
+    <xsd:attribute name="schema-declaration">
+        <xsd:annotation>
+            <xsd:documentation> Declares a JSON Schema with a namespace prefix. Format: prefix="URI"
+                The URI can be: - file://relative/path.json (relative to document) -
+                github.com/user/repo/path.json (fetched from GitHub) </xsd:documentation>
+        </xsd:annotation>
+        <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+                <xsd:pattern value="(file://.*\.json|github\.com/.*/.*\.json)" />
+            </xsd:restriction>
+        </xsd:simpleType>
+    </xsd:attribute>
+
+    <!-- Allow any attribute from this namespace to be used as a schema declaration -->
+    <xsd:attributeGroup name="schemaDeclarations">
+        <xsd:annotation>
+            <xsd:documentation> Group of schema declaration attributes. Any attribute in the
+                http://agentflare.ai/agentml/schema namespace on the root element is treated as a
+                schema declaration. Example: schema:user="file://user.json"
+                schema:api="github.com/company/api-schema.json" </xsd:documentation>
+        </xsd:annotation>
+        <xsd:anyAttribute namespace="http://agentflare.ai/agentml/schema" processContents="lax" />
+    </xsd:attributeGroup>
+
+</xsd:schema>

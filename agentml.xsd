@@ -2,7 +2,12 @@
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
   xmlns="github.com/agentflare-ai/agentml"
   xmlns:agentml="github.com/agentflare-ai/agentml"
+  xmlns:schema="http://agentflare.ai/agentml/schema"
   targetNamespace="github.com/agentflare-ai/agentml" elementFormDefault="qualified">
+
+  <!-- Import schema namespace for JSON Schema declarations -->
+  <xsd:import namespace="http://agentflare.ai/agentml/schema"
+    schemaLocation="schema/schema.xsd" />
 
   <!--
 =============================================================================
@@ -175,6 +180,21 @@ be ignored in certain implementations.
   </xsd:simpleType>
 
   <!--
+  ENCODE TYPES:
+  - json: JSON encoding format (default)
+  - xml: XML encoding format
+  -->
+  <xsd:simpleType name="Encode.datatype">
+    <xsd:annotation>
+      <xsd:documentation>Data encoding format: "json" (default) or "xml"</xsd:documentation>
+    </xsd:annotation>
+    <xsd:restriction base="xsd:NMTOKEN">
+      <xsd:enumeration value="json" />
+      <xsd:enumeration value="xml" />
+    </xsd:restriction>
+  </xsd:simpleType>
+
+  <!--
   EVENT TYPES:
   - Single event: "user.input", "system.error"
   - Pattern: "user.*" matches "user.input", "user.click", etc.
@@ -201,30 +221,41 @@ be ignored in certain implementations.
 
   <!--
   JSON SCHEMA TYPE - CRITICAL FOR LLM-GENERATED VALIDATION:
-  - String containing a valid JSON Schema object for data/event validation
-  - Pattern enforces basic JSON object structure (curly braces)
-  - Full JSON validation would require external tools; this ensures basic format
 
-  *** CRITICAL: The JSON Schema content itself MUST include detailed descriptions ***
+  Supports two formats:
+  1. INLINE JSON SCHEMA: String containing a valid JSON Schema object for data/event validation
+     - Pattern enforces basic JSON object structure (curly braces)
+     - Example: schema='{"title":"User","type":"object","properties":{"name":{"type":"string"}}}'
+
+  2. NAMESPACE POINTER: Reference to a schema defined via schema:* attributes on root element
+     - Format: "prefix:/json/pointer/path"
+     - Prefix refers to schema:prefix attribute on <agentml> root
+     - Pointer uses JSON Pointer (RFC 6901) syntax to navigate within the schema
+     - Example: schema="user:/definitions/Person"
+     - Requires: <agentml schema:user="file://schemas/user.json"> or
+                 <agentml schema:user="github.com/org/repo/schemas/user.json">
+
+  *** CRITICAL for inline JSON: The JSON Schema content MUST include detailed descriptions ***
   - JSON Schema MUST have top-level "description" and "title" fields
   - ALL properties MUST have "description" fields
   - Use "required" array to specify mandatory properties
   - JSON Schema "description" and "title" fields are ESSENTIAL for LLMs
   - Property descriptions guide proper data structure generation
   - Without descriptions, LLMs cannot create meaningful validation schemas
-  - Example: schema='{"title":"User Query","description":"Schema for user question
-  events","type":"object","properties":{"query":{"type":"string","description":"User query
-  string"}},"required":["query"]}'
   -->
   <xsd:simpleType name="JsonSchema.datatype">
     <xsd:annotation>
-      <xsd:documentation>JSON Schema string for validating event data or datamodel structures.
-        CRITICAL: The JSON Schema MUST have top-level "description" and "title" fields, ALL
-        properties MUST have "description" fields, and use "required" array for mandatory properties
-        to enable proper LLM generation of validation schemas.</xsd:documentation>
+      <xsd:documentation>JSON Schema reference for validating event data or datamodel structures.
+        Supports two formats: 1. Inline JSON: schema='{"type":"object",...}' 2. Namespace pointer:
+        schema="prefix:/definitions/TypeName" For inline JSON: CRITICAL that the schema includes
+        "description" and "title" fields, ALL properties have "description" fields, and uses
+        "required" array for mandatory properties to enable proper LLM generation of validation
+        schemas. For namespace pointers: The prefix must be declared as schema:prefix attribute on
+        root element. Example: &lt;agentml schema:user="file://user-schema.json"&gt; then use
+        schema="user:/definitions/User" </xsd:documentation>
     </xsd:annotation>
     <xsd:restriction base="xsd:string">
-      <xsd:pattern value="\{.*\}" />
+      <xsd:pattern value="\{.*\}|[a-zA-Z][a-zA-Z0-9]*:/.*" />
     </xsd:restriction>
   </xsd:simpleType>
 
@@ -352,6 +383,16 @@ be ignored in certain implementations.
   - name: Optional machine identifier
   - datamodel: Datamodel type ("null" for no datamodel, or custom type)
   - binding: "early" or "late" datamodel initialization
+  - schema:* : JSON Schema declarations (from http://agentflare.ai/agentml/schema namespace)
+    * Define reusable JSON schemas for data validation
+    * Format: schema:prefix="URI" (where xmlns:schema="http://agentflare.ai/agentml/schema")
+    * URI types:
+      - file://path/to/schema.json (relative to document location)
+      - github.com/user/repo/path/to/schema.json (fetched from GitHub)
+    * Example: <agentml xmlns:schema="http://agentflare.ai/agentml/schema"
+                        schema:user="file://schemas/user.json"
+                        schema:events="github.com/org/repo/events.json">
+    * Reference in data/transition: schema="user:/definitions/Person"
 
   Content: states, parallel regions, final states, datamodel, scripts
   -->
@@ -953,6 +994,7 @@ be ignored in certain implementations.
   - expr: Optional expression to initialize the data
   - schema: ***CRITICAL*** Optional JSON Schema for data validation (MUST include detailed
   descriptions for LLM success)
+  - encode: Optional encoding format ("json" or "xml") for the data (defaults to "json")
 
   Content: Optional inline data content (alternative to src/expr)
 
@@ -971,6 +1013,7 @@ be ignored in certain implementations.
     <xsd:attribute name="src" type="URI.datatype" />
     <xsd:attribute name="expr" type="ValueLang.datatype" />
     <xsd:attribute name="schema" type="JsonSchema.datatype" />
+    <xsd:attribute name="encode" type="Encode.datatype" default="json" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
 
