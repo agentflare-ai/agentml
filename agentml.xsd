@@ -349,7 +349,15 @@ be ignored in certain implementations.
 
   Use substitutionGroup="agentml:executable" to create custom executable actions
   Use substitutionGroup="agentml:invokable" to create custom invocation types
+  Use substitutionGroup="agentml:root" to create custom root elements
   -->
+  <xsd:element name="root" abstract="true">
+    <xsd:annotation>
+      <xsd:documentation>Abstract base for root elements. Extend with
+        substitutionGroup="agentml:root"</xsd:documentation>
+    </xsd:annotation>
+  </xsd:element>
+
   <xsd:element name="executable" abstract="true">
     <xsd:annotation>
       <xsd:documentation>Abstract base for executable content. Extend with
@@ -428,9 +436,9 @@ be ignored in certain implementations.
   </xsd:complexType>
 
   <!-- Main root element -->
-  <xsd:element name="agentml" type="agentml.agentml.type" />
+  <xsd:element name="agentml" type="agentml.agentml.type" substitutionGroup="agentml:root" />
   <!-- Alias for backwards compatibility -->
-  <xsd:element name="agent" type="agentml.agentml.type" />
+  <xsd:element name="agent" type="agentml.agentml.type" substitutionGroup="agentml:root" />
 
   <!--
   STATE ELEMENT - Basic state in the state machine
