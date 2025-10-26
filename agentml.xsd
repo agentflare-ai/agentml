@@ -1002,7 +1002,7 @@ be ignored in certain implementations.
   - expr: Optional expression to initialize the data
   - schema: ***CRITICAL*** Optional JSON Schema for data validation (MUST include detailed
   descriptions for LLM success)
-  - encode: Optional encoding format ("json" or "xml") for the data (defaults to "json")
+  - encoding: Optional encoding format ("json" or "xml") for the data (defaults to "json")
 
   Content: Optional inline data content (alternative to src/expr)
 
@@ -1021,7 +1021,7 @@ be ignored in certain implementations.
     <xsd:attribute name="src" type="URI.datatype" />
     <xsd:attribute name="expr" type="ValueLang.datatype" />
     <xsd:attribute name="schema" type="JsonSchema.datatype" />
-    <xsd:attribute name="encode" type="Encode.datatype" default="json" />
+    <xsd:attribute name="encoding" type="Encode.datatype" default="json" />
     <xsd:attributeGroup ref="agentml.extra.attribs" />
   </xsd:attributeGroup>
 
