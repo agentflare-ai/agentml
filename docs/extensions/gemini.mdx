@@ -22,7 +22,7 @@ agentmlx run agent.aml
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="userInput" expr="''" />
@@ -31,7 +31,7 @@ agentmlx run agent.aml
 
   <state id="process">
     <onentry>
-      <gemini:generate
+      <openai:generate
         model="gemini-2.0-flash-exp"
         location="_event"
         promptexpr="'You are a helpful assistant. User: ' + userInput" />
@@ -48,7 +48,7 @@ agentmlx run agent.aml
 
 ## Actions
 
-### `<gemini:generate>`
+### `<openai:generate>`
 
 Generate text with Gemini models:
 
@@ -73,7 +73,7 @@ Generate text with Gemini models:
 Fast, efficient model for most tasks:
 
 ```xml
-<gemini:generate
+<openai:generate
   model="gemini-2.0-flash-exp"
   location="_event"
   promptexpr="userQuery" />
@@ -84,7 +84,7 @@ Fast, efficient model for most tasks:
 Most capable model:
 
 ```xml
-<gemini:generate
+<openai:generate
   model="gemini-2.0-exp"
   location="_event"
   promptexpr="complexQuery"
@@ -97,11 +97,11 @@ Control generation behavior:
 
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <state id="generate">
     <onentry>
-      <gemini:generate
+      <openai:generate
         model="gemini-2.0-flash-exp"
         location="_event"
         promptexpr="userPrompt"
@@ -116,35 +116,23 @@ Control generation behavior:
 
 ## Schema-Guided Generation
 
-Combine with `event:schema` for structured outputs:
+Combine with `schema` for structured outputs:
 
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
-  <state id="extract_info">
+  <state id="classify">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
-        promptexpr="'Extract flight information from: ' + userMessage" />
+        promptexpr="'Classify this text: ' + userInput" />
     </onentry>
 
     <transition event="action.response"
-                event:schema='{
-                  "type": "object",
-                  "properties": {
-                    "from": {"type": "string"},
-                    "to": {"type": "string"},
-                    "date": {"type": "string", "format": "date"}
-                  },
-                  "required": ["from", "to", "date"]
-                }'
-                target="book_flight">
-      <assign location="flightData" expr="_event.data" />
-    </transition>
-
-    <transition event="error.execution.validation" target="retry_extraction" />
+                schema='{"type": "object", "properties": {"class": {"type": "string"}}}'
+                target="handle_classification" />
   </state>
 </agentml>
 ```
@@ -156,7 +144,7 @@ Build conversation history in datamodel:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="conversationHistory" expr="[]" />
@@ -169,7 +157,7 @@ Build conversation history in datamodel:
               expr="conversationHistory.concat([{role: 'user', content: userInput}])" />
 
       <!-- Generate with conversation context -->
-      <gemini:generate
+      <openai:generate
         model="gemini-2.0-flash-exp"
         location="_event"
         promptexpr="conversationHistory.map(m => m.role + ': ' + m.content).join('\n')" />
@@ -190,7 +178,7 @@ Handle Gemini-specific errors:
 
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="retryCount" expr="0" />
@@ -198,7 +186,7 @@ Handle Gemini-specific errors:
 
   <state id="generate">
     <onentry>
-      <gemini:generate
+      <openai:generate
         model="gemini-2.0-flash-exp"
         location="_event"
         promptexpr="userQuery" />
@@ -249,7 +237,7 @@ Monitor token consumption:
 
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="totalTokens" expr="0" />
@@ -257,7 +245,7 @@ Monitor token consumption:
 
   <state id="generate">
     <onentry>
-      <gemini:generate
+      <openai:generate
         model="gemini-2.0-flash-exp"
         location="_event"
         promptexpr="query" />
@@ -277,7 +265,7 @@ Monitor token consumption:
 1. **Secure API keys**: Use environment variables, never hardcode
 2. **Handle rate limits**: Implement exponential backoff
 3. **Monitor token usage**: Track costs with usage logging
-4. **Use schemas**: Guide output structure with `event:schema`
+4. **Use schemas**: Guide output structure with `schema`
 5. **Validate responses**: Add schema validation for critical data
 6. **Set token limits**: Use `max-output-tokens` to control costs
 7. **Handle errors gracefully**: Add error transitions for all calls

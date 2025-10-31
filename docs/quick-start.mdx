@@ -1,4 +1,5 @@
 ---
+
 title: "Quick Start"
 description: "Build your first AgentML agent in 5 minutes"
 ---
@@ -19,7 +20,7 @@ Create a file called `chatbot.aml`:
 <agentml xmlns="github.com/agentflare-ai/agentml"
        version="1.0"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -34,8 +35,8 @@ Create a file called `chatbot.aml`:
 
   <state id="processing">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'You are a helpful assistant. User said: ' + user_input" />
     </onentry>
@@ -64,14 +65,14 @@ Let's break down each part of this agent:
 <agentml xmlns="github.com/agentflare-ai/agentml"
        version="1.0"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 ```
 
-- `<agentml>` is the root element for AgentML files (extends W3C SCXML's `<scxml>`)
-- `xmlns` declares the default namespace
-- `version="1.0"` is the required SCXML version
-- `datamodel="ecmascript"` specifies we're using JavaScript for expressions
-- `xmlns:gemini` imports the Gemini LLM namespace
+* `<agentml>` is the root element for AgentML files (extends W3C SCXML's `<scxml>`)
+* `xmlns` declares the default namespace
+* `version="1.0"` is the required SCXML version
+* `datamodel="ecmascript"` specifies we're using JavaScript for expressions
+* `xmlns:gemini` imports the Gemini LLM namespace
 
 ### Data Model
 
@@ -99,13 +100,13 @@ States define what the agent is doing. Transitions move between states when even
 ### LLM Integration
 
 ```xml
-<gemini:generate
-  model="gemini-2.0-flash-exp"
+<openai:generate
+  model="gpt-4o"
   location="_event"
   promptexpr="'You are a helpful assistant. User said: ' + user_input" />
 ```
 
-The `<gemini:generate>` action calls the Gemini LLM. Results are stored in `_event`.
+The `<openai:generate>` action calls the Gemini LLM. Results are stored in `_event`.
 
 ## Running Your Agent
 
@@ -131,7 +132,7 @@ Let's enhance our agent with event schema validation to ensure type safety:
 <agentml xmlns="github.com/agentflare-ai/agentml"
        version="1.0"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -140,7 +141,7 @@ Let's enhance our agent with event schema validation to ensure type safety:
 
   <state id="awaiting_input">
     <transition event="user.message"
-                event:schema='{
+                schema='{
                   "type": "object",
                   "description": "User message event",
                   "properties": {
@@ -158,14 +159,14 @@ Let's enhance our agent with event schema validation to ensure type safety:
 
   <state id="processing">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'You are a helpful assistant. User said: ' + user_input" />
     </onentry>
 
     <transition event="action.response"
-                event:schema='{
+                schema='{
                   "type": "object",
                   "description": "LLM response event",
                   "properties": {
@@ -190,7 +191,7 @@ Let's enhance our agent with event schema validation to ensure type safety:
 </agentml>
 ```
 
-The `event:schema` attribute validates incoming events against JSON Schema, ensuring data integrity.
+The `schema` attribute validates incoming events against JSON Schema, ensuring data integrity.
 
 ## Building a Multi-Intent Agent
 
@@ -200,7 +201,7 @@ Let's create a more sophisticated agent that can handle different user intents:
 <agentml xmlns="github.com/agentflare-ai/agentml"
        version="1.0"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -215,8 +216,8 @@ Let's create a more sophisticated agent that can handle different user intents:
 
   <state id="classify_intent">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'Classify the intent as greeting, question, or farewell: ' + user_input" />
     </onentry>
@@ -236,8 +237,8 @@ Let's create a more sophisticated agent that can handle different user intents:
 
   <state id="handle_question">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'Answer this question: ' + user_input" />
     </onentry>
@@ -314,41 +315,41 @@ Congratulations! You've built your first AgentML agent. Here's what to explore n
 
 ### Learn Core Concepts
 
-- [Event-Driven LLM](/concepts/event-driven-llm) - Understand event-based architecture
-- [State Machines](/concepts/state-machines) - Build complex workflows
-- [Events & Schemas](/concepts/events-schemas) - Structure your data
-- [Token Efficiency](/concepts/token-efficiency) - Optimize LLM costs
+* [Event-Driven LLM](/concepts/event-driven-llm) - Understand event-based architecture
+* [State Machines](/concepts/state-machines) - Build complex workflows
+* [Events & Schemas](/concepts/events-schemas) - Structure your data
+* [Token Efficiency](/concepts/token-efficiency) - Optimize LLM costs
 
 ### Explore Architecture
 
-- [Document Structure](/architecture/document-structure) - Deep dive into AgentML syntax
-- [Namespace System](/architecture/namespace-system) - Extend functionality
-- [Interpreter](/architecture/interpreter) - How agentmlx works
-- [I/O Processors](/architecture/io-processors) - External communications
+* [Document Structure](/architecture/document-structure) - Deep dive into AgentML syntax
+* [Namespace System](/architecture/namespace-system) - Extend functionality
+* [Interpreter](/architecture/interpreter) - How agentmlx works
+* [I/O Processors](/architecture/io-processors) - External communications
 
 ### Add Extensions
 
-- [Gemini Extension](/extensions/gemini) - Google's Gemini models
-- [Ollama Extension](/extensions/ollama) - Local LLM integration
-- [Memory Extension](/extensions/memory) - Vector search and graph database
-- [Custom Extensions](/extensions/custom) - Build your own
+* [Gemini Extension](/extensions/gemini) - Google's Gemini models
+* [Ollama Extension](/extensions/ollama) - Local LLM integration
+* [Memory Extension](/extensions/memory) - Vector search and graph database
+* [Custom Extensions](/extensions/custom) - Build your own
 
 ### Deploy Your Agent
 
-- [Docker Deployment](/deployment/docker) - Containerize your agent
-- [Self-Hosted](/deployment/self-hosted) - Run on your infrastructure
-- [Vercel](/deployment/vercel) - Deploy to the edge
+* [Docker Deployment](/deployment/docker) - Containerize your agent
+* [Self-Hosted](/deployment/self-hosted) - Run on your infrastructure
+* [Vercel](/deployment/vercel) - Deploy to the edge
 
 ## Example Projects
 
 Check out complete example agents in the [examples directory](https://github.com/agentflare-ai/agentml/tree/main/examples):
 
-- **[Customer Support Bot](https://github.com/agentflare-ai/agentml/tree/main/examples/customer_support)**: Classifies and handles support requests
-- **[Flight Booking Agent](https://github.com/agentflare-ai/agentml/tree/main/examples/flight_booking)**: Conversational flight booking system
-- **Echo Bot**: Interactive echo agent with stdin/stdout
-- **Hello World**: Simple starter agent
-- **Insurance Agent**: Quote generation workflow
-- **Healthcare Agent**: Healthcare marketplace agent
+* **[Customer Support Bot](https://github.com/agentflare-ai/agentml/tree/main/examples/customer_support)**: Classifies and handles support requests
+* **[Flight Booking Agent](https://github.com/agentflare-ai/agentml/tree/main/examples/flight_booking)**: Conversational flight booking system
+* **Echo Bot**: Interactive echo agent with stdin/stdout
+* **Hello World**: Simple starter agent
+* **Insurance Agent**: Quote generation workflow
+* **Healthcare Agent**: Healthcare marketplace agent
 
 Find them all at [github.com/agentflare-ai/agentml/tree/main/examples](https://github.com/agentflare-ai/agentml/tree/main/examples)
 

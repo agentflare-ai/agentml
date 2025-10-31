@@ -1,4 +1,5 @@
 ---
+
 title: "Namespace System"
 description: "Extending AgentML functionality through the namespace system with xmlns:prefix directives"
 ---
@@ -49,11 +50,12 @@ AgentML provides several official namespaces:
 ```
 
 **Official Namespace URIs:**
-- `github.com/agentflare-ai/agentml-go/agent` - Core AgentML features (default)
-- `github.com/agentflare-ai/agentml-go/gemini` - Google Gemini LLM integration
-- `github.com/agentflare-ai/agentml-go/ollama` - Local LLM via Ollama
-- `github.com/agentflare-ai/agentml-go/memory` - Vector search and graph database
-- `github.com/agentflare-ai/agentml-go/stdin` - Console I/O
+
+* `github.com/agentflare-ai/agentml-go/agent` - Core AgentML features (default)
+* `github.com/agentflare-ai/agentml-go/gemini` - Google Gemini LLM integration
+* `github.com/agentflare-ai/agentml-go/ollama` - Local LLM via Ollama
+* `github.com/agentflare-ai/agentml-go/memory` - Vector search and graph database
+* `github.com/agentflare-ai/agentml-go/stdin` - Console I/O
 
 ### External Schema Namespaces
 
@@ -66,7 +68,7 @@ Import JSON Schema or OpenAPI files:
 
   <!-- Reference schemas using JSON Pointer -->
   <transition event="user.message"
-              event:schema="events:#/components/schemas/UserMessage"
+              schema="events:#/components/schemas/UserMessage"
               target="processing" />
 </agentml>
 ```
@@ -74,12 +76,14 @@ Import JSON Schema or OpenAPI files:
 ## Namespace Prefix Conventions
 
 **Prefix Rules:**
-- Must be valid XML NCName (no colons, spaces)
-- Use lowercase for consistency
-- Choose descriptive names: `gemini`, `memory`, `custom`
-- Avoid reserved prefixes: `xml`, `xmlns`
+
+* Must be valid XML NCName (no colons, spaces)
+* Use lowercase for consistency
+* Choose descriptive names: `gemini`, `memory`, `custom`
+* Avoid reserved prefixes: `xml`, `xmlns`
 
 **Good prefixes:**
+
 ```xml
 xmlns:gemini="..."
 xmlns:memory="..."
@@ -88,6 +92,7 @@ xmlns:custom="..."
 ```
 
 **Avoid:**
+
 ```xml
 xmlns:ns1="..."  <!-- Not descriptive -->
 xmlns:XML="..."  <!-- Reserved -->
@@ -98,7 +103,7 @@ xmlns:my-plugin="..."  <!-- Contains hyphen -->
 
 The agent namespace is the default and provides AgentML-specific extensions:
 
-### event:schema Attribute
+### schema Attribute
 
 Schema-guided event validation:
 
@@ -107,7 +112,7 @@ Schema-guided event validation:
        datamodel="ecmascript">
 
   <transition event="intent.flight"
-              event:schema='{
+              schema='{
                 "type": "object",
                 "properties": {
                   "from": {"type": "string"},
@@ -123,10 +128,10 @@ Schema-guided event validation:
 
 The agent namespace enables runtime snapshot generation for token-efficient LLM prompts. The runtime automatically generates snapshots containing:
 
-- Current active states
-- Datamodel variables
-- Available events and their schemas
-- Transition conditions
+* Current active states
+* Datamodel variables
+* Available events and their schemas
+* Transition conditions
 
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
@@ -169,14 +174,16 @@ Google Gemini LLM integration:
 ```
 
 **Gemini Actions:**
-- `<gemini:generate>` - Generate text with Gemini models
-- `<gemini:stream>` - Stream responses token-by-token
+
+* `<gemini:generate>` - Generate text with Gemini models
+* `<gemini:stream>` - Stream responses token-by-token
 
 **Attributes:**
-- `model` - Model ID (e.g., "gemini-2.0-flash-exp")
-- `location` - Variable to store event reference
-- `promptexpr` - ECMAScript expression for prompt
-- `max-output-tokens` - Limit response length (optional)
+
+* `model` - Model ID (e.g., "gemini-2.0-flash-exp")
+* `location` - Variable to store event reference
+* `promptexpr` - ECMAScript expression for prompt
+* `max-output-tokens` - Limit response length (optional)
 
 ## Ollama Namespace
 
@@ -200,8 +207,9 @@ Local LLM integration:
 ```
 
 **Ollama Actions:**
-- `<ollama:generate>` - Generate with local Ollama model
-- `<ollama:stream>` - Stream local model responses
+
+* `<ollama:generate>` - Generate with local Ollama model
+* `<ollama:stream>` - Stream local model responses
 
 ## Memory Namespace
 
@@ -236,11 +244,12 @@ High-performance memory with vector search and graph database, powered by `sqlit
 ```
 
 **Memory Actions:**
-- `<memory:put>` - Store key-value data
-- `<memory:get>` - Retrieve by key
-- `<memory:embed>` - Generate vector embeddings
-- `<memory:search>` - Vector similarity search
-- `<memory:graph-query>` - Execute Cypher queries
+
+* `<memory:put>` - Store key-value data
+* `<memory:get>` - Retrieve by key
+* `<memory:embed>` - Generate vector embeddings
+* `<memory:search>` - Vector similarity search
+* `<memory:graph-query>` - Execute Cypher queries
 
 All data persists in a single SQLite file with vector and graph capabilities.
 
@@ -273,8 +282,9 @@ Console I/O for command-line agents:
 ```
 
 **Stdin Actions:**
-- `<stdin:read>` - Read from console
-- `<stdin:write>` - Write to console
+
+* `<stdin:read>` - Read from console
+* `<stdin:write>` - Write to console
 
 ## Creating Custom Namespaces
 
@@ -283,6 +293,7 @@ Console I/O for command-line agents:
 Currently, custom namespaces are implemented in Go:
 
 **customnamespace/actions.go:**
+
 ```go
 package customnamespace
 
@@ -319,6 +330,7 @@ func Register() {
 ```
 
 **Usage in AgentML:**
+
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:custom="github.com/example/custom">
@@ -341,6 +353,7 @@ func Register() {
 Future: Implement namespaces in any language via WebAssembly:
 
 **agentml.wit (WebAssembly Interface Types):**
+
 ```wit
 package agentml:core
 
@@ -369,6 +382,7 @@ interface namespace {
 ```
 
 **Rust implementation:**
+
 ```rust
 wit_bindgen::generate!({
     path: "agentml.wit",
@@ -399,6 +413,7 @@ impl Namespace for MyCustomNamespace {
 ```
 
 **Load WASM namespace:**
+
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:custom="https://cdn.example.com/custom-namespace.wasm">
@@ -583,8 +598,8 @@ agentmlx namespace remove github.com/community/stripe
 
 ## Next Steps
 
-- Learn about [Interpreter](/architecture/interpreter) to understand how namespaces execute
-- Explore [I/O Processors](/architecture/io-processors) for external communication
-- See [Custom Extensions](/extensions/custom) for creating namespaces
-- Read [Namespaces Concept](/concepts/namespaces) for usage patterns
-- Review [Memory Extension](/extensions/memory) for sqlite-graph integration
+* Learn about [Interpreter](/architecture/interpreter) to understand how namespaces execute
+* Explore [I/O Processors](/architecture/io-processors) for external communication
+* See [Custom Extensions](/extensions/custom) for creating namespaces
+* Read [Namespaces Concept](/concepts/namespaces) for usage patterns
+* Review [Memory Extension](/extensions/memory) for sqlite-graph integration

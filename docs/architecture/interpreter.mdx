@@ -1,4 +1,5 @@
 ---
+
 title: "Interpreter"
 description: "Understanding the AgentML interpreter: SCXML execution engine for state machines"
 ---
@@ -12,13 +13,14 @@ The AgentML interpreter is the core execution engine that processes SCXML state 
 The interpreter is based on the W3C SCXML specification, with AgentML extensions for LLM integration and token efficiency. It ensures deterministic, auditable agent behavior.
 
 **Key responsibilities:**
-- Parse and validate AgentML documents
-- Execute state machine transitions
-- Manage datamodel (variables)
-- Process events from internal and external sources
-- Generate runtime snapshots for LLMs
-- Coordinate namespace actions
-- Handle errors and recovery
+
+* Parse and validate AgentML documents
+* Execute state machine transitions
+* Manage datamodel (variables)
+* Process events from internal and external sources
+* Generate runtime snapshots for LLMs
+* Coordinate namespace actions
+* Handle errors and recovery
 
 ## Execution Model
 
@@ -39,9 +41,10 @@ The interpreter uses a **run-to-completion** execution model:
 ```
 
 This ensures:
-- **Determinism**: Same events produce same state paths
-- **Atomicity**: State changes complete before next event
-- **Consistency**: State machine is always in valid configuration
+
+* **Determinism**: Same events produce same state paths
+* **Atomicity**: State changes complete before next event
+* **Consistency**: State machine is always in valid configuration
 
 ### Event Queue
 
@@ -66,6 +69,7 @@ The interpreter maintains separate queues for internal and external events:
 ```
 
 **Event priority:**
+
 1. Internal events (`<raise>`)
 2. Platform events (errors, done events)
 3. External events (`<send>`, IOProcessor events)
@@ -91,6 +95,7 @@ The interpreter maintains the current **state configuration** - the set of activ
 ```
 
 **With parallel states:**
+
 ```xml
 <parallel id="multi_task">
   <state id="region1">
@@ -294,13 +299,14 @@ A key AgentML innovation: the interpreter generates **runtime snapshots** for to
 
   <state id="search_flights">
     <transition event="flight.found"
-                event:schema='{"type": "object", "properties": {"price": {"type": "number"}}, "required": ["price"]}'
+                schema='{"type": "object", "properties": {"price": {"type": "number"}}, "required": ["price"]}'
                 target="book_flight" />
   </state>
 </agentml>
 ```
 
 **Runtime Snapshot:**
+
 ```xml
 <snapshot session="abc123" timestamp="2025-01-15T10:30:00Z">
   <configuration>
@@ -369,7 +375,7 @@ The interpreter raises platform events for errors:
 
 ```xml
 <transition event="user.input"
-            event:schema='{"type": "object", "properties": {"age": {"type": "number"}}, "required": ["age"]}'
+            schema='{"type": "object", "properties": {"age": {"type": "number"}}, "required": ["age"]}'
             target="valid" />
 
 <!-- Catch schema validation errors -->
@@ -418,7 +424,7 @@ agentmlx run agent.aml --save-snapshots ./debug
 agentmlx run agent.aml --log-tokens
 
 # Set environment variables
-agentmlx run agent.aml --env GEMINI_API_KEY=xxx
+agentmlx run agent.aml --env OPENAI_API_KEY=xxx
 ```
 
 ### Validation
@@ -438,14 +444,16 @@ agentmlx validate agent.aml --check-schemas      # Schema validity
 ### State Indexing
 
 The interpreter builds indexes for fast state lookups:
-- State ID to state element
-- State ID to parent state
-- Transition event patterns
-- State entry/exit handlers
+
+* State ID to state element
+* State ID to parent state
+* Transition event patterns
+* State entry/exit handlers
 
 ### Transition Caching
 
 Frequently used transition conditions are cached:
+
 ```xml
 <transition cond="count > 10" target="overflow" />
 <!-- Condition compiled and cached on first evaluation -->
@@ -453,9 +461,9 @@ Frequently used transition conditions are cached:
 
 ### Datamodel Efficiency
 
-- ECMAScript expressions compiled once
-- Variables stored in optimized map structure
-- Event data passed by reference when possible
+* ECMAScript expressions compiled once
+* Variables stored in optimized map structure
+* Event data passed by reference when possible
 
 ## Debugging
 
@@ -466,6 +474,7 @@ agentmlx run agent.aml --verbose
 ```
 
 Output:
+
 ```
 [INFO] Entering state: awaiting_input
 [INFO] Received event: user.message
@@ -473,85 +482,8 @@ Output:
 [INFO] Exiting state: awaiting_input
 [INFO] Executing transition actions
 [INFO] Entering state: processing
-[INFO] Executing action: <gemini:generate>
+[INFO] Executing action: <openai:generate>
 [INFO] Generated snapshot: 245 tokens
 [INFO] LLM request completed: 78 tokens response
 [INFO] Raised event: action.response
 ```
-
-### State Tracing
-
-```bash
-# Trace state transitions
-agentmlx run agent.aml --trace-states
-
-# Output
-# awaiting_input -> processing -> responding -> awaiting_input
-```
-
-### Event Logging
-
-```xml
-<agentml xmlns="github.com/agentflare-ai/agentml"
-       datamodel="ecmascript">
-
-  <!-- Log all events -->
-  <datamodel>
-    <data id="eventLog" expr="[]" />
-  </datamodel>
-
-  <state id="root">
-    <onentry>
-      <assign location="eventLog"
-              expr="eventLog.concat([{name: _event.name, data: _event.data, timestamp: Date.now()}])" />
-    </onentry>
-
-    <!-- Rest of agent -->
-  </state>
-</agentml>
-```
-
-## SCXML Conformance
-
-AgentML interpreter: **95.9% W3C SCXML conformance** (185/193 tests passing)
-
-**Supported features:**
-- Basic state machine execution
-- Hierarchical states
-- Parallel states
-- History states (shallow and deep)
-- Eventless transitions
-- Conditional transitions
-- ECMAScript datamodel
-- `<raise>`, `<send>`, `<assign>`, `<log>`
-- `<if>`, `<elseif>`, `<else>`
-- `<foreach>`
-- `<invoke>` (sub-machines)
-- Error events
-- Done events
-- Event wildcards
-
-**Not yet supported:**
-- `<cancel>` (delayed send cancellation)
-- Some edge cases in parallel state completion
-
-## Best Practices
-
-1. **Trust the interpreter**: Let it handle state coordination
-2. **Use verbose mode**: During development for visibility
-3. **Validate before running**: Catch errors early
-4. **Monitor snapshots**: Check token usage
-5. **Handle errors**: Add error transitions for robustness
-6. **Keep states focused**: Single responsibility per state
-7. **Log strategically**: Use `<log>` for debugging
-8. **Test coverage**: Ensure all states are reachable
-9. **Profile performance**: Use `--log-tokens` to track efficiency
-10. **Version your agents**: Use version control for agent files
-
-## Next Steps
-
-- Learn about [I/O Processors](/architecture/io-processors) for external communication
-- Explore [Namespace System](/architecture/namespace-system) for custom actions
-- Read [Document Structure](/architecture/document-structure) for SCXML syntax
-- Understand [State Machines](/concepts/state-machines) for patterns
-- See [Token Efficiency](/concepts/token-efficiency) for snapshot optimization

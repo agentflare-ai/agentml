@@ -22,8 +22,7 @@ const messages = [
 ];
 
 // Every request repeats ALL of this!
-const response = await openai.chat.completions.create({
-  model: 'gpt-4',
+const response = await llmClient.generateResponse({
   messages: messages  // 5612 tokens sent EVERY TIME
 });
 ```
@@ -111,11 +110,11 @@ Benefits:
 
 ## Schema-Guided Generation
 
-The `event:schema` attribute minimizes token usage by providing precise output specifications:
+The `schema` attribute minimizes token usage by providing precise output specifications:
 
 ```xml
 <transition event="intent.flight"
-            event:schema='{
+            schema='{
               "type": "object",
               "description": "Flight booking intent",
               "properties": {
@@ -221,7 +220,7 @@ Define precise schemas, let LLM fill them:
 
 ```xml
 <transition event="booking.complete"
-            event:schema='{
+            schema='{
               "type": "object",
               "properties": {
                 "confirmation_number": {"type": "string"},
@@ -350,7 +349,7 @@ Combine fast and powerful models:
 
 1. **Use Runtime Snapshots**: Let the runtime provide context
 2. **Minimize Prompts**: Keep `promptexpr` short and focused
-3. **Schema Everything**: Use `event:schema` for all LLM outputs
+3. **Schema Everything**: Use `schema` for all LLM outputs
 4. **Store in Datamodel**: Put context in datamodel, not prompts
 5. **Leverage Caching**: Design agents to maximize provider caching
 6. **Choose Right Models**: Fast local models for classification, powerful cloud models for reasoning
@@ -398,7 +397,7 @@ Flight booking agent with full conversation:
 
   <state id="collect_info">
     <transition event="user.message"
-                event:schema='{"type": "object", "properties": {"from": {"type": "string"}, "to": {"type": "string"}, "date": {"type": "string"}}}'
+                schema='{"type": "object", "properties": {"from": {"type": "string"}, "to": {"type": "string"}, "date": {"type": "string"}}}'
                 target="search">
       <assign location="from" expr="_event.data.from || from" />
       <assign location="to" expr="_event.data.to || to" />

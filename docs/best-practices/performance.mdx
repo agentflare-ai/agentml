@@ -14,7 +14,7 @@ AgentML achieves 90%+ token reduction using runtime snapshots instead of full co
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="conversationHistory" expr="[]" />
@@ -30,8 +30,8 @@ AgentML achieves 90%+ token reduction using runtime snapshots instead of full co
   <state id="generate">
     <onentry>
       <!-- Runtime sends compact state snapshot to LLM, not full history -->
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="userInput" />
     </onentry>
@@ -55,7 +55,7 @@ Use prompt caching to reduce latency and costs:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <!-- Cache-friendly system prompt -->
@@ -65,8 +65,8 @@ Use prompt caching to reduce latency and costs:
   <state id="generate">
     <onentry>
       <!-- System context is cached by provider -->
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         systemexpr="systemContext"
         promptexpr="userInput" />
@@ -89,13 +89,13 @@ Minimize token usage with focused prompts:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <!-- Bad: Verbose prompt -->
   <state id="verbose_generate">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'Please carefully analyze the following text and provide a comprehensive summary that includes all the main points, key details, and important information contained within the text: ' + longText" />
     </onentry>
@@ -104,8 +104,8 @@ Minimize token usage with focused prompts:
   <!-- Good: Concise prompt -->
   <state id="concise_generate">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'Summarize key points:\n' + longText" />
     </onentry>
@@ -120,13 +120,13 @@ Stream LLM responses for better perceived performance:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai"
        xmlns:stdin="github.com/agentflare-ai/agentml-go/stdin">
 
   <state id="stream_generate">
     <onentry>
-      <gemini:stream
-        model="gemini-2.0-flash-exp"
+      <openai:stream
+        model="gpt-4o"
         location="_event"
         promptexpr="userInput" />
     </onentry>
@@ -151,7 +151,7 @@ Process multiple tasks concurrently:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="summaryResult" expr="''" />
@@ -163,8 +163,8 @@ Process multiple tasks concurrently:
     <!-- Run all analyses concurrently -->
     <state id="summarize">
       <onentry>
-        <gemini:generate
-          model="gemini-2.0-flash-exp"
+        <openai:generate
+          model="gpt-4o"
           location="_event"
           promptexpr="'Summarize:\n' + text" />
       </onentry>
@@ -176,8 +176,8 @@ Process multiple tasks concurrently:
 
     <state id="extract_keywords">
       <onentry>
-        <gemini:generate
-          model="gemini-2.0-flash-exp"
+        <openai:generate
+          model="gpt-4o"
           location="_event"
           promptexpr="'Extract keywords:\n' + text" />
       </onentry>
@@ -189,8 +189,8 @@ Process multiple tasks concurrently:
 
     <state id="analyze_sentiment">
       <onentry>
-        <gemini:generate
-          model="gemini-2.0-flash-exp"
+        <openai:generate
+          model="gpt-4o"
           location="_event"
           promptexpr="'Sentiment:\n' + text" />
       </onentry>
@@ -417,7 +417,7 @@ Track agent performance:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="startTime" expr="0" />
@@ -429,8 +429,8 @@ Track agent performance:
     <onentry>
       <assign location="startTime" expr="Date.now()" />
 
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="userInput" />
     </onentry>

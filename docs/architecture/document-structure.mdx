@@ -1,4 +1,5 @@
 ---
+
 title: "Document Structure"
 description: "Understanding AgentML document structure with the <agentml> root element"
 ---
@@ -14,7 +15,7 @@ The `<agentml>` element is the root of every AgentML document. It extends SCXML'
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <!-- Document content -->
 
@@ -24,6 +25,7 @@ The `<agentml>` element is the root of every AgentML document. It extends SCXML'
 ### Required Attributes
 
 **xmlns** - The default namespace URI:
+
 ```xml
 xmlns="github.com/agentflare-ai/agentml"
 ```
@@ -33,6 +35,7 @@ This identifies the document as an AgentML agent.
 ### Standard SCXML Attributes
 
 **datamodel** - The scripting language for expressions:
+
 ```xml
 datamodel="ecmascript"  <!-- JavaScript/ECMAScript -->
 ```
@@ -40,6 +43,7 @@ datamodel="ecmascript"  <!-- JavaScript/ECMAScript -->
 AgentML currently supports ECMAScript (JavaScript) as the datamodel language.
 
 **name** - Optional agent identifier:
+
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        name="customer-support-bot"
@@ -47,6 +51,7 @@ AgentML currently supports ECMAScript (JavaScript) as the datamodel language.
 ```
 
 **initial** - Initial state (if not using document order):
+
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
@@ -60,9 +65,10 @@ AgentML currently supports ECMAScript (JavaScript) as the datamodel language.
 ### Namespace Imports
 
 **xmlns:prefix="uri"** - Import external namespaces:
+
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory"
        xmlns:events="./schemas/events.json">
 ```
@@ -92,9 +98,10 @@ The `<datamodel>` element defines the agent's variables:
 ```
 
 **Attributes:**
-- `id`: Variable name (required)
-- `expr`: Initial value expression (optional)
-- `src`: Load from external source (optional)
+
+* `id`: Variable name (required)
+* `expr`: Initial value expression (optional)
+* `src`: Load from external source (optional)
 
 ### 2. States
 
@@ -144,7 +151,7 @@ Transitions move between states based on events:
 
   <!-- Schema-validated transition (AgentML extension) -->
   <transition event="intent.booking"
-              event:schema='{"type": "object", "properties": {"action": {"type": "string"}}}'
+              schema='{"type": "object", "properties": {"action": {"type": "string"}}}'
               target="process_booking" />
 
   <!-- Delayed transition -->
@@ -183,8 +190,8 @@ Actions execute when entering states or on transitions:
     </send>
 
     <!-- Namespace actions (AgentML extension) -->
-    <gemini:generate
-      model="gemini-2.0-flash-exp"
+    <openai:generate
+      model="gpt-4o"
       location="_event"
       promptexpr="'Process this input: ' + userInput" />
   </onentry>
@@ -281,7 +288,7 @@ Here's a complete AgentML document demonstrating all components:
 <agentml xmlns="github.com/agentflare-ai/agentml"
        name="customer-support-agent"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai"
        xmlns:memory="github.com/agentflare-ai/agentml-go/memory">
 
   <!-- Datamodel: Agent's variables -->
@@ -308,14 +315,14 @@ Here's a complete AgentML document demonstrating all components:
   <!-- Classify user intent -->
   <state id="classify_intent">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'Classify this as greeting, question, or complaint: ' + user_input" />
     </onentry>
 
     <transition event="intent.greeting"
-                event:schema='{"type": "object", "properties": {"type": {"type": "string"}}}'
+                schema='{"type": "object", "properties": {"type": {"type": "string"}}}'
                 target="handle_greeting">
       <assign location="current_intent" expr="'greeting'" />
     </transition>
@@ -346,8 +353,8 @@ Here's a complete AgentML document demonstrating all components:
       <memory:search location="results" expr="user_input" limit="3" />
 
       <!-- Generate response with context -->
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'Answer based on context: ' + JSON.stringify(results)" />
     </onentry>
@@ -425,19 +432,20 @@ agentmlx validate agent.aml
 ```
 
 The validator checks:
-- XML syntax
-- SCXML conformance
-- State reachability
-- Event schema validity
-- Namespace declarations
-- Datamodel consistency
+
+* XML syntax
+* SCXML conformance
+* State reachability
+* Event schema validity
+* Namespace declarations
+* Datamodel consistency
 
 ## Best Practices
 
 1. **Use meaningful IDs**: `awaiting_user_input` not `state1`
 2. **Document your agent**: Add XML comments explaining complex logic
 3. **Keep states focused**: Each state should have one clear purpose
-4. **Define schemas for all events**: Use `event:schema` for type safety
+4. **Define schemas for all events**: Use `schema` for type safety
 5. **Organize with hierarchy**: Use nested states for related functionality
 6. **External schemas**: Define schemas in separate files for reuse
 7. **Validate early**: Run `agentmlx validate` during development
@@ -447,7 +455,7 @@ The validator checks:
 
 ## Next Steps
 
-- Learn about [Namespace System](/architecture/namespace-system) for extending functionality
-- Explore [Interpreter](/architecture/interpreter) to understand execution
-- Read [I/O Processors](/architecture/io-processors) for external communication
-- See [W3C SCXML Specification](https://www.w3.org/TR/scxml/) for full standard
+* Learn about [Namespace System](/architecture/namespace-system) for extending functionality
+* Explore [Interpreter](/architecture/interpreter) to understand execution
+* Read [I/O Processors](/architecture/io-processors) for external communication
+* See [W3C SCXML Specification](https://www.w3.org/TR/scxml/) for full standard

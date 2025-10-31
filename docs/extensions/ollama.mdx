@@ -154,41 +154,26 @@ Use Ollama for classification, Gemini for generation:
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama"
        xmlns:gemini="github.com/agentflare-ai/agentml/gemini">
 
-  <state id="classify">
-    <!-- Fast local classification -->
+  <state id="classify_local">
     <onentry>
+      <!-- Use local model for classification -->
       <ollama:generate
         model="llama2"
         location="_event"
-        promptexpr="'Classify this as simple or complex: ' + userInput" />
+        promptexpr="'Classify as positive or negative: ' + text" />
     </onentry>
 
-    <transition event="action.response"
-                cond="_event.data.message.includes('complex')"
-                target="cloud_generation" />
-
-    <transition event="action.response" target="local_generation" />
+    <transition event="intent.positive" target="handle_positive" />
+    <transition event="intent.negative" target="handle_negative" />
   </state>
 
-  <state id="cloud_generation">
-    <!-- Use Gemini for complex queries -->
+  <!-- Fallback to cloud for complex tasks -->
+  <state id="generate_complex">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
-        promptexpr="'Provide detailed analysis: ' + userInput" />
-    </onentry>
-
-    <transition event="action.response" target="respond" />
-  </state>
-
-  <state id="local_generation">
-    <!-- Use Ollama for simple queries -->
-    <onentry>
-      <ollama:generate
-        model="llama2"
-        location="_event"
-        promptexpr="'Provide brief answer: ' + userInput" />
+        promptexpr="'Generate detailed response: ' + userInput" />
     </onentry>
 
     <transition event="action.response" target="respond" />

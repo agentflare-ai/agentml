@@ -1,4 +1,5 @@
 ---
+
 title: "Overview"
 description: "Introduction to AgentML - A universal language for AI agents built on W3C SCXML"
 ---
@@ -13,11 +14,11 @@ Just as HTML lets you write content once and have it render in any browser, Agen
 
 The AI agent landscape is fragmented and accelerating, with new frameworks appearing weekly. This creates:
 
-- **Vendor Lock-in**: Tied to frameworks that may become limiting or unmaintained
-- **Costly Rewrites**: Forced to rebuild when switching frameworks
-- **Token Waste**: Sending entire conversation histories on every request
-- **Non-Deterministic Behavior**: Unpredictable agent responses
-- **Poor Auditability**: Difficult to trace and verify agent decisions
+* **Vendor Lock-in**: Tied to frameworks that may become limiting or unmaintained
+* **Costly Rewrites**: Forced to rebuild when switching frameworks
+* **Token Waste**: Sending entire conversation histories on every request
+* **Non-Deterministic Behavior**: Unpredictable agent responses
+* **Poor Auditability**: Difficult to trace and verify agent decisions
 
 ## The AgentML Solution
 
@@ -57,11 +58,11 @@ AgentML uses W3C SCXML state machines to define **deterministic behavior**, movi
 
 ### Schema-Guided Events
 
-LLM outputs are constrained to structured JSON events validated against schemas using the `event:schema` attribute. This ensures reliability and type safety.
+LLM outputs are constrained to structured JSON events validated against schemas using the `schema` attribute. This ensures reliability and type safety.
 
 ```xml
 <transition event="intent.flight"
-            event:schema='{"type": "object", "properties": {"action": {"type": "string", "enum": ["search", "book", "cancel"]}}}'
+            schema='{"type": "object", "properties": {"action": {"type": "string", "enum": ["search", "book", "cancel"]}}}'
             target="handle_flight" />
 ```
 
@@ -71,16 +72,16 @@ The runtime provides the LLM with a "snapshot" of the current state, datamodel, 
 
 ## Key Features
 
-- 🎯 **Deterministic Execution**: Same inputs always produce same outputs
-- 📝 **Schema-Guided Events**: `event:schema` attributes validate LLM-generated events
-- 🔄 **Runtime Snapshots**: Efficiently provide LLM context, minimizing token usage
-- 📦 **Modular Design**: Decompose complex agents with `<invoke>`
-- 🔌 **Extensible Namespaces**: Plug in custom functionality (LLMs, memory, I/O)
-- 📊 **Observable**: OpenTelemetry tracing and logging built-in
-- 🌐 **Universal Standard**: Write once, deploy anywhere
-- 🔗 **Remote Communication**: Built-in distributed agent communication via IOProcessors
-- ✅ **W3C Conformant**: 185/193 conformance tests passing (95.9%)
-- 🛡️ **Compiler-Inspired Validation**: Detailed, actionable error messages
+* 🎯 **Deterministic Execution**: Same inputs always produce same outputs
+* 📝 **Schema-Guided Events**: `schema` attributes validate LLM-generated events
+* 🔄 **Runtime Snapshots**: Efficiently provide LLM context, minimizing token usage
+* 📦 **Modular Design**: Decompose complex agents with `<invoke>`
+* 🔌 **Extensible Namespaces**: Plug in custom functionality (LLMs, memory, I/O)
+* 📊 **Observable**: OpenTelemetry tracing and logging built-in
+* 🌐 **Universal Standard**: Write once, deploy anywhere
+* 🔗 **Remote Communication**: Built-in distributed agent communication via IOProcessors
+* ✅ **W3C Conformant**: 185/193 conformance tests passing (95.9%)
+* 🛡️ **Compiler-Inspired Validation**: Detailed, actionable error messages
 
 ## Quick Example
 
@@ -89,7 +90,7 @@ Here's a simple customer support agent:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -104,8 +105,8 @@ Here's a simple customer support agent:
 
   <state id="processing">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'Help the user: ' + user_input" />
     </onentry>
@@ -142,9 +143,9 @@ Ready to build your first AgentML agent?
 
 ## Community & Support
 
-- **GitHub**: [github.com/agentflare-ai/agentml](https://github.com/agentflare-ai/agentml)
-- **Issues**: [Report bugs or request features](https://github.com/agentflare-ai/agentml/issues)
-- **Discussions**: [Share your use cases](https://github.com/agentflare-ai/agentml/discussions)
+* **GitHub**: [github.com/agentflare-ai/agentml](https://github.com/agentflare-ai/agentml)
+* **Issues**: [Report bugs or request features](https://github.com/agentflare-ai/agentml/issues)
+* **Discussions**: [Share your use cases](https://github.com/agentflare-ai/agentml/discussions)
 
 ---
 

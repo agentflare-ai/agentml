@@ -50,7 +50,7 @@ Handle errors gracefully without halting the agent:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini"
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai"
        xmlns:ollama="github.com/agentflare-ai/agentml-go/ollama">
 
   <datamodel>
@@ -60,9 +60,9 @@ Handle errors gracefully without halting the agent:
 
   <state id="generate_primary">
     <onentry>
-      <!-- Try primary provider (Gemini) -->
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <!-- Try primary provider (OpenAI) -->
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="userInput" />
     </onentry>
@@ -104,7 +104,7 @@ Implement retry logic using state machines:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="retryCount" expr="0" />
@@ -116,8 +116,8 @@ Implement retry logic using state machines:
     <onentry>
       <log expr="'Attempt ' + (retryCount + 1) + ' of ' + maxRetries" />
 
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="userInput" />
     </onentry>
@@ -152,17 +152,17 @@ Implement retry logic using state machines:
 
 ## Validation with JSON Schema
 
-Validate LLM outputs using `event:schema`:
+Validate LLM outputs using `schema`:
 
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <state id="request_booking">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'Extract booking details: ' + userInput" />
     </onentry>
@@ -170,7 +170,7 @@ Validate LLM outputs using `event:schema`:
     <!-- Valid response matching schema -->
     <transition
       event="action.response"
-      event:schema='{
+      schema='{
         "type": "object",
         "properties": {
           "from": {"type": "string"},
@@ -207,7 +207,7 @@ Prevent cascading failures using parallel states:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="failureCount" expr="0" />
@@ -258,8 +258,8 @@ Prevent cascading failures using parallel states:
 
       <state id="processing">
         <onentry>
-          <gemini:generate
-            model="gemini-2.0-flash-exp"
+          <openai:generate
+            model="gpt-4o"
             location="_event"
             promptexpr="userInput" />
         </onentry>
@@ -293,7 +293,7 @@ Use `<log>` for debugging and monitoring:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <state id="processing">
     <onentry>
@@ -301,8 +301,8 @@ Use `<log>` for debugging and monitoring:
       <log expr="'[' + Date.now() + '] Entering state: processing'" />
       <log expr="'Input: ' + JSON.stringify(userInput)" />
 
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="userInput" />
     </onentry>
@@ -399,7 +399,7 @@ Use structured logging for analysis:
 ## Best Practices
 
 1. **Use error events**: Handle `error.execution` and `error.communication` events
-2. **Validate inputs**: Use JSON Schema with `event:schema` attribute
+2. **Validate inputs**: Use JSON Schema with `schema` attribute
 3. **Implement fallbacks**: Gracefully degrade to alternative providers
 4. **Retry with backoff**: Use exponential backoff for transient failures
 5. **Circuit breakers**: Prevent cascading failures with circuit breaker pattern

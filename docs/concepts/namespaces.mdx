@@ -1,4 +1,5 @@
 ---
+
 title: "Namespaces"
 description: "Extend AgentML functionality with namespaces using the xmlns:prefix directive"
 ---
@@ -44,9 +45,9 @@ The core namespace for AgentML-specific features (default namespace):
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
 
-  <!-- event:schema is from the agent namespace -->
+  <!-- schema is from the agent namespace -->
   <transition event="user.message"
-              event:schema='{"type": "object", "properties": {"message": {"type": "string"}}}'
+              schema='{"type": "object", "properties": {"message": {"type": "string"}}}'
               target="processing" />
 </agentml>
 ```
@@ -124,11 +125,12 @@ High-performance memory with vector search and graph database:
 ```
 
 The memory namespace is powered by `sqlite-graph`, providing:
-- Vector similarity search
-- Graph database with Cypher queries
-- Embedding generation
-- Persistent key-value storage
-- All in a single SQLite file
+
+* Vector similarity search
+* Graph database with Cypher queries
+* Embedding generation
+* Persistent key-value storage
+* All in a single SQLite file
 
 ### Stdin Namespace
 
@@ -199,7 +201,7 @@ Import JSON/YAML files for schemas:
 
   <!-- Reference schemas with JSON Pointer -->
   <transition event="user.message"
-              event:schema="events:#/components/schemas/UserMessage"
+              schema="events:#/components/schemas/UserMessage"
               target="processing" />
 </agentml>
 ```
@@ -211,6 +213,7 @@ Import JSON/YAML files for schemas:
 Currently, custom namespaces are implemented in Go. Here's a basic structure:
 
 **namespace.go:**
+
 ```go
 package customnamespace
 
@@ -239,6 +242,7 @@ func Register() {
 ```
 
 **Usage:**
+
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:custom="github.com/example/custom">
@@ -256,6 +260,7 @@ func Register() {
 Future: Implement namespaces in any language via WebAssembly:
 
 **agentml.wit:**
+
 ```wit
 package agentml:core
 
@@ -277,6 +282,7 @@ interface namespace {
 ```
 
 **Rust implementation:**
+
 ```rust
 wit_bindgen::generate!({
     path: "agentml.wit",
@@ -297,6 +303,7 @@ impl Namespace for MyNamespace {
 ```
 
 **Usage:**
+
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:custom="https://cdn.example.com/custom-namespace.wasm">
@@ -427,8 +434,8 @@ agentmlx namespace update github.com/community/stripe
 
 ## Next Steps
 
-- Learn about [Custom Extensions](/extensions/custom) for detailed implementation
-- Explore [Memory Extension](/extensions/memory) for vector search and graphs
-- See [Gemini Extension](/extensions/gemini) for LLM integration examples
-- Read [Document Structure](/architecture/document-structure) for namespace syntax
-- Understand [Namespace System](/architecture/namespace-system) architecture
+* Learn about [Custom Extensions](/extensions/custom) for detailed implementation
+* Explore [Memory Extension](/extensions/memory) for vector search and graphs
+* See [Gemini Extension](/extensions/gemini) for LLM integration examples
+* Read [Document Structure](/architecture/document-structure) for namespace syntax
+* Understand [Namespace System](/architecture/namespace-system) architecture

@@ -1,4 +1,5 @@
 ---
+
 title: "I/O Processors"
 description: "External communication in AgentML via SCXML I/O Processors for HTTP, WebSocket, and distributed systems"
 ---
@@ -10,11 +11,12 @@ I/O Processors (IOProcessors) are SCXML's mechanism for communicating with exter
 ## Overview
 
 IOProcessors bridge the gap between state machines and the outside world. They handle:
-- Sending events to external systems
-- Receiving events from external sources
-- Protocol-specific serialization/deserialization
-- Connection management
-- Error handling
+
+* Sending events to external systems
+* Receiving events from external sources
+* Protocol-specific serialization/deserialization
+* Connection management
+* Error handling
 
 ## The `<send>` Element
 
@@ -41,15 +43,17 @@ The `<send>` element sends events to external targets via IOProcessors:
 ```
 
 **Attributes:**
-- `event` - Event name to send (required)
-- `target` - Destination URI (required for external sends)
-- `type` - IOProcessor type (optional, inferred from target)
-- `delay` - Delay before sending (optional)
-- `id` - Send ID for cancellation (optional)
+
+* `event` - Event name to send (required)
+* `target` - Destination URI (required for external sends)
+* `type` - IOProcessor type (optional, inferred from target)
+* `delay` - Delay before sending (optional)
+* `id` - Send ID for cancellation (optional)
 
 **Child elements:**
-- `<param>` - Event data parameters
-- `<content>` - Event data as XML/JSON content
+
+* `<param>` - Event data parameters
+* `<content>` - Event data as XML/JSON content
 
 ## Built-in IOProcessors
 
@@ -84,6 +88,7 @@ Send events via HTTP POST requests:
 ```
 
 **HTTP Request Format:**
+
 ```http
 POST /process HTTP/1.1
 Host: api.example.com
@@ -99,6 +104,7 @@ Content-Type: application/json
 ```
 
 **HTTP Response Format:**
+
 ```json
 {
   "event": "api.response",
@@ -153,6 +159,7 @@ Persistent bidirectional communication:
 ```
 
 **WebSocket Message Format:**
+
 ```json
 {
   "event": "chat.message",
@@ -284,7 +291,7 @@ Send to other AgentML agents:
 <agentml xmlns="github.com/agentflare-ai/agentml"
        name="worker"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <state id="idle">
     <!-- Receive tasks from orchestrator -->
@@ -295,8 +302,8 @@ Send to other AgentML agents:
 
   <state id="processing">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'Process: ' + currentTask.data" />
     </onentry>
@@ -390,11 +397,12 @@ Send events after a delay:
 ```
 
 **Delay formats:**
-- Milliseconds: `1000ms`
-- Seconds: `30s`
-- Minutes: `5m`
-- Hours: `1h`
-- Expression: `delayexpr="timeout_duration"`
+
+* Milliseconds: `1000ms`
+* Seconds: `30s`
+* Minutes: `5m`
+* Hours: `1h`
+* Expression: `delayexpr="timeout_duration"`
 
 ## Content Types
 
@@ -408,6 +416,7 @@ Send events after a delay:
 ```
 
 Sends:
+
 ```json
 {
   "event": "api.request",
@@ -427,6 +436,7 @@ Sends:
 ```
 
 Or inline:
+
 ```xml
 <send event="api.request" target="https://api.example.com/process">
   <content>
@@ -536,6 +546,7 @@ func Register(token string) {
 ```
 
 **Usage:**
+
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript">
@@ -671,7 +682,7 @@ func Register(token string) {
 2. **Use request IDs**: Track request-response pairs with unique IDs
 3. **Set timeouts**: Don't wait indefinitely for responses
 4. **Retry with backoff**: Implement exponential backoff for retries
-5. **Validate responses**: Use `event:schema` for response validation
+5. **Validate responses**: Use `schema` for response validation
 6. **Log communications**: Track all external interactions
 7. **Secure endpoints**: Use HTTPS/WSS for production
 8. **Rate limit**: Avoid overwhelming external services
@@ -705,8 +716,8 @@ export AGENTML_WS_PING_INTERVAL=30s
 
 ## Next Steps
 
-- Learn about [Namespace System](/architecture/namespace-system) for extending functionality
-- Explore [Interpreter](/architecture/interpreter) to understand event processing
-- Read [Document Structure](/architecture/document-structure) for `<send>` syntax
-- See [Docker Deployment](/deployment/docker) or [Self-Hosted Deployment](/deployment/self-hosted) for distributed agent systems
-- Understand [Error Handling](/best-practices/error-handling) for robust communication
+* Learn about [Namespace System](/architecture/namespace-system) for extending functionality
+* Explore [Interpreter](/architecture/interpreter) to understand event processing
+* Read [Document Structure](/architecture/document-structure) for `<send>` syntax
+* See [Docker Deployment](/deployment/docker) or [Self-Hosted Deployment](/deployment/self-hosted) for distributed agent systems
+* Understand [Error Handling](/best-practices/error-handling) for robust communication

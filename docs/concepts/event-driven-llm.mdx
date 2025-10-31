@@ -1,4 +1,5 @@
 ---
+
 title: "Event-Driven LLM Architecture"
 description: "Understanding the event-driven approach to LLM interactions in AgentML"
 ---
@@ -11,35 +12,39 @@ AgentML uses an event-driven architecture based on W3C SCXML to manage LLM inter
 
 Traditional LLM integrations rely on simple function calls or streaming responses, making it difficult to:
 
-- **Control execution flow**: Hard to pause, resume, or cancel operations
-- **Ensure determinism**: Same inputs don't guarantee same state transitions
-- **Audit behavior**: Limited visibility into decision-making process
-- **Compose workflows**: Difficult to build complex multi-step interactions
-- **Handle errors gracefully**: No formal error recovery patterns
+* **Control execution flow**: Hard to pause, resume, or cancel operations
+* **Ensure determinism**: Same inputs don't guarantee same state transitions
+* **Audit behavior**: Limited visibility into decision-making process
+* **Compose workflows**: Difficult to build complex multi-step interactions
+* **Handle errors gracefully**: No formal error recovery patterns
 
 AgentML solves these problems by treating every LLM interaction as part of a formal state machine.
 
 ## Benefits
 
 **Deterministic Execution**
-- State transitions are explicit and predictable
-- Same inputs always produce same state paths
-- Formal verification of agent behavior possible
+
+* State transitions are explicit and predictable
+* Same inputs always produce same state paths
+* Formal verification of agent behavior possible
 
 **Complete Observability**
-- Every event is traceable through the state machine
-- OpenTelemetry tracing built-in
-- Runtime snapshots capture complete agent state
+
+* Every event is traceable through the state machine
+* OpenTelemetry tracing built-in
+* Runtime snapshots capture complete agent state
 
 **Better Control**
-- Pause, resume, or cancel at any state
-- Implement timeouts and retry logic declaratively
-- Handle errors with explicit error states
+
+* Pause, resume, or cancel at any state
+* Implement timeouts and retry logic declaratively
+* Handle errors with explicit error states
 
 **Composability**
-- Build complex agents from simpler state machines
-- Reuse common patterns across agents
-- Invoke sub-agents as services with `<invoke>`
+
+* Build complex agents from simpler state machines
+* Reuse common patterns across agents
+* Invoke sub-agents as services with `<invoke>`
 
 ## Event Flow in AgentML
 
@@ -48,7 +53,7 @@ Events flow through the SCXML state machine, triggering transitions and executin
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -64,8 +69,8 @@ Events flow through the SCXML state machine, triggering transitions and executin
   <!-- Process with LLM -->
   <state id="processing">
     <onentry>
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'Help the user: ' + user_input" />
     </onentry>
@@ -152,16 +157,17 @@ Use dot-separated namespaces for event names:
 ```
 
 Event matching in SCXML supports wildcards:
-- `user.message` matches `user.message`, `user.message.text`, `user.message.voice`
-- `user.message.text` only matches exactly `user.message.text`
+
+* `user.message` matches `user.message`, `user.message.text`, `user.message.voice`
+* `user.message.text` only matches exactly `user.message.text`
 
 ## Schema-Guided Events
 
-The `event:schema` attribute validates events against JSON Schema, ensuring type safety:
+The `schema` attribute validates events against JSON Schema, ensuring type safety:
 
 ```xml
 <transition event="intent.flight"
-            event:schema='{
+            schema='{
               "type": "object",
               "description": "Flight booking intent from user",
               "properties": {
@@ -198,6 +204,7 @@ The `event:schema` attribute validates events against JSON Schema, ensuring type
 For better maintainability, define schemas in external files:
 
 **schemas/events.json:**
+
 ```json
 {
   "components": {
@@ -219,12 +226,13 @@ For better maintainability, define schemas in external files:
 ```
 
 **agent.aml:**
+
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:events="./schemas/events.json">
 
   <transition event="intent.flight"
-              event:schema="events:#/components/schemas/FlightIntent"
+              schema="events:#/components/schemas/FlightIntent"
               target="handle_flight" />
 </agentml>
 ```
@@ -284,8 +292,8 @@ Handle errors with explicit error states and events:
 ```xml
 <state id="processing">
   <onentry>
-    <gemini:generate
-      model="gemini-2.0-flash-exp"
+    <openai:generate
+      model="gpt-4o"
       location="_event"
       promptexpr="user_input" />
   </onentry>
@@ -326,7 +334,7 @@ Handle errors with explicit error states and events:
 ## Best Practices
 
 1. **Use hierarchical event names**: `user.message.text` instead of `message`
-2. **Always provide schemas**: Use `event:schema` for type safety
+2. **Always provide schemas**: Use `schema` for type safety
 3. **Include descriptions**: Guide LLMs with detailed schema descriptions
 4. **Handle all events**: Provide fallback transitions for unexpected events
 5. **Keep states focused**: Each state should have a single responsibility
@@ -336,7 +344,7 @@ Handle errors with explicit error states and events:
 
 ## Next Steps
 
-- Learn about [State Machines](/concepts/state-machines) for building complex workflows
-- Explore [Events & Schemas](/concepts/events-schemas) for data validation
-- Understand [Token Efficiency](/concepts/token-efficiency) for optimizing costs
-- Read about [Namespaces](/concepts/namespaces) for extending functionality
+* Learn about [State Machines](/concepts/state-machines) for building complex workflows
+* Explore [Events & Schemas](/concepts/events-schemas) for data validation
+* Understand [Token Efficiency](/concepts/token-efficiency) for optimizing costs
+* Read about [Namespaces](/concepts/namespaces) for extending functionality

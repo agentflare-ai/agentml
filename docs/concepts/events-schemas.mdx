@@ -1,11 +1,11 @@
 ---
 title: "Events & Schemas"
-description: "Structure your data with event:schema validation for type-safe AgentML agents"
+description: "Structure your data with schema validation for type-safe AgentML agents"
 ---
 
 # Events & Schemas
 
-AgentML uses JSON Schema to validate events, ensuring type safety and guiding LLMs to generate correctly structured data. The `event:schema` attribute is a key feature that makes agents reliable and predictable.
+AgentML uses JSON Schema to validate events, ensuring type safety and guiding LLMs to generate correctly structured data. The `schema` attribute is a key feature that makes agents reliable and predictable.
 
 ## Understanding Events in AgentML
 
@@ -14,9 +14,10 @@ Events are the primary communication mechanism in W3C SCXML state machines. In A
 ### Event Structure
 
 Every event has:
-- **Name**: Dot-separated hierarchical identifier (e.g., `user.message.text`)
-- **Data**: JSON payload with the event's information
-- **Origin**: Source of the event (IOProcessor, internal raise, etc.)
+
+* **Name**: Dot-separated hierarchical identifier (e.g., `user.message.text`)
+* **Data**: JSON payload with the event's information
+* **Origin**: Source of the event (IOProcessor, internal raise, etc.)
 
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
@@ -50,23 +51,24 @@ Use dot-separated namespaces for hierarchical organization:
 ```
 
 Event matching supports wildcards:
-- `user.message` matches `user.message`, `user.message.text`, `user.message.voice`
-- `user.message.text` matches only `user.message.text`
+
+* `user.message` matches `user.message`, `user.message.text`, `user.message.voice`
+* `user.message.text` matches only `user.message.text`
 
 ## Schema-Guided Events
 
-The `event:schema` attribute validates events against JSON Schema, providing:
+The `schema` attribute validates events against JSON Schema, providing:
 
-- **Type Safety**: Ensure data has correct types
-- **LLM Guidance**: Descriptions guide LLM output generation
-- **Runtime Validation**: Catch errors before they propagate
-- **Documentation**: Schemas document expected data structure
+* **Type Safety**: Ensure data has correct types
+* **LLM Guidance**: Descriptions guide LLM output generation
+* **Runtime Validation**: Catch errors before they propagate
+* **Documentation**: Schemas document expected data structure
 
 ### Basic Schema Validation
 
 ```xml
 <transition event="intent.greeting"
-            event:schema='{
+            schema='{
               "type": "object",
               "description": "Greeting intent from user",
               "properties": {
@@ -90,7 +92,7 @@ The `event:schema` attribute validates events against JSON Schema, providing:
 
 ```xml
 <transition event="intent.flight"
-            event:schema='{
+            schema='{
               "type": "object",
               "description": "Flight booking intent extracted from user message",
               "properties": {
@@ -155,6 +157,7 @@ For maintainability, define schemas in separate JSON or YAML files:
 ### JSON Schema File
 
 **schemas/events.json:**
+
 ```json
 {
   "components": {
@@ -208,11 +211,11 @@ Reference external schemas with JSON Pointer (RFC 6901):
   <state id="classify_intent">
     <!-- Reference using namespace:pointer syntax -->
     <transition event="intent.flight"
-                event:schema="events:#/components/schemas/FlightIntent"
+                schema="events:#/components/schemas/FlightIntent"
                 target="handle_flight" />
 
     <transition event="intent.greeting"
-                event:schema="events:#/components/schemas/GreetingIntent"
+                schema="events:#/components/schemas/GreetingIntent"
                 target="handle_greeting" />
   </state>
 </agentml>
@@ -223,6 +226,7 @@ Reference external schemas with JSON Pointer (RFC 6901):
 You can also import OpenAPI specifications:
 
 **schemas/api.yaml:**
+
 ```yaml
 openapi: 3.0.0
 components:
@@ -243,12 +247,13 @@ components:
 ```
 
 **agent.aml:**
+
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        xmlns:api="./schemas/api.yaml">
 
   <transition event="user.message"
-              event:schema="api:#/components/schemas/UserMessage"
+              schema="api:#/components/schemas/UserMessage"
               target="processing" />
 </agentml>
 ```
@@ -282,7 +287,7 @@ Use the `_event` system variable to access event data:
 
 ```xml
 <transition event="user.profile"
-            event:schema='{
+            schema='{
               "type": "object",
               "properties": {
                 "name": {
@@ -313,7 +318,7 @@ Use the `_event` system variable to access event data:
 
 ```xml
 <transition event="order.items"
-            event:schema='{
+            schema='{
               "type": "object",
               "properties": {
                 "items": {
@@ -346,7 +351,7 @@ Use the `_event` system variable to access event data:
 
 ```xml
 <transition event="status.update"
-            event:schema='{
+            schema='{
               "type": "object",
               "properties": {
                 "status": {
@@ -428,7 +433,7 @@ Handle schema validation failures:
 ```xml
 <state id="processing">
   <transition event="user.input"
-              event:schema='{"type": "object", "properties": {"message": {"type": "string"}}, "required": ["message"]}'
+              schema='{"type": "object", "properties": {"message": {"type": "string"}}, "required": ["message"]}'
               target="valid_input" />
 
   <!-- Catch validation errors -->
@@ -447,7 +452,7 @@ Handle schema validation failures:
 
 ## Next Steps
 
-- Learn about [Namespaces](/concepts/namespaces) for extending functionality
-- Explore [Token Efficiency](/concepts/token-efficiency) for cost optimization
-- Read [Document Structure](/architecture/document-structure) for syntax details
-- See [Namespace System](/architecture/namespace-system) for external schema loading
+* Learn about [Namespaces](/concepts/namespaces) for extending functionality
+* Explore [Token Efficiency](/concepts/token-efficiency) for cost optimization
+* Read [Document Structure](/architecture/document-structure) for syntax details
+* See [Namespace System](/architecture/namespace-system) for external schema loading

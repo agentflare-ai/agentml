@@ -81,7 +81,7 @@ Here's a simple customer support agent:
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
        datamodel="ecmascript"
-       xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai">
 
   <datamodel>
     <data id="user_input" expr="''" />
@@ -102,8 +102,8 @@ Here's a simple customer support agent:
   <state id="processing">
     <onentry>
       <log expr="'Processing: ' + user_input" />
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <openai:generate
+        model="gpt-4o"
         location="_event"
         promptexpr="'You are a helpful assistant. User: ' + user_input" />
     </onentry>

@@ -132,13 +132,16 @@ Combine memory with LLM for context-aware responses:
     <transition target="generate" />
   </state>
 
-  <state id="generate">
+  <state id="generate_with_memory">
     <onentry>
-      <!-- Generate with context -->
-      <gemini:generate
-        model="gemini-2.0-flash-exp"
+      <!-- Search memory for relevant context -->
+      <memory:search location="context" expr="queryEmbedding" limit="5" />
+
+      <!-- Generate response using context -->
+      <openai:generate
+        model="gpt-4o"
         location="_event"
-        promptexpr="'Context:\n' + context.join('\n\n') + '\n\nQuestion: ' + userQuery" />
+        promptexpr="'Based on this context: ' + JSON.stringify(context) + ' answer: ' + userQuery" />
     </onentry>
 
     <transition event="action.response" target="store_response">
@@ -148,13 +151,9 @@ Combine memory with LLM for context-aware responses:
 
   <state id="store_response">
     <onentry>
-      <!-- Store response for future searches -->
-      <memory:embed location="responseEmbedding" expr="userQuery + ' ' + response" />
-
-      <!-- Store with metadata -->
-      <memory:put
-        key="'qa_' + Date.now()"
-        expr='{"query": userQuery, "response": response, "embedding": responseEmbedding}' />
+      <!-- Store response in memory for future reference -->
+      <memory:put key="last_response" expr="response" />
+      <memory:embed location="responseEmbedding" expr="response" />
     </onentry>
 
     <transition target="complete" />
