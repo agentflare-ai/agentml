@@ -17,6 +17,7 @@ Create a file called `chatbot.aml`:
 
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
+       version="1.0"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -61,12 +62,14 @@ Let's break down each part of this agent:
 
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
+       version="1.0"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 ```
 
 - `<agentml>` is the root element for AgentML files (extends W3C SCXML's `<scxml>`)
 - `xmlns` declares the default namespace
+- `version="1.0"` is the required SCXML version
 - `datamodel="ecmascript"` specifies we're using JavaScript for expressions
 - `xmlns:gemini` imports the Gemini LLM namespace
 
@@ -126,6 +129,7 @@ Let's enhance our agent with event schema validation to ensure type safety:
 
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
+       version="1.0"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -194,6 +198,7 @@ Let's create a more sophisticated agent that can handle different user intents:
 
 ```xml
 <agentml xmlns="github.com/agentflare-ai/agentml"
+       version="1.0"
        datamodel="ecmascript"
        xmlns:gemini="github.com/agentflare-ai/agentml-go/gemini">
 
@@ -336,14 +341,16 @@ Congratulations! You've built your first AgentML agent. Here's what to explore n
 
 ## Example Projects
 
-Check out complete example agents:
+Check out complete example agents in the [examples directory](https://github.com/agentflare-ai/agentml/tree/main/examples):
 
-- **Customer Support Bot**: [examples/customer_support/](https://github.com/agentflare-ai/agentml/tree/main/examples/customer_support)
-- **Flight Booking Agent**: [examples/flight_booking/](https://github.com/agentflare-ai/agentml/tree/main/examples/flight_booking)
-- **Data Analysis Agent**: Multi-step analysis workflows
-- **RAG Application**: Retrieval-augmented generation
+- **[Customer Support Bot](https://github.com/agentflare-ai/agentml/tree/main/examples/customer_support)**: Classifies and handles support requests
+- **[Flight Booking Agent](https://github.com/agentflare-ai/agentml/tree/main/examples/flight_booking)**: Conversational flight booking system
+- **Echo Bot**: Interactive echo agent with stdin/stdout
+- **Hello World**: Simple starter agent
+- **Insurance Agent**: Quote generation workflow
+- **Healthcare Agent**: Healthcare marketplace agent
 
-Find them at [github.com/agentflare-ai/agentml/tree/main/examples](https://github.com/agentflare-ai/agentml/tree/main/examples)
+Find them all at [github.com/agentflare-ai/agentml/tree/main/examples](https://github.com/agentflare-ai/agentml/tree/main/examples)
 
 ---
 

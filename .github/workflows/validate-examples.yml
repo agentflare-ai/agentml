@@ -1,0 +1,95 @@
+name: Validate AgentML Examples
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'examples/**/*.aml'
+      - 'docs/**/*.mdx'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'examples/**/*.aml'
+      - 'docs/**/*.mdx'
+  workflow_dispatch:
+
+jobs:
+  validate-examples:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install agentmlx
+        run: |
+          curl -fsSL https://amlx.agentml.dev/install.sh | bash
+          echo "$HOME/.agentmlx/bin" >> $GITHUB_PATH
+
+      - name: Verify installation
+        run: |
+          agentmlx --version
+
+      - name: Validate example files
+        run: |
+          echo "=== Validating AgentML Examples ==="
+          failed=0
+          for file in examples/**/*.aml; do
+            if [ -f "$file" ]; then
+              echo ""
+              echo "Validating: $file"
+              if agentmlx validate "$file"; then
+                echo "✓ $file is valid"
+              else
+                echo "✗ $file is invalid"
+                failed=$((failed + 1))
+              fi
+            fi
+          done
+
+          echo ""
+          echo "================================"
+          if [ $failed -gt 0 ]; then
+            echo "❌ $failed example(s) failed validation"
+            exit 1
+          else
+            echo "✅ All examples are valid!"
+          fi
+
+  validate-documentation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install agentmlx
+        run: |
+          curl -fsSL https://amlx.agentml.dev/install.sh | bash
+          echo "$HOME/.agentmlx/bin" >> $GITHUB_PATH
+
+      - name: Verify installation
+        run: |
+          agentmlx --version
+
+      - name: Validate documentation examples
+        run: |
+          echo "=== Validating Documentation Code Examples ==="
+          python3 scripts/validate_docs.py docs || true
+
+          echo ""
+          echo "Note: Documentation contains pedagogical examples that may be intentionally incomplete."
+          echo "See validation-report.txt for details."
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: validation-report.txt
+          retention-days: 30

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<agentml xmlns="github.com/agentflare-ai/agentml"
+    xmlns:openai="github.com/agentflare-ai/agentml-go/openai"
+    version="1.0"
+    datamodel="ecmascript"
+    name="aml-planner">
+
+    <datamodel>
+        <data id="userRequest" expr="''"
+            schema='{"type":"string","description":"Initial user request"}' />
+        <data id="conversationHistory" expr="[]"
+            schema='{"type":"array","items":{"type":"object","properties":{"role":{"type":"string"},"content":{"type":"string"}}},"description":"Q and A history"}' />
+        <data id="requirements" expr="''"
+            schema='{"type":"string","description":"Complete gathered requirements"}' />
+        <data id="researchFindings" expr="''"
+            schema='{"type":"string","description":"Research results about AgentML"}' />
+        <data id="engineeringResult" expr="[{}][0]"
+            schema='{"type":"object"}' />
+    </datamodel>
+
+    <!-- Entry state -->
+    <state id="idle">
+        <onentry>
+            <log label="AML Agent: " expr="`Ready to create Agents`" />
+        </onentry>
+
+        <transition event="user.request" target="analyzing_request"
+            schema='{"type":"object","description":"User wants to build AgentML agents","properties":{"request":{"type":"string","description":"What the user wants to build"}},"required":["request"]}'>
+            <assign location="userRequest" expr="_event.data.request" />
+            <assign location="conversationHistory"
+                expr="[{'role': 'user', 'content': _event.data.request}]" />
+            <log label="AML Agent: " expr="`Received request: ${userRequest}`" />
+        </transition>
+    </state>
+
+    <!-- Analyze the request -->
+    <state id="analyzing_request">
+        <onentry>
+            <log label="AML Agent: " expr="`Analyzing request`" />
+            <openai:generate model="grok-code-fast-1" location="requirements" stream="false">
+                <openai:prompt>Analyze user request for building AgentML agents.</openai:prompt>
+            </openai:generate>
+        </onentry>
+
+        <!-- Requirements complete, ready to engineer -->
+        <transition event="requirements.complete" target="invoking_engineer"
+            schema='{"type":"object","description":"Requirements are clear and complete, ready for engineering. Provide COMPLETE detailed requirements summary covering all aspects: purpose, states, events, data model, interactions, constraints.","properties":{"summary":{"type":"string","description":"Complete detailed requirements for the engineer"},"ready":{"type":"boolean","description":"True if ready to engineer"}},"required":["summary","ready"]}'>
+            <assign location="requirements" expr="_event.data.summary" />
+            <log label="AML Agent: " expr="`Requirements complete, proceeding to engineering`" />
+        </transition>
+
+        <!-- Need clarification from user -->
+        <transition event="clarification.needed" target="asking_questions"
+            schema='{"type":"object","description":"Requirements are unclear, need to ask user questions to clarify ambiguities or gather missing information","properties":{"questions":{"type":"array","items":{"type":"string"},"description":"Specific questions to ask the user"},"reason":{"type":"string","description":"Why clarification is needed"}},"required":["questions"]}'>
+            <log label="AML Agent: " expr="`Need clarification: ${_event.data.reason}`" />
+        </transition>
+
+        <!-- Need to research AgentML docs/examples/capabilities -->
+        <transition event="research.needed" target="researching"
+            schema='{"type":"object","description":"Need to research AgentML capabilities, documentation, or examples before requirements can be finalized","properties":{"topic":{"type":"string","description":"What to research (e.g., parallel states, invoke mechanism, datamodel types)"},"reason":{"type":"string","description":"Why this research is needed"}},"required":["topic"]}'>
+            <log label="AML Agent: " expr="`Need to research: ${_event.data.topic}`" />
+        </transition>
+
+        <transition event="analysis.failed" target="failed"
+            schema='{"type":"object","description":"Unable to analyze the request","properties":{"reason":{"type":"string","description":"Why analysis failed"}},"required":["reason"]}'>
+            <log label="AML Agent: " expr="`Analysis failed: ${_event.data.reason}`" />
+        </transition>
+    </state>
+
+    <!-- Ask user for clarification -->
+    <state id="asking_questions">
+        <onentry>
+            <log label="AML Agent: " expr="`Asking user for clarification (timeout in 5s)`" />
+            <!-- TODO: This would send questions to user interface -->
+            <send id="timeout.clarification" event="timeout.clarification" delay="5s" />
+        </onentry>
+
+        <transition event="user.answers" target="analyzing_request"
+            schema='{"type":"object","description":"User provided answers to clarification questions","properties":{"answers":{"type":"array","items":{"type":"string"},"description":"User answers to the questions"}},"required":["answers"]}'>
+            <cancel sendid="timeout.clarification" />
+            <assign location="conversationHistory"
+                expr="conversationHistory.concat([{'role': 'user', 'content': _event.data.answers.join('; ')}])" />
+            <log label="AML Agent: " expr="`Received answers, re-analyzing`" />
+        </transition>
+
+        <transition event="user.cancel" target="cancelled"
+            schema='{"type":"object","description":"User cancelled the planning process"}'>
+            <log label="AML Agent: " expr="`User cancelled`" />
+        </transition>
+
+        <!-- Timeout: proceed without user answers -->
+        <transition event="timeout.clarification" target="analyzing_request">
+            <assign location="conversationHistory"
+                expr="conversationHistory.concat([{'role': 'system', 'content': 'User did not provide clarification within timeout, proceeding with available information'}])" />
+            <log label="AML Agent: "
+                expr="`Timeout waiting for clarification, proceeding without answers`" />
+        </transition>
+    </state>
+
+    <!-- Research AgentML capabilities using LLM -->
+    <state id="researching">
+        <onentry>
+            <log label="AML Agent: " expr="`Researching AgentML capabilities`" />
+            <openai:generate model="grok-code-fast-1" location="researchFindings"
+                stream="false">
+                <openai:prompt>Research AgentML to answer questions about capabilities.</openai:prompt>
+            </openai:generate>
+        </onentry>
+
+        <transition event="research.complete" target="analyzing_request"
+            schema='{"type":"object","description":"Research completed. Provide findings about AgentML capabilities, patterns, best practices, or examples relevant to the user request.","properties":{"findings":{"type":"string","description":"Research findings about AgentML relevant to this request"}},"required":["findings"]}'>
+            <assign location="researchFindings" expr="_event.data.findings" />
+            <assign location="conversationHistory"
+                expr="conversationHistory.concat([{'role': 'system', 'content': `Research: ${_event.data.findings}`}])" />
+            <log label="AML Agent: " expr="`Research complete, re-analyzing with new information`" />
+        </transition>
+
+        <transition event="research.failed" target="analyzing_request"
+            schema='{"type":"object","description":"Research failed but can proceed without it","properties":{"reason":{"type":"string","description":"Why research failed"}},"required":["reason"]}'>
+            <log label="AML Agent: "
+                expr="`Research failed, proceeding without: ${_event.data.reason}`" />
+        </transition>
+    </state>
+
+    <!-- Invoke engineer to build the agents -->
+    <state id="invoking_engineer">
+        <onentry>
+            <log label="AML Agent: " expr="`Invoking engineer to decompose and generate agents`" />
+        </onentry>
+
+        <invoke type="agentml" src="aml-engineer.aml" id="engineer">
+            <param name="requirements" expr="requirements" />
+        </invoke>
+
+        <!-- Engineering succeeded -->
+        <transition event="done.invoke.engineer" target="complete"
+            cond="_event.data.success === true"
+            schema='{"type":"object","description":"Engineering completed successfully with generated agents","properties":{"success":{"type":"boolean","description":"True if successful"},"files":{"type":"array","description":"Generated agent files"},"failed":{"type":"array","description":"Failed agent names"},"total":{"type":"number","description":"Total agent count"}},"required":["success","files"]}'>
+            <assign location="engineeringResult" expr="_event.data" />
+            <log label="AML Agent: "
+                expr="`Engineering complete: ${_event.data.files.length} agents generated`" />
+        </transition>
+
+        <!-- Engineering failed -->
+        <transition event="done.invoke.engineer" target="failed"
+            cond="_event.data.success === false"
+            schema='{"type":"object","description":"Engineering failed","properties":{"success":{"type":"boolean"},"error":{"type":"string","description":"Error message"}},"required":["success","error"]}'>
+            <assign location="engineeringResult" expr="_event.data" />
+            <log label="AML Agent: " expr="`Engineering failed: ${_event.data.error}`" />
+        </transition>
+
+        <transition event="error.platform.engineer" target="failed"
+            schema='{"type":"object"}'>
+            <log label="AML Agent: " expr="`Engineer invocation failed`" />
+        </transition>
+    </state>
+
+    <final id="complete">
+        <onentry>
+            <log label="AML Agent: "
+                expr="`Planning complete! Generated ${engineeringResult.files.length} agents`" />
+            <foreach array="engineeringResult.files" item="file">
+                <log expr="`\n***\n\n**${file.name}**\n`" />
+                <log expr="`${'```xml'}\n${file.content}\n${'```'}`" />
+            </foreach>
+        </onentry>
+        <donedata>
+            <content
+                expr="[{success: true, requirements: requirements, files: engineeringResult.files, failed: engineeringResult.failed || []}][0]" />
+        </donedata>
+    </final>
+
+    <final id="cancelled">
+        <onentry>
+            <log label="AML Agent: " expr="`Planning cancelled by user`" />
+        </onentry>
+        <donedata>
+            <content expr="[{success: false, cancelled: true}][0]" />
+        </donedata>
+    </final>
+
+    <final id="failed">
+        <onentry>
+            <log label="AML Agent: " expr="`Planning failed`" />
+        </onentry>
+        <donedata>
+            <content expr="[{success: false, error: 'Planning or engineering failed'}][0]" />
+        </donedata>
+    </final>
+
+</agentml>

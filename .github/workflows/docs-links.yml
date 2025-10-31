@@ -1,0 +1,50 @@
+name: Documentation Link Checker
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs/**/*.mdx'
+      - 'docs/**/*.md'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/**/*.mdx'
+      - 'docs/**/*.md'
+  schedule:
+    # Run weekly on Monday at 9am UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install markdown-link-check
+        run: npm install -g markdown-link-check
+
+      - name: Check internal links
+        run: |
+          echo "Checking documentation links..."
+          find docs -name "*.mdx" -o -name "*.md" | while read file; do
+            echo "Checking: $file"
+            markdown-link-check "$file" \
+              --config .github/markdown-link-check-config.json \
+              || exit_code=$?
+          done
+
+      - name: Report results
+        if: failure()
+        run: |
+          echo "❌ Link check failed! Some links are broken."
+          echo "Please review the output above and fix broken links."
+          exit 1

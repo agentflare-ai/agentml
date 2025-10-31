@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<agentml xmlns="github.com/agentflare-ai/agentml"
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai"
+       name="support_bot"
+       version="1.0"
+       datamodel="ecmascript">
+
+  <datamodel>
+    <data id="customer_message" expr="''" />
+    <data id="ticket_type" expr="''" />
+    <data id="response" expr="''" />
+    <data id="conversation_history" expr="[]" />
+  </datamodel>
+
+  <!-- Initial state: waiting for customer -->
+  <state id="idle">
+    <transition event="customer.message" target="classify_issue">
+      <assign location="customer_message" expr="_event.data.message" />
+      <assign location="conversation_history"
+              expr="conversation_history.concat([{role: 'user', message: customer_message}])" />
+    </transition>
+  </state>
+
+  <!-- Classify the type of support issue using AI -->
+  <state id="classify_issue">
+    <onentry>
+      <openai:generate
+        model="gpt-4o"
+        promptexpr="'Classify this customer support request into one of these categories: billing, technical, account, or general. Respond with ONLY the category name in lowercase. Customer said: ' + customer_message" />
+    </onentry>
+
+    <transition event="billing" target="handle_billing">
+      <assign location="ticket_type" expr="'billing'" />
+    </transition>
+
+    <transition event="technical" target="handle_technical">
+      <assign location="ticket_type" expr="'technical'" />
+    </transition>
+
+    <transition event="account" target="handle_account">
+      <assign location="ticket_type" expr="'account'" />
+    </transition>
+
+    <transition target="handle_general">
+      <assign location="ticket_type" expr="'general'" />
+    </transition>
+  </state>
+
+  <!-- Handle billing issues -->
+  <state id="handle_billing">
+    <onentry>
+      <openai:generate
+        model="gpt-4o"
+        promptexpr="'You are a helpful billing support agent. Assist the customer with their billing question in a friendly, professional manner. Customer said: ' + customer_message" />
+    </onentry>
+
+    <transition event="user.message" target="send_response">
+      <assign location="response" expr="_event.data.response_and_question" />
+    </transition>
+  </state>
+
+  <!-- Handle technical issues -->
+  <state id="handle_technical">
+    <onentry>
+      <openai:generate
+        model="gpt-4o"
+        promptexpr="'You are a helpful technical support agent. Help the customer troubleshoot their technical issue step by step. Customer said: ' + customer_message" />
+    </onentry>
+
+    <transition event="user.message" target="send_response">
+      <assign location="response" expr="_event.data.response_and_question" />
+    </transition>
+  </state>
+
+  <!-- Handle account issues -->
+  <state id="handle_account">
+    <onentry>
+      <openai:generate
+        model="gpt-4o"
+        promptexpr="'You are a helpful account support agent. Assist the customer with their account question, reminding them about security when necessary. Customer said: ' + customer_message" />
+    </onentry>
+
+    <transition event="user.message" target="send_response">
+      <assign location="response" expr="_event.data.response_and_question" />
+    </transition>
+  </state>
+
+  <!-- Handle general questions -->
+  <state id="handle_general">
+    <onentry>
+      <openai:generate
+        model="gpt-4o"
+        promptexpr="'You are a helpful customer support agent. Assist the customer with their question in a friendly manner. Customer said: ' + customer_message" />
+    </onentry>
+
+    <transition event="user.message" target="send_response">
+      <assign location="response" expr="_event.data.response_and_question" />
+    </transition>
+  </state>
+
+  <!-- Send response and wait for follow-up -->
+  <state id="send_response">
+    <onentry>
+      <log expr="'Support Agent: ' + response" />
+      <assign location="conversation_history"
+              expr="conversation_history.concat([{role: 'assistant', message: response}])" />
+    </onentry>
+
+    <transition event="customer.message" target="classify_issue">
+      <assign location="customer_message" expr="_event.data.message" />
+      <assign location="conversation_history"
+              expr="conversation_history.concat([{role: 'user', message: customer_message}])" />
+    </transition>
+
+    <transition event="customer.close" target="resolved">
+      <log expr="'Customer closed ticket'" />
+    </transition>
+
+    <transition event="timeout.inactive" target="resolved" />
+  </state>
+
+  <!-- Final state: issue resolved -->
+  <final id="resolved">
+    <onentry>
+      <log expr="'Support ticket closed. Total messages: ' + conversation_history.length" />
+    </onentry>
+  </final>
+
+</agentml>

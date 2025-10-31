@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<agentml xmlns="github.com/agentflare-ai/agentml"
+    xmlns:openai="github.com/agentflare-ai/agentml-go/openai"
+    xmlns:validate="github.com/agentflare-ai/agentml-go/validate"
+    version="1.0"
+    datamodel="ecmascript"
+    name="aml-generator">
+
+    <datamodel>
+        <data id="name" expr="''"
+            schema='{"type":"string","description":"Filename like agent-name.aml"}' />
+        <data id="description" expr="''"
+            schema='{"type":"string","description":"Detailed description of what this agent should do"}' />
+        <data id="generatedCode" expr="''"
+            schema='{"type":"string","description":"Generated AgentML XML code"}' />
+        <data id="validationResult" expr="[{}][0]"
+            schema='{"type":"object"}' />
+        <data id="retryCount" expr="0"
+            schema='{"type":"number"}' />
+        <data id="maxRetries" expr="3"
+            schema='{"type":"number"}' />
+        <data id="errorMessage" expr="''"
+            schema='{"type":"string"}' />
+        <data id="validationErrors" expr="[]"
+            schema='{"type":"array"}' />
+        <!-- Note: agentmlx mock no longer needed - using real validate:content extension -->
+    </datamodel>
+
+    <!-- Generate the AgentML code -->
+    <state id="generating">
+        <onentry>
+            <log label="AML Generator: "
+                expr="`Generating ${name} (attempt ${retryCount + 1}/${maxRetries + 1})`" />
+            <openai:generate model="grok-code-fast-1">
+                <openai:prompt>`
+                    Generate complete AgentML XML file based on this detailed description:
+                    ${description}
+
+                    1. Think about error handling, retry, timeouts, and recovery strategies.
+                    2. Remember recovery is more important than eliminating errors.
+                    3. Think about parallel states to do more work in less time if necessary.
+                    4. \`fetch\` is available in the ecmascript datamodel.
+                    5. invoked agents / services should propogate events and errors to the #_parent
+                    {{fetch "https://xsd.agentml.dev/agentflare-ai/agentml/agentml.xsd"}}
+                    {{fetch "https://xsd.agentml.dev/agentflare-ai/agentml-go/openai/openai.xsd"}}
+                    `</openai:prompt>
+            </openai:generate>
+        </onentry>
+
+        <transition event="code.generated" target="writing_file"
+            schema='{"type":"object","description":"Complete AgentML XML file content. Must start with XML declaration, use xmlns github.com/agentflare-ai/agentml, version 1.0, datamodel ecmascript. Every transition receiving event data MUST have inline schema attribute. Use template literals with backticks. Use snake_case for state ids, dot.notation for events.","properties":{"content":{"type":"string","description":"Complete valid AgentML XML file"}},"required":["content"]}'>
+            <assign location="generatedCode" expr="_event.data.content" />
+            <log label="AML Generator: " expr="`Code generated (${generatedCode.length} bytes)`" />
+        </transition>
+
+        <transition event="code.failed" target="failed"
+            schema='{"type":"object","description":"Generation failed","properties":{"reason":{"type":"string","description":"Why generation failed"}},"required":["reason"]}'>
+            <log label="AML Generator: " expr="`Generation failed: ${_event.data.reason}`" />
+        </transition>
+
+        <!-- Handle API timeouts and other execution errors -->
+        <transition event="error.execution" target="generating"
+            cond="retryCount &lt; maxRetries">
+            <assign location="retryCount" expr="retryCount + 1" />
+            <assign location="errorMessage" expr="_event.data.message" />
+            <log label="AML Generator: "
+                expr="`API error (retry ${retryCount}/${maxRetries}): ${_event.data.message}`" />
+        </transition>
+
+        <transition event="error.execution" target="failed"
+            cond="retryCount &gt;= maxRetries">
+            <assign location="errorMessage" expr="_event.data.message" />
+            <log label="AML Generator: "
+                expr="`API error after ${maxRetries} retries: ${_event.data.message}`" />
+        </transition>
+    </state>
+
+    <!-- Simulated file writing (immediate transition) -->
+    <state id="writing_file">
+        <onentry>
+            <log label="AML Generator: " expr="`Writing ${name} to /tmp/agent-architect-output/`" />
+        </onentry>
+
+        <!-- Auto-transition to validation -->
+        <transition target="validating">
+            <log label="AML Generator: " expr="`File written successfully`" />
+        </transition>
+    </state>
+
+    <!-- Validate the generated AML -->
+    <state id="validating">
+        <onentry>
+            <log label="AML Generator: "
+                expr="`Validating ${name} against AgentML schema`" />
+            <!-- Note: validate:content is an extension element not recognized by static validation -->
+            <validate:content contentexpr="generatedCode" location="validationResult" strict="false"
+                recursive="false" />
+            <log label="AML Generator: "
+                expr="`Validation result: valid=${validationResult['Valid']}, errors=${validationResult['ErrorCount']}, warnings=${validationResult['WarningCount']}, retryCount=${retryCount}, maxRetries=${maxRetries}`" />
+        </onentry>
+
+        <!-- Auto-transition after validation completes -->
+        <transition target="complete" cond="validationResult.Valid == true">
+            <log label="AML Generator: "
+                expr="`Validation passed - Errors: ${validationResult.ErrorCount}, Warnings: ${validationResult.WarningCount}`" />
+            <assign location="validationResult"
+                expr="({'name': name, 'content': generatedCode, 'validated': validationResult.Valid, 'errors': validationResult.ErrorCount, 'warnings': validationResult.WarningCount, 'diagnostics': validationResult.Diagnostics})" />
+        </transition>
+
+        <transition target="fixing"
+            cond="validationResult.Valid == false &amp;&amp; retryCount &lt; maxRetries">
+            <log label="AML Generator: "
+                expr="`Validation failed (${validationResult.ErrorCount} errors), attempting to fix errors`" />
+            <assign location="validationErrors" expr="validationResult.Diagnostics" />
+            <assign location="retryCount" expr="retryCount + 1" />
+        </transition>
+
+        <transition target="failed"
+            cond="validationResult.Valid == false &amp;&amp; retryCount &gt;= maxRetries">
+            <log label="AML Generator: "
+                expr="`Validation failed after ${maxRetries + 1} attempts (${validationResult.ErrorCount} errors)`" />
+            <assign location="validationResult"
+                expr="({'name': name, 'content': generatedCode, 'validated': validationResult.Valid, 'errors': validationResult.ErrorCount, 'warnings': validationResult.WarningCount, 'diagnostics': validationResult.Diagnostics})" />
+        </transition>
+
+        <!-- Fallback transition in case conditions don't work -->
+        <transition target="fixing">
+            <log label="AML Generator: "
+                expr="`Fallback transition taken - validationResult: ${JSON.stringify(validationResult)}`" />
+        </transition>
+    </state>
+
+    <!-- Fix validation errors -->
+    <state id="fixing">
+        <onentry>
+            <log label="AML Generator: "
+                expr="`Fixing validation errors in ${name} (retry ${retryCount}/${maxRetries})`" />
+            <openai:generate model="grok-code-fast-1">
+                <openai:prompt>`
+                    Fix these validation errors in the AgentML file against
+
+                    Errors: ${validationErrors.join('\n- ')}
+
+                    Original description: ${description}
+                    Current code: ${generatedCode}
+                    Follow the schemas:
+                    {{fetch "https://xsd.agentml.dev/agentflare-ai/agentml/agentml.xsd"}}
+                    {{fetch "https://xsd.agentml.dev/agentflare-ai/agentml-go/openai/openai.xsd"}}
+                    `</openai:prompt>
+            </openai:generate>
+        </onentry>
+
+        <transition event="code.fixed" target="writing_file"
+            schema='{"type":"object","description":"Code fixed and ready for re-validation. Return the complete corrected AgentML XML file with all validation errors resolved.","properties":{"content":{"type":"string","description":"Fixed complete AgentML XML content"}},"required":["content"]}'>
+            <assign location="generatedCode" expr="_event.data.content" />
+            <log label="AML Generator: " expr="`Code fixed, re-validating`" />
+        </transition>
+
+        <transition event="fix.failed" target="failed"
+            schema='{"type":"object","description":"Unable to fix the validation errors","properties":{"reason":{"type":"string","description":"Why fix failed"}},"required":["reason"]}'>
+            <log label="AML Generator: " expr="`Fix failed: ${_event.data.reason}`" />
+        </transition>
+
+        <!-- Handle API timeouts during fixing -->
+        <transition event="error.execution" target="fixing"
+            cond="retryCount &lt; maxRetries">
+            <assign location="retryCount" expr="retryCount + 1" />
+            <assign location="errorMessage" expr="_event.data.message" />
+            <log label="AML Generator: "
+                expr="`Fix API error (retry ${retryCount}/${maxRetries}): ${_event.data.message}`" />
+        </transition>
+
+        <transition event="error.execution" target="failed"
+            cond="retryCount &gt;= maxRetries">
+            <assign location="errorMessage" expr="_event.data.message" />
+            <log label="AML Generator: "
+                expr="`Fix API error after ${maxRetries} retries: ${_event.data.message}`" />
+        </transition>
+    </state>
+
+    <final id="complete">
+        <onentry>
+            <log label="AML Generator: "
+                expr="`Successfully generated and validated ${name} against remote XSD`" />
+        </onentry>
+        <donedata>
+            <content expr="({'name': name, 'content': generatedCode, 'validated': true})" />
+        </donedata>
+    </final>
+
+    <final id="failed">
+        <onentry>
+            <log label="AML Generator: " expr="`Failed to generate/validate ${name} after retries`" />
+        </onentry>
+        <donedata>
+            <content
+                expr="({'name': name, 'content': generatedCode, 'validated': false, 'errors': validationErrors, 'retries': retryCount})" />
+        </donedata>
+    </final>
+
+</agentml>

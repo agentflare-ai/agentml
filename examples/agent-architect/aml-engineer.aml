@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<agentml xmlns="github.com/agentflare-ai/agentml"
+    xmlns:openai="github.com/agentflare-ai/agentml-go/openai"
+    version="1.0"
+    datamodel="ecmascript"
+    name="aml-engineer">
+
+    <datamodel>
+        <data id="requirements" expr="''"
+            schema='{"type":"string","description":"Detailed requirements from planner"}' />
+        <data id="agents" expr="[]"
+            schema='{"type":"array","items":{"type":"object","properties":{"name":{"type":"string"},"description":{"type":"string"}}},"description":"List of agents to generate"}' />
+        <data id="currentIndex" expr="0"
+            schema='{"type":"number"}' />
+        <data id="totalCount" expr="0"
+            schema='{"type":"number"}' />
+        <data id="generatedFiles" expr="[]"
+            schema='{"type":"array","items":{"type":"object","properties":{"name":{"type":"string"},"content":{"type":"string"},"validated":{"type":"boolean"}}}}' />
+        <data id="failedFiles" expr="[]"
+            schema='{"type":"array","items":{"type":"string"}}' />
+        <data id="errorMessage" expr="''"
+            schema='{"type":"string"}' />
+        <data id="engineeringResult" expr="[{}][0]"
+            schema='{"type":"object"}' />
+    </datamodel>
+
+    <!-- Decompose requirements into agent specifications -->
+    <state id="decomposing">
+        <onentry>
+            <log label="AML Engineer: " expr="`Decomposing requirements into agent specifications`" />
+            <log label="AML Engineer: " expr="`Requirements: ${requirements.substring(0, 200)}...`" />
+            <openai:generate model="grok-code-fast-1" location="agents" stream="false">
+                <openai:prompt>Decompose the following requirements into focused AgentML agents in
+                    dependency order.
+                    Requirements: ${requirements}
+                </openai:prompt>
+            </openai:generate>
+        </onentry>
+
+        <transition event="decomposition.complete" target="preparing_generation"
+            schema='{"type":"object","description":"List of agents to generate in dependency order (dependencies listed first). Each agent should do 1-2 focused tasks. Descriptions must be DETAILED: exact inputs (event data), exact outputs (done data), states needed, step-by-step behavior. Example: [{name: \"faq-service.aml\", description: \"Receives {question: string}, searches FAQ DB, returns {matches: [{q, a, score}]}. States: searching -> filtering -> complete. Uses semantic search, score threshold 0.8\"}, {name: \"support-bot.aml\", description: \"Main agent. States: idle -> classifying -> processing -> responding. Invokes faq-service.aml for FAQ questions...\"}]","properties":{"agentList":{"type":"array","items":{"type":"object","properties":{"name":{"type":"string","description":"Filename like agent-name.aml"},"description":{"type":"string","description":"Detailed spec: inputs, outputs, states, behavior, what it does step-by-step"}},"required":["name","description"]},"description":"Agents in dependency order"}},"required":["agentList"]}'>
+            <assign location="agents" expr="_event.data.agentList" />
+            <assign location="totalCount" expr="_event.data.agentList.length" />
+            <log label="AML Engineer: " expr="`Decomposed into ${totalCount} agents`" />
+            <foreach array="agents" item="agent">
+                <log label="AML Engineer: "
+                    expr="`  - ${agent.name}: ${agent.description.substring(0, 80)}...`" />
+            </foreach>
+        </transition>
+
+        <transition event="decomposition.failed" target="failed"
+            schema='{"type":"object","description":"Decomposition failed","properties":{"reason":{"type":"string","description":"Why decomposition failed"}},"required":["reason"]}'>
+            <log label="AML Engineer: " expr="`Decomposition failed: ${_event.data.reason}`" />
+        </transition>
+    </state>
+
+    <!-- Prepare for generation (reverse order) -->
+    <state id="preparing_generation">
+        <onentry>
+            <log label="AML Engineer: "
+                expr="`Preparing to create ${totalCount} agents in dependency order`" />
+            <assign location="agents" expr="agents.reverse()" />
+            <assign location="currentIndex" expr="0" />
+        </onentry>
+
+        <transition target="generating_next_agent" cond="totalCount > 0" />
+        <transition target="complete" cond="totalCount === 0">
+            <log label="AML Engineer: " expr="`No agents to generate`" />
+        </transition>
+    </state>
+
+    <!-- Generate agents one-by-one (in reverse order) -->
+    <state id="generating_next_agent">
+        <onentry>
+            <log label="AML Engineer: "
+                expr="`Generating ${currentIndex + 1}/${totalCount}: ${agents[currentIndex].name}`" />
+        </onentry>
+
+        <invoke type="agentml" src="aml-generator.aml" id="generator">
+            <param name="name" expr="agents[currentIndex].name" />
+            <param name="description" expr="agents[currentIndex].description" />
+        </invoke>
+
+        <!-- Generation succeeded, more to go -->
+        <transition event="done.invoke.generator" target="generating_next_agent"
+            cond="_event.data.validated &amp;&amp; currentIndex + 1 &lt; totalCount"
+            schema='{"type":"object","description":"Agent generated and validated successfully","properties":{"name":{"type":"string","description":"Agent filename"},"content":{"type":"string","description":"AgentML XML content"},"validated":{"type":"boolean","description":"True if validation passed"}},"required":["name","content","validated"]}'>
+            <assign location="generatedFiles" expr="generatedFiles.concat([_event.data])" />
+            <assign location="currentIndex" expr="currentIndex + 1" />
+            <log label="AML Engineer: "
+                expr="`Successfully generated ${_event.data.name} (${currentIndex}/${totalCount} complete)`" />
+        </transition>
+
+        <!-- Last agent generated successfully -->
+        <transition event="done.invoke.generator" target="complete"
+            cond="_event.data.validated &amp;&amp; currentIndex + 1 &gt;= totalCount"
+            schema='{"type":"object","description":"Final agent generated and validated successfully","properties":{"name":{"type":"string"},"content":{"type":"string"},"validated":{"type":"boolean"}},"required":["name","content","validated"]}'>
+            <assign location="generatedFiles" expr="generatedFiles.concat([_event.data])" />
+            <log label="AML Engineer: " expr="`All ${totalCount} agents generated successfully`" />
+        </transition>
+
+        <!-- Generation failed but continue with others -->
+        <transition event="done.invoke.generator" target="generating_next_agent"
+            cond="!_event.data.validated &amp;&amp; currentIndex + 1 &lt; totalCount"
+            schema='{"type":"object","description":"Agent generation or validation failed","properties":{"error":{"type":"string","description":"Error message"},"name":{"type":"string","description":"Agent that failed"}},"required":["error","name"]}'>
+            <assign location="failedFiles" expr="failedFiles.concat([agents[currentIndex].name])" />
+            <assign location="currentIndex" expr="currentIndex + 1" />
+            <log label="AML Engineer: "
+                expr="`Failed to generate ${agents[currentIndex - 1].name}, continuing...`" />
+        </transition>
+
+        <!-- Last agent failed -->
+        <transition event="done.invoke.generator" target="partial_failure"
+            cond="!_event.data.validated &amp;&amp; currentIndex + 1 &gt;= totalCount"
+            schema='{"type":"object","description":"Final agent generation failed","properties":{"error":{"type":"string"},"name":{"type":"string"}},"required":["error","name"]}'>
+            <assign location="failedFiles" expr="failedFiles.concat([agents[currentIndex].name])" />
+            <log label="AML Engineer: "
+                expr="`Generation complete with ${failedFiles.length} failures`" />
+        </transition>
+
+        <transition event="error.platform.generator" target="generating_next_agent"
+            cond="currentIndex + 1 &lt; totalCount">
+            <assign location="failedFiles" expr="failedFiles.concat([agents[currentIndex].name])" />
+            <assign location="currentIndex" expr="currentIndex + 1" />
+            <log label="AML Engineer: "
+                expr="`Generator invocation failed for ${agents[currentIndex - 1].name}`" />
+        </transition>
+
+        <transition event="error.platform.generator" target="partial_failure"
+            cond="currentIndex + 1 &gt;= totalCount">
+            <assign location="failedFiles" expr="failedFiles.concat([agents[currentIndex].name])" />
+            <log label="AML Engineer: " expr="`Generator invocation failed`" />
+        </transition>
+    </state>
+
+    <state id="partial_failure">
+        <onentry>
+            <log label="AML Engineer: " expr="`Generation completed with failures:`" />
+            <log label="AML Engineer: " expr="`  Success: ${generatedFiles.length}/${totalCount}`" />
+            <log label="AML Engineer: " expr="`  Failed: ${failedFiles.length}/${totalCount}`" />
+            <foreach array="failedFiles" item="failed">
+                <log label="AML Engineer: " expr="`    - ${failed}`" />
+            </foreach>
+        </onentry>
+
+        <transition target="complete" cond="generatedFiles.length > 0">
+            <log label="AML Engineer: " expr="`Returning partial results`" />
+        </transition>
+
+        <transition target="failed" cond="generatedFiles.length === 0">
+            <log label="AML Engineer: " expr="`All generations failed`" />
+        </transition>
+    </state>
+
+    <final id="complete">
+        <onentry>
+            <log label="AML Engineer: "
+                expr="`Engineering complete: ${generatedFiles.length} agents generated`" />
+            <assign location="engineeringResult"
+                expr="[{success: true, files: generatedFiles, failed: failedFiles, total: totalCount}][0]" />
+        </onentry>
+        <donedata>
+            <content expr="engineeringResult" />
+        </donedata>
+    </final>
+
+    <final id="failed">
+        <onentry>
+            <log label="AML Engineer: " expr="`Engineering failed`" />
+            <assign location="errorMessage" expr="'All agent generation failed'" />
+            <assign location="engineeringResult"
+                expr="[{'success': false, 'error': errorMessage, 'failed': failedFiles}][0]" />
+        </onentry>
+        <donedata>
+            <content expr="engineeringResult" />
+        </donedata>
+    </final>
+
+</agentml>

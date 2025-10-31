@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<agentml xmlns="github.com/agentflare-ai/agentml"
+       xmlns:openai="github.com/agentflare-ai/agentml-go/openai"
+       name="flight_booking_agent"
+       version="1.0"
+       datamodel="ecmascript">
+
+  <datamodel>
+    <data id="from_city" expr="''" />
+    <data id="to_city" expr="''" />
+    <data id="departure_date" expr="''" />
+    <data id="return_date" expr="''" />
+    <data id="passengers" expr="1" />
+    <data id="flight_class" expr="'economy'" />
+    <data id="user_input" expr="''" />
+    <data id="booking_confirmed" expr="false" />
+  </datamodel>
+
+  <!-- Start: Welcome user -->
+  <state id="welcome">
+    <onentry>
+      <log expr="'Agent: Welcome! I can help you book a flight. Where would you like to fly from?'" />
+    </onentry>
+
+    <transition event="user.input" target="get_destination">
+      <assign location="from_city" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <!-- Get destination city -->
+  <state id="get_destination">
+    <onentry>
+      <log expr="'Agent: Great! Where would you like to fly to?'" />
+    </onentry>
+
+    <transition event="user.input" target="get_departure_date">
+      <assign location="to_city" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <!-- Get departure date -->
+  <state id="get_departure_date">
+    <onentry>
+      <log expr="'Agent: When would you like to depart? (e.g., 2025-12-15)'" />
+    </onentry>
+
+    <transition event="user.input" target="get_return_date">
+      <assign location="departure_date" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <!-- Get return date -->
+  <state id="get_return_date">
+    <onentry>
+      <log expr="'Agent: When would you like to return? (e.g., 2025-12-20 or say one-way)'" />
+    </onentry>
+
+    <transition event="user.input" target="get_passengers">
+      <assign location="return_date" expr="_event.data.message" />
+    </transition>
+  </state>
+
+  <!-- Get number of passengers -->
+  <state id="get_passengers">
+    <onentry>
+      <log expr="'Agent: How many passengers? (1-9)'" />
+    </onentry>
+
+    <transition event="user.input" target="get_class">
+      <assign location="passengers" expr="parseInt(_event.data.message) || 1" />
+    </transition>
+  </state>
+
+  <!-- Get flight class preference -->
+  <state id="get_class">
+    <onentry>
+      <log expr="'Agent: Which class would you prefer? (economy, business, first)'" />
+    </onentry>
+
+    <transition event="user.input" target="search_flights">
+      <assign location="flight_class" expr="_event.data.message.toLowerCase()" />
+    </transition>
+  </state>
+
+  <!-- Search for flights using AI -->
+  <state id="search_flights">
+    <onentry>
+      <log expr="'Agent: Searching for flights from ' + from_city + ' to ' + to_city + '...'" />
+
+      <openai:generate
+        model="gpt-4o"
+        promptexpr="'Generate a realistic flight search result for: ' + from_city + ' to ' + to_city + ' departing ' + departure_date + (return_date !== 'one-way' ? ' returning ' + return_date : ' one-way') + ' for ' + passengers + ' passenger(s) in ' + flight_class + ' class. Include 2-3 flight options with airlines, departure/arrival times, and prices.'" />
+    </onentry>
+
+    <transition event="flight.options" target="present_options">
+      <assign location="user_input" expr="_event.data.options" />
+    </transition>
+
+    <transition event="user.message" target="present_options">
+      <assign location="user_input" expr="_event.data.response_and_question" />
+    </transition>
+
+    <transition event="error.communication error.execution" target="search_error">
+      <log expr="'Error searching flights'" />
+    </transition>
+  </state>
+
+  <!-- Present flight options to user -->
+  <state id="present_options">
+    <onentry>
+      <log expr="'Agent: Here are your flight options:\\n' + user_input" />
+      <log expr="'Agent: Would you like to book one of these flights? (yes/no)'" />
+    </onentry>
+
+    <transition event="user.input" cond="_event.data.message.toLowerCase().includes('yes')" target="confirm_booking">
+      <assign location="booking_confirmed" expr="true" />
+    </transition>
+
+    <transition event="user.input" target="modify_search">
+      <log expr="'Agent: No problem! Let me help you search again.'" />
+    </transition>
+  </state>
+
+  <!-- Confirm booking details -->
+  <state id="confirm_booking">
+    <onentry>
+      <openai:generate
+        model="gpt-4o"
+        promptexpr="'Generate a booking confirmation message for a flight from ' + from_city + ' to ' + to_city + ' on ' + departure_date + ' for ' + passengers + ' passenger(s) in ' + flight_class + ' class. Include a realistic confirmation number (6 characters, mix of letters and numbers) and thank the customer.'" />
+    </onentry>
+
+    <transition event="booking.confirmed" target="booking_complete">
+      <assign location="user_input" expr="_event.data.confirmation" />
+    </transition>
+
+    <transition event="user.message" target="booking_complete">
+      <assign location="user_input" expr="_event.data.response_and_question" />
+    </transition>
+  </state>
+
+  <!-- Booking complete -->
+  <final id="booking_complete">
+    <onentry>
+      <log expr="'Agent: ' + user_input" />
+      <log expr="'Thank you for booking with us!'" />
+    </onentry>
+  </final>
+
+  <!-- Modify search -->
+  <state id="modify_search">
+    <onentry>
+      <log expr="'Agent: What would you like to change? (say start over to begin again)'" />
+    </onentry>
+
+    <transition event="user.input" cond="_event.data.message.toLowerCase().includes('start')" target="welcome" />
+    <transition event="user.input" target="welcome" />
+  </state>
+
+  <!-- Error handling -->
+  <state id="search_error">
+    <onentry>
+      <log expr="'Agent: Sorry, we encountered an error searching for flights. Would you like to try again?'" />
+    </onentry>
+
+    <transition event="user.input" cond="_event.data.message.toLowerCase().includes('yes')" target="search_flights" />
+    <transition event="user.input" target="booking_complete">
+      <log expr="'Agent: Thank you for your time. Please try again later.'" />
+    </transition>
+  </state>
+
+</agentml>

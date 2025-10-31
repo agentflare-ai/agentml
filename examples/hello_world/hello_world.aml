@@ -5,7 +5,7 @@
 
   <state id="main">
     <onentry>
-      <log label="hello-world" expr="`Hello, world!`" />
+      <log label="Agent: " expr="`Hello, world!`" />
     </onentry>
     <transition target="done" />
   </state>
