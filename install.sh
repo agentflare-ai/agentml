@@ -53,7 +53,6 @@ detect_platform() {
         Linux*)
             if is_wsl; then
                 os="linux"
-                info "Detected WSL environment"
             else
                 os="linux"
             fi
@@ -61,7 +60,6 @@ detect_platform() {
         Darwin*)    os="darwin" ;;
         MINGW*|MSYS*|CYGWIN*)
             os="windows"
-            info "Detected Windows (Git Bash/MSYS2/Cygwin)"
             ;;
         *)          error "Unsupported operating system: $(uname -s)" ;;
     esac
@@ -327,6 +325,18 @@ main() {
     local platform
     platform=$(detect_platform)
     info "Detected platform: $platform"
+    
+    # Show environment-specific messages
+    case "$(uname -s)" in
+        Linux*)
+            if is_wsl; then
+                info "Detected WSL environment"
+            fi
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            info "Detected Windows (Git Bash/MSYS2/Cygwin)"
+            ;;
+    esac
 
     # Get binary URLs (with channel fallback logic)
     local binary_url checksums_url
