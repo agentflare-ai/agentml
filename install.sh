@@ -103,10 +103,18 @@ get_binary_url_with_fallback() {
     local platform="$2"
     local binary_url
     local checksums_url
+    local binary_name="agentmlx_${platform}"
+    
+    # Add .exe extension for Windows
+    case "$platform" in
+        windows_*)
+            binary_name="${binary_name}.exe"
+            ;;
+    esac
 
     # Try requested channel
     info "Checking ${channel} channel..." >&2
-    binary_url="${RELEASES_BASE_URL}/${channel}/agentmlx_${platform}"
+    binary_url="${RELEASES_BASE_URL}/${channel}/${binary_name}"
     checksums_url="${RELEASES_BASE_URL}/${channel}/checksums.txt"
 
     if check_binary_exists "$binary_url"; then
@@ -118,7 +126,11 @@ get_binary_url_with_fallback() {
     case "$channel" in
         latest)
             warn "No binary found in latest channel, trying next (rc) channel..."
-            binary_url="${RELEASES_BASE_URL}/next/agentmlx_${platform}"
+            binary_name="agentmlx_${platform}"
+            case "$platform" in
+                windows_*) binary_name="${binary_name}.exe" ;;
+            esac
+            binary_url="${RELEASES_BASE_URL}/next/${binary_name}"
             checksums_url="${RELEASES_BASE_URL}/next/checksums.txt"
             if check_binary_exists "$binary_url"; then
                 warn "Using next channel"
@@ -127,7 +139,7 @@ get_binary_url_with_fallback() {
             fi
 
             warn "No binary found in next channel, trying beta channel..."
-            binary_url="${RELEASES_BASE_URL}/beta/agentmlx_${platform}"
+            binary_url="${RELEASES_BASE_URL}/beta/${binary_name}"
             checksums_url="${RELEASES_BASE_URL}/beta/checksums.txt"
             if check_binary_exists "$binary_url"; then
                 warn "Using beta channel"
@@ -137,7 +149,11 @@ get_binary_url_with_fallback() {
             ;;
         next)
             warn "No binary found in next channel, trying beta channel..."
-            binary_url="${RELEASES_BASE_URL}/beta/agentmlx_${platform}"
+            binary_name="agentmlx_${platform}"
+            case "$platform" in
+                windows_*) binary_name="${binary_name}.exe" ;;
+            esac
+            binary_url="${RELEASES_BASE_URL}/beta/${binary_name}"
             checksums_url="${RELEASES_BASE_URL}/beta/checksums.txt"
             if check_binary_exists "$binary_url"; then
                 warn "Using beta channel"
@@ -318,6 +334,12 @@ main() {
         # Specific version requested
         info "Version: $version"
         local binary_name="agentmlx_${version}_${platform}"
+        # Add .exe extension for Windows
+        case "$platform" in
+            windows_*)
+                binary_name="${binary_name}.exe"
+                ;;
+        esac
         binary_url="${RELEASES_BASE_URL}/v${version}/${binary_name}"
         checksums_url="${RELEASES_BASE_URL}/v${version}/checksums.txt"
     else
@@ -336,9 +358,21 @@ main() {
     tmp_dir=$(mktemp -d)
     trap "rm -rf '$tmp_dir'" EXIT
 
+    # Determine binary filename based on platform
+    local binary_file="agentmlx"
+    local installed_binary="$BIN_DIR/agentmlx"
+    local amlx_alias="$BIN_DIR/amlx"
+    case "$platform" in
+        windows_*)
+            binary_file="agentmlx.exe"
+            installed_binary="$BIN_DIR/agentmlx.exe"
+            amlx_alias="$BIN_DIR/amlx.exe"
+            ;;
+    esac
+
     # Download binary
     info "Downloading agentmlx..."
-    download "$binary_url" "$tmp_dir/agentmlx" || error "Failed to download binary from $binary_url"
+    download "$binary_url" "$tmp_dir/$binary_file" || error "Failed to download binary from $binary_url"
 
     # Download checksums
     info "Downloading checksums..."
@@ -349,20 +383,20 @@ main() {
         info "Verifying checksum..."
         local binary_name
         binary_name=$(basename "$binary_url")
-        verify_checksum "$tmp_dir/agentmlx" "$tmp_dir/checksums.txt" "$binary_name"
+        verify_checksum "$tmp_dir/$binary_file" "$tmp_dir/checksums.txt" "$binary_name"
     fi
 
     # Create installation directory
     mkdir -p "$BIN_DIR"
 
     # Install binary
-    info "Installing to $BIN_DIR/agentmlx..."
-    mv "$tmp_dir/agentmlx" "$BIN_DIR/agentmlx"
-    chmod +x "$BIN_DIR/agentmlx"
+    info "Installing to $installed_binary..."
+    mv "$tmp_dir/$binary_file" "$installed_binary"
+    chmod +x "$installed_binary"
 
     # Create amlx symlink (may fail on some Windows setups without admin rights)
     info "Creating amlx alias..."
-    if ln -sf "$BIN_DIR/agentmlx" "$BIN_DIR/amlx" 2>/dev/null; then
+    if ln -sf "$installed_binary" "$amlx_alias" 2>/dev/null; then
         info "amlx alias created successfully"
     else
         warn "Could not create symlink for amlx. You can still use 'agentmlx' command."
@@ -380,7 +414,7 @@ main() {
         printf "${GREEN}==>${RESET} ${GREEN}✓${RESET} agentmlx v%s installed successfully!\n" "$version"
     else
         # Try to get version from binary
-        installed_version=$("$BIN_DIR/agentmlx" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?' || echo "")
+        installed_version=$("$installed_binary" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?' || echo "")
         if [ -n "$installed_version" ]; then
             printf "${GREEN}==>${RESET} ${GREEN}✓${RESET} agentmlx v%s installed successfully!\n" "$installed_version"
         else

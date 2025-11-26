@@ -1,3 +1,10 @@
+# Environment files
+.env
+.env.*
+*.env
+.env.local
+.env.*.local
+
 # Node modules
 node_modules/
 
@@ -12,11 +19,6 @@ yarn-error.log*
 *_tmp.*
 *.bak
 *~
-.DS_Store
-
-# Validation reports
-validation-report.txt
-.validate-temp/
 
 # IDE
 .vscode/
@@ -24,16 +26,19 @@ validation-report.txt
 *.swp
 *.swo
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Validation reports
+validation-report.txt
+.validate-temp/
+
 # Build outputs
 dist/
 build/
 *.min.js
 *.min.css
-
-# Environment variables
-.env
-.env.local
-.env.*.local
 
 # Test coverage
 coverage/
